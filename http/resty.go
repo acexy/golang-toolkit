@@ -62,6 +62,7 @@ func (c *RestyClient) SetHeaders(headers map[string]string) *RestyClient {
 	return c
 }
 
+// R GetRequest
 func (c *RestyClient) R() *restyRequest {
 	return &restyRequest{request: c.client.R()}
 }
@@ -116,8 +117,7 @@ func (r *restyRequest) PostJson(url string, jsonString string) (*resty.Response,
 	return r.request.Post(url)
 }
 
-// method
-
+// M set Method
 func (r *restyRequest) M(httpMethod HttpMethod, url string) *restyMethod {
 	return &restyMethod{
 		request: r.request,
@@ -142,8 +142,7 @@ func (m *restyMethod) SetBodyForm(formEncode map[string]string) *restyMethod {
 	return m
 }
 
-// 执行请求
-
+// E Execution
 func (m *restyMethod) E() (*resty.Response, error) {
 	switch m.method {
 	case HttpMethodGet:
