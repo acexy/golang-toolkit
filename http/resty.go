@@ -132,7 +132,7 @@ func (m *restyMethod) SetRequestBody(bodyString *string, contentType ContentType
 	return m
 }
 
-func (m *restyMethod) SetBodyJson(bodyJson *string, contentType ContentType) *restyMethod {
+func (m *restyMethod) SetBodyJson(bodyJson *string) *restyMethod {
 	m.SetRequestBody(bodyJson, ContentTypeJson)
 	return m
 }
