@@ -10,6 +10,7 @@ Golang Toolkit
 
 - 第三方库清单
 
-| 库   | 备注  |
-|-----|-----|
-| github.com/go-resty/resty/v2 | http请求工具 |
+| 库   | 类型          |
+|-----|-------------|
+| github.com/go-resty/resty/v2 | http client |
+| github.com/sirupsen/logrus | logger      |
