@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/acexy/golang-toolkit/util"
+	"net/http"
 	"testing"
 	"time"
 )
@@ -20,7 +21,7 @@ func TestGet(t *testing.T) {
 
 	println(resp.String())
 
-	resp, err = client.R().M(HttpMethodGet, "https://github.com").E()
+	resp, err = client.R().M(http.MethodGet, "https://github.com").E()
 	if err != nil {
 		return
 	}

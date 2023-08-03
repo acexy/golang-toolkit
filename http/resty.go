@@ -2,7 +2,7 @@ package http
 
 import (
 	"context"
-	resty "github.com/go-resty/resty/v2"
+	"github.com/go-resty/resty/v2"
 	"github.com/google/go-querystring/query"
 	"net/http"
 	"net/url"
@@ -19,7 +19,7 @@ type restyRequest struct {
 
 type restyMethod struct {
 	request *resty.Request
-	method  HttpMethod
+	method  string
 	url     string
 }
 
@@ -118,7 +118,7 @@ func (r *restyRequest) PostJson(url string, jsonString string) (*resty.Response,
 }
 
 // M set Method
-func (r *restyRequest) M(httpMethod HttpMethod, url string) *restyMethod {
+func (r *restyRequest) M(httpMethod string, url string) *restyMethod {
 	return &restyMethod{
 		request: r.request,
 		method:  httpMethod,
@@ -145,19 +145,19 @@ func (m *restyMethod) SetBodyForm(formEncode map[string]string) *restyMethod {
 // E Execution
 func (m *restyMethod) E() (*resty.Response, error) {
 	switch m.method {
-	case HttpMethodGet:
+	case http.MethodGet:
 		return m.request.Get(m.url)
-	case HttpMethodPost:
+	case http.MethodPost:
 		return m.request.Post(m.url)
-	case HttpMethodPut:
+	case http.MethodPut:
 		return m.request.Put(m.url)
-	case HttpMethodDelete:
+	case http.MethodDelete:
 		return m.request.Delete(m.url)
-	case HttpMethodHead:
+	case http.MethodHead:
 		return m.request.Head(m.url)
-	case HttpMethodOptions:
+	case http.MethodOptions:
 		return m.request.Options(m.url)
-	case HttpMethodPatch:
+	case http.MethodPatch:
 		return m.request.Patch(m.url)
 	}
 	return nil, nil
