@@ -7,11 +7,11 @@ import (
 
 func main() {
 
+	consoleDefault()
 	//console()
 	//fileText()
 	//fileJson()
 	//consoleAndFile()
-	consoleAndFileByDefault()
 }
 
 func console() {
@@ -20,6 +20,10 @@ func console() {
 
 	log.Logrus().Infof("%d %s\n", 1, "s")
 	log.Logrus().Infoln("Logger Console")
+	log.Logrus().WithField("field", "value").Error("error")
+}
+
+func consoleDefault() {
 	log.Logrus().WithField("field", "value").Error("error")
 }
 
@@ -41,9 +45,5 @@ func consoleAndFile() {
 	l := &log.LogrusConfig{}
 	l.EnableConsole(logrus.DebugLevel, false)
 	l.EnableFileWithJson(logrus.DebugLevel)
-	log.Logrus().WithField("field", "value").Error("error")
-}
-
-func consoleAndFileByDefault() {
 	log.Logrus().WithField("field", "value").Error("error")
 }

@@ -104,7 +104,6 @@ func Logrus() *logrus.Logger {
 			// 如果未手动初始化，则执行默认初始化配置
 			config := &LogrusConfig{}
 			config.EnableConsole(logrus.TraceLevel, false)
-			config.EnableFileWithJson(logrus.TraceLevel)
 		}
 		if consoleLogger != nil && fileLogger != nil {
 			fileLogger.AddHook(&autoConsole{})
