@@ -25,6 +25,9 @@ var (
 	logrusOnce sync.Once
 )
 
+type LogrusConfig struct {
+}
+
 func (l *LogrusConfig) EnableConsole(level logrus.Level, disableColor bool) {
 	consoleLogger = logrus.New()
 	consoleLogger.SetOutput(os.Stdout)
@@ -68,7 +71,6 @@ func (l *LogrusConfig) EnableFileWithJson(level logrus.Level, fileConfig ...*lum
 		DataKey:          "data",
 		CallerPrettyfier: callerPrettyfier,
 	}, fileConfig...)
-
 }
 
 func (l *LogrusConfig) EnableFileWithText(level logrus.Level, fileConfig ...*lumberjack.Logger) {
