@@ -1,6 +1,7 @@
 package log
 
 import (
+	"errors"
 	"github.com/sirupsen/logrus"
 	"testing"
 )
@@ -14,32 +15,43 @@ logrus在普通Test模式中由于Format环境变量的原因Console模式的out
 func TestConsole(t *testing.T) {
 	l := &LogrusConfig{}
 	l.EnableConsole(logrus.DebugLevel, false) // 非tty模式即使未禁用color也不会生效，自动替换为json模式
-	Logrus().Infof("%d %s\n", 1, "s")
+	Logrus().Debugf("%d %s\n", 1, "s")
 	Logrus().Infoln("Logger Console")
-	Logrus().WithField("field", "value").Error("error")
+	Logrus().WithError(errors.New("ERROR")).WithField("field", "value").Error("error")
+	Logrus().WithField("field", "value").Traceln("----------------------")
 }
 
 func TestConsoleDefault(t *testing.T) {
-	Logrus().WithField("field", "value").Error("error")
+	Logrus().Debugf("%d %s\n", 1, "s")
+	Logrus().Infoln("Logger Console")
+	Logrus().WithError(errors.New("ERROR")).WithField("field", "value").Error("error")
+	Logrus().WithField("field", "value").Traceln("----------------------")
 }
 
 func TestFileText(t *testing.T) {
 	l := &LogrusConfig{}
 	l.EnableFileWithText(logrus.DebugLevel)
-	Logrus().Infof("%d %s\n", 1, "s")
+	Logrus().Debugf("%d %s\n", 1, "s")
 	Logrus().Infoln("Logger Console")
+	Logrus().WithError(errors.New("ERROR")).WithField("field", "value").Error("error")
+	Logrus().WithField("field", "value").Traceln("----------------------")
 }
 
 func TestFileJson(t *testing.T) {
 	l := &LogrusConfig{}
 	l.EnableFileWithJson(logrus.DebugLevel)
-	Logrus().Infof("%d %s\n", 1, "s")
+	Logrus().Debugf("%d %s\n", 1, "s")
 	Logrus().Infoln("Logger Console")
+	Logrus().WithError(errors.New("ERROR")).WithField("field", "value").Error("error")
+	Logrus().WithField("field", "value").Traceln("----------------------")
 }
 
 func TestConsoleAndFile(t *testing.T) {
 	l := &LogrusConfig{}
 	l.EnableConsole(logrus.DebugLevel, false)
 	l.EnableFileWithJson(logrus.DebugLevel)
-	Logrus().WithField("field", "value").Error("error")
+	Logrus().Debugf("%d %s\n", 1, "s")
+	Logrus().Infoln("Logger Console")
+	Logrus().WithError(errors.New("ERROR")).WithField("field", "value").Error("error")
+	Logrus().WithField("field", "value").Traceln("----------------------")
 }
