@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-// Md5Hex Md5字符串返回Hex
+// Md5Hex Md5字符串返回HexString
 func Md5Hex(data string) string {
 	hash := Md5([]byte(data))
 	return hex.EncodeToString(hash[:])
@@ -24,7 +24,7 @@ func Md5FileHex(absFilePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	hash := sdkmd5.New()
 	if _, err = io.Copy(hash, file); err != nil {
 		return "", err

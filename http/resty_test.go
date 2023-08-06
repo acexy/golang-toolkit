@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"github.com/acexy/golang-toolkit/util"
 	"net/http"
 	"testing"
@@ -16,6 +17,7 @@ func init() {
 func TestGet(t *testing.T) {
 	resp, err := client.SetTimeout(time.Second * 3).R().Get("https://github.com")
 	if err != nil {
+		fmt.Printf("%+v\n", err)
 		return
 	}
 
@@ -23,10 +25,11 @@ func TestGet(t *testing.T) {
 
 	resp, err = client.R().M(http.MethodGet, "https://github.com").E()
 	if err != nil {
+		fmt.Printf("%+v\n", err)
 		return
 	}
 
-	println(resp.String())
+	fmt.Println(resp.String())
 
 	s := struct {
 		Message  string `json:"message"`
@@ -46,14 +49,14 @@ func TestGet(t *testing.T) {
 	if err != nil {
 		return
 	}
-	println(resp.String())
-	println(util.ToJsonString(s))
+	fmt.Println(resp.String())
+	fmt.Println(util.ToJson(s))
 
 	resp, err = req.Get("http://t.weather.sojson.com/api/weather/city/101030100")
 	if err != nil {
 		return
 	}
-	println(resp.String())
-	println(util.ToJsonString(s))
+	fmt.Println(resp.String())
+	fmt.Println(util.ToJson(s))
 
 }
