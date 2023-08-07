@@ -5,7 +5,10 @@ import (
 	"testing"
 )
 
-func TestRandString(t *testing.T) {
+func TestRandRangeInt(t *testing.T) {
+	fmt.Println(RandRangeInt(1, 2))
+}
 
+func TestRandString(t *testing.T) {
 	fmt.Println(RandString(5))
 }
