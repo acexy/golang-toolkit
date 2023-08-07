@@ -15,6 +15,3 @@ func (h *autoConsole) Fire(entry *logrus.Entry) error {
 func (h *autoConsole) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
-
-type LogrusConfig struct {
-}
