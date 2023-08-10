@@ -25,7 +25,6 @@ func TestJsonCopyStructPanic(t *testing.T) {
 
 	var person Person
 	JsonCopyStructPanic(s, &person)
-
 	fmt.Printf("%+v\n", person)
 
 }
