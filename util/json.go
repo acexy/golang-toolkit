@@ -64,3 +64,29 @@ func ParseJsonPanic(jsonString string, any any) {
 		panic(err)
 	}
 }
+
+// JsonCopyStruct 通过json序列化/反序列化将origin struct复制给target struct 忽略任何错误
+func JsonCopyStruct(originData, targetStruct any) {
+	_ = JsonCopyStructError(originData, targetStruct)
+}
+
+// JsonCopyStructError 通过json序列化/反序列化将origin struct复制给target struct 返回任何错误
+func JsonCopyStructError(originData, targetStruct any) error {
+	jsonString, err := ToJsonError(originData)
+	if err != nil {
+		return err
+	}
+	err = ParseJsonError(jsonString, targetStruct)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// JsonCopyStructPanic 通过json序列化/反序列化将origin struct复制给target struct 任何错误将触发panic
+func JsonCopyStructPanic(originData, targetStruct any) {
+	err := JsonCopyStructError(originData, targetStruct)
+	if err != nil {
+		panic(err)
+	}
+}
