@@ -17,12 +17,9 @@ var (
 	}
 	consoleLogger *logrus.Logger
 	fileLogger    *logrus.Logger
-
-	activeLogger *logrus.Logger
-
-	fileSet bool
-
-	logrusOnce sync.Once
+	activeLogger  *logrus.Logger
+	fileSet       bool
+	logrusOnce    sync.Once
 )
 
 type LogrusConfig struct {
@@ -95,6 +92,7 @@ func Logrus() *logrus.Logger {
 			config.EnableConsole(logrus.TraceLevel, false)
 		}
 		if consoleLogger != nil && fileLogger != nil {
+			consoleLogger.ReportCaller = false
 			fileLogger.AddHook(&autoConsole{})
 			activeLogger = fileLogger
 		} else {
