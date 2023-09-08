@@ -9,10 +9,14 @@ import (
 
 var manager *CachingManager
 
+type User struct {
+	Name string
+	Sex  uint8
+}
+
 func TestBigCache(t *testing.T) {
 
 	manager = NewCacheBucketManager("b1", NewSimpleBigCache(time.Second*10))
-
 	manager.AddBucket("b2", NewSimpleBigCache(time.Second*3))
 
 	err := manager.Put("b1", "key1", "123")
@@ -20,7 +24,7 @@ func TestBigCache(t *testing.T) {
 		log.Logrus().Errorln(err)
 		return
 	}
-	err = manager.Put("b2", "key1", "321")
+	err = manager.Put("b2", "key1", User{Name: "Q", Sex: 1})
 	if err != nil {
 		log.Logrus().Errorln(err)
 		return
@@ -40,7 +44,7 @@ func TestBigCache(t *testing.T) {
 
 	go func() {
 		for {
-			var result string
+			var result User
 			err := manager.Get("b2", "key1", &result)
 			if err != nil {
 				return
