@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/acexy/golang-toolkit/util"
 	"github.com/allegro/bigcache/v3"
+	"time"
 )
 
 type BigCacheBucket struct {
@@ -38,7 +39,12 @@ func (b *BigCacheBucket) Evict(key string) error {
 	return b.cache.Delete(key)
 }
 
-func NewBigCacheBucket(config bigcache.Config) *BigCacheBucket {
+func NewBigCacheByConfig(config bigcache.Config) *BigCacheBucket {
 	cache, _ := bigcache.New(context.Background(), config)
+	return &BigCacheBucket{cache: cache}
+}
+
+func NewSimpleBigCache(duration time.Duration) *BigCacheBucket {
+	cache, _ := bigcache.New(context.Background(), bigcache.DefaultConfig(duration))
 	return &BigCacheBucket{cache: cache}
 }
