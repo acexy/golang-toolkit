@@ -30,4 +30,5 @@ func TestJsonCopyStructPanic(t *testing.T) {
 	ss := []*Student{{Name: "acexy", Sex: 1, School: "Q"}, {Name: "acexy", Sex: 1, School: "H"}}
 
 	fmt.Println(ToJson(ss))
+	fmt.Println(ToJsonFormat(ss))
 }
