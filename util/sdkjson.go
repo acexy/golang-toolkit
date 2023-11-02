@@ -1,11 +1,28 @@
 package util
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/json"
+)
 
 // ToJson 转json字符串 忽略任何错误
 func ToJson(any any) (json string) {
 	json, _ = ToJsonError(any)
 	return
+}
+
+func ToJsonFormat(any any) (jsonFormat string) {
+	jsonString := ToJson(any)
+	if jsonString != "" {
+		var formattedJSON bytes.Buffer
+
+		err := json.Indent(&formattedJSON, []byte(jsonString), "", "  ")
+		if err == nil {
+			jsonFormat = formattedJSON.String()
+			return
+		}
+	}
+	return ""
 }
 
 // ToJsonBytes 转json字节 忽略任何错误
