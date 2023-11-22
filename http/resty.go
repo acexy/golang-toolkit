@@ -23,6 +23,8 @@ type restyMethod struct {
 	url     string
 }
 
+// NewRestyClient 创建一个httpClient对象
+// proxyHttpHost 可以指定代理 localhost:7890
 func NewRestyClient(proxyHttpHost ...string) *RestyClient {
 	var client = &RestyClient{}
 	if len(proxyHttpHost) > 0 {
@@ -100,23 +102,6 @@ func (r *restyRequest) SetHeader(key, value string) *restyRequest {
 	return r
 }
 
-func (r *restyRequest) Get(url string) (*resty.Response, error) {
-	return r.request.Get(url)
-}
-
-func (r *restyRequest) PostForm(url string, formEncode map[string]string) (*resty.Response, error) {
-	if len(formEncode) == 0 {
-		return r.request.Post(url)
-	}
-	return r.request.SetFormData(formEncode).Post(url)
-}
-
-func (r *restyRequest) PostJson(url string, jsonString string) (*resty.Response, error) {
-	r.request.SetBody(jsonString)
-	r.request.SetHeader(HeadContentType, string(ContentTypeJson))
-	return r.request.Post(url)
-}
-
 // M set Method
 func (r *restyRequest) M(httpMethod string, url string) *restyMethod {
 	return &restyMethod{
@@ -161,4 +146,21 @@ func (m *restyMethod) E() (*resty.Response, error) {
 		return m.request.Patch(m.url)
 	}
 	return nil, nil
+}
+
+func (r *restyRequest) Get(url string) (*resty.Response, error) {
+	return r.request.Get(url)
+}
+
+func (r *restyRequest) PostForm(url string, formEncode map[string]string) (*resty.Response, error) {
+	if len(formEncode) == 0 {
+		return r.request.Post(url)
+	}
+	return r.request.SetFormData(formEncode).Post(url)
+}
+
+func (r *restyRequest) PostJson(url string, jsonString string) (*resty.Response, error) {
+	r.request.SetBody(jsonString)
+	r.request.SetHeader(HeadContentType, string(ContentTypeJson))
+	return r.request.Post(url)
 }
