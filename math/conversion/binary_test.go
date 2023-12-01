@@ -7,8 +7,8 @@ import (
 
 func TestNewFromRawBinary(t *testing.T) {
 	b, _ := NewFromRawBinary("11111111")
-	fmt.Println(b.ToBit())
-	fmt.Println(b.ToHex())
+	fmt.Println(b.To8Bit())
+	fmt.Println(b.To2Hex())
 }
 
 func TestNewFromRawHex(t *testing.T) {
@@ -17,5 +17,7 @@ func TestNewFromRawHex(t *testing.T) {
 }
 
 func TestNewFormBytes(t *testing.T) {
-	fmt.Println(NewFormBytes([]byte{255, 0, 3, 45, 251}).ToBit(","))
+	bs := NewFormBytes([]byte{255, 0, 3, 45, 251})
+	fmt.Println(bs.To8Bits(","))
+	fmt.Println(bs.To2HexString(","))
 }
