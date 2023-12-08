@@ -2,7 +2,7 @@ package cache
 
 import (
 	"errors"
-	"github.com/acexy/golang-toolkit/log"
+	"github.com/acexy/golang-toolkit/logger"
 	"sync"
 )
 
@@ -38,7 +38,7 @@ func (c *CachingManager) AddBucket(bucketName string, bucket CachingBucket) {
 	if _, flag := c.caches[bucketName]; !flag {
 		c.caches[bucketName] = bucket
 	} else {
-		log.Logrus().Warnln("duplicate bucketName")
+		logger.Logrus().Warnln("duplicate bucketName")
 	}
 }
 
@@ -51,7 +51,7 @@ func (c *CachingManager) GetBucket(bucketName string) CachingBucket {
 func (c *CachingManager) Get(bucketName, key string, result any) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
-		log.Logrus().Warnln("bad bucketName", bucketName)
+		logger.Logrus().Warnln("bad bucketName", bucketName)
 		return errors.New("bad bucketName " + bucketName)
 	}
 	return bucket.Get(key, result)
@@ -60,7 +60,7 @@ func (c *CachingManager) Get(bucketName, key string, result any) error {
 func (c *CachingManager) Put(bucketName, key string, data any) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
-		log.Logrus().Warnln("bad bucketName", bucketName)
+		logger.Logrus().Warnln("bad bucketName", bucketName)
 		return errors.New("bad bucketName " + bucketName)
 	}
 	return bucket.Put(key, data)
@@ -69,7 +69,7 @@ func (c *CachingManager) Put(bucketName, key string, data any) error {
 func (c *CachingManager) Evict(bucketName, key string) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
-		log.Logrus().Warnln("bad bucketName", bucketName)
+		logger.Logrus().Warnln("bad bucketName", bucketName)
 		return errors.New("bad bucketName " + bucketName)
 	}
 	return bucket.Evict(key)

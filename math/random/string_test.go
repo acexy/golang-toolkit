@@ -6,6 +6,7 @@ import (
 )
 
 func TestRandRangeInt(t *testing.T) {
+
 	fmt.Println(RandRangeInt(1, 2))
 }
 

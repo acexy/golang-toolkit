@@ -19,5 +19,5 @@ func TestNewFromRawHex(t *testing.T) {
 func TestNewFormBytes(t *testing.T) {
 	bs := NewFormBytes([]byte{255, 0, 3, 45, 251})
 	fmt.Println(bs.To8Bits(","))
-	fmt.Println(bs.To2HexString(","))
+	fmt.Println(bs.To2Hex(","))
 }

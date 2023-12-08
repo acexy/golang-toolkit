@@ -1,4 +1,4 @@
-package log
+package logger
 
 import (
 	"fmt"
@@ -50,7 +50,7 @@ func enableFile(level logrus.Level, formatter logrus.Formatter, fileConfig ...*l
 	fileLogger.SetFormatter(formatter)
 	if len(fileConfig) == 0 {
 		fileLogger.SetOutput(&lumberjack.Logger{
-			Filename:   "./logrus.log",
+			Filename:   "./logrus.logger",
 			MaxSize:    200,
 			MaxBackups: 100,
 			MaxAge:     365,
