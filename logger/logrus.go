@@ -25,6 +25,7 @@ var (
 type LogrusConfig struct {
 }
 
+// EnableConsole 启用该设置后，日志内容将向标准控台输出
 func (l *LogrusConfig) EnableConsole(level logrus.Level, disableColor bool) {
 	consoleLogger = logrus.New()
 	consoleLogger.SetOutput(os.Stdout)
@@ -61,6 +62,7 @@ func enableFile(level logrus.Level, formatter logrus.Formatter, fileConfig ...*l
 	}
 }
 
+// EnableFileWithJson 启用该配置后将写入日志文件，并将日志输出json格式
 func (l *LogrusConfig) EnableFileWithJson(level logrus.Level, fileConfig ...*lumberjack.Logger) {
 	if fileSet {
 		panic("repeated initialization")
@@ -72,6 +74,7 @@ func (l *LogrusConfig) EnableFileWithJson(level logrus.Level, fileConfig ...*lum
 	}, fileConfig...)
 }
 
+// EnableFileWithText 启用该配置后写入日志文件，将日志输出为text格式
 func (l *LogrusConfig) EnableFileWithText(level logrus.Level, fileConfig ...*lumberjack.Logger) {
 	if fileSet {
 		panic("repeated initialization")
