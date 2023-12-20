@@ -1,15 +1,16 @@
 package asymmetric
 
 import (
+	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
 	"testing"
 )
 
-func TestRSA(t *testing.T) {
+func TestRSAPKCS1(t *testing.T) {
 
 	var manager = RsaKeyManager{
-		CreateSetting: CreateSetting{Length: 168},
+		CreateSetting: CreateSetting{Length: 512},
 	}
 
 	keyPair, err := manager.Create()
@@ -19,8 +20,8 @@ func TestRSA(t *testing.T) {
 	}
 	rsaPKCS1 := NewRsaWithPaddingPKCS1()
 
-	context := []byte("hello rsa")
-	result, err := rsaPKCS1.Encrypt(keyPair, context)
+	raw := []byte("hello rsa")
+	result, err := rsaPKCS1.Encrypt(keyPair, raw)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -31,8 +32,39 @@ func TestRSA(t *testing.T) {
 		return
 	}
 	fmt.Println(string(result))
-	bae64Result, _ := rsaPKCS1.EncryptBase64(keyPair, base64.StdEncoding.EncodeToString(context))
+	bae64Result, _ := rsaPKCS1.EncryptBase64(keyPair, base64.StdEncoding.EncodeToString(raw))
 	bae64Result, _ = rsaPKCS1.DecryptBase64(keyPair, bae64Result)
 	fmt.Println(string(result))
 
+}
+
+func TestRSAOAEP(t *testing.T) {
+	var manager = RsaKeyManager{
+		CreateSetting: CreateSetting{Length: 2048},
+	}
+
+	keyPair, err := manager.Create()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	label := []byte("label")
+	rsaOAEP, err := NewRsaWithPaddingOAEP(sha1.New(), label)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	raw := []byte("hello rsa")
+	result, err := rsaOAEP.Encrypt(keyPair, raw)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	result, err = rsaOAEP.Decrypt(keyPair, result)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println(string(result))
 }

@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"errors"
+	"hash"
 )
 
 type PaddingType uint8
@@ -58,7 +59,9 @@ func (r *RsaKeyManager) Load() (KeyPair, error) {
 }
 
 type RsaAsymmetric struct {
-	paddingType PaddingType
+	paddingType  PaddingType
+	hashForOAEP  hash.Hash
+	labelForOAEP []byte
 }
 
 func (a *RsaAsymmetric) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
@@ -70,11 +73,11 @@ func (a *RsaAsymmetric) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
 	case PaddingTypePKCS1:
 		return rsa.EncryptPKCS1v15(rand.Reader, publicKey.(*rsa.PublicKey), raw)
 	case PaddingTypeOAEP:
-		//return rsa.EncryptOAEP(rand.Reader, a.rsaKey.publicKey, raw)
+		return rsa.EncryptOAEP(a.hashForOAEP, rand.Reader, publicKey.(*rsa.PublicKey), raw, a.labelForOAEP)
 	default:
 
 	}
-	return nil, nil
+	return nil, errors.New("not supported paddingType")
 }
 
 func (a *RsaAsymmetric) EncryptBase64(keyPair KeyPair, base64Raw string) (string, error) {
@@ -98,11 +101,11 @@ func (a *RsaAsymmetric) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) 
 	case PaddingTypePKCS1:
 		return rsa.DecryptPKCS1v15(rand.Reader, privateKey.(*rsa.PrivateKey), cipher)
 	case PaddingTypeOAEP:
-		//return rsa.EncryptOAEP(rand.Reader, a.rsaKey.publicKey, raw)
+		return rsa.DecryptOAEP(a.hashForOAEP, rand.Reader, privateKey.(*rsa.PrivateKey), cipher, a.labelForOAEP)
 	default:
 
 	}
-	return nil, nil
+	return nil, errors.New("not supported paddingType")
 }
 
 func (a *RsaAsymmetric) DecryptBase64(keyPair KeyPair, base64Cipher string) (string, error) {
@@ -117,8 +120,19 @@ func (a *RsaAsymmetric) DecryptBase64(keyPair KeyPair, base64Cipher string) (str
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
+// NewRsaWithPaddingPKCS1 创建一个标准的RSA Padding-PKCS1模式实例
 func NewRsaWithPaddingPKCS1() *RsaAsymmetric {
 	var rsaAsymmetric RsaAsymmetric
 	rsaAsymmetric.paddingType = PaddingTypePKCS1
 	return &rsaAsymmetric
+}
+
+func NewRsaWithPaddingOAEP(hash hash.Hash, label []byte) (*RsaAsymmetric, error) {
+	if hash == nil {
+		return nil, errors.New("nil hash function")
+	}
+	var rsaAsymmetric RsaAsymmetric
+	rsaAsymmetric.paddingType = PaddingTypeOAEP
+	rsaAsymmetric.hashForOAEP = hash
+	return &rsaAsymmetric, nil
 }
