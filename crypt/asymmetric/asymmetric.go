@@ -2,15 +2,31 @@ package asymmetric
 
 // KeyPair 公私钥信息
 type KeyPair interface {
+	// PrivateKey 获取原始私钥
 	PrivateKey() interface{}
+	// PublicKey 获取原始公钥信息
 	PublicKey() interface{}
 }
 
-type CryptAsymmetric interface {
+// KeyPairManager KeyPair管理器
+type KeyPairManager interface {
+	// Create 生成新的公私钥对
+	Create() (KeyPair, error)
+	// Load 加载公私钥
+	Load() (KeyPair, error)
+}
 
-	// Create 创建原始公私钥
-	create() KeyPair
+type Crypt interface {
 
-	// Encrypt 加密数据
-	encrypt(content []byte) ([]byte, error)
+	// Encrypt 加密
+	Encrypt(keyPair KeyPair, raw []byte) ([]byte, error)
+
+	// EncryptBase64 使用标准Base64传递的数据进行加密
+	EncryptBase64(keyPair KeyPair, base64Raw string) (string, error)
+
+	// Decrypt 解密
+	Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error)
+
+	// DecryptBase64 使用标准Base64传递的数据进行解密
+	DecryptBase64(keyPair KeyPair, base64Cipher string) (string, error)
 }
