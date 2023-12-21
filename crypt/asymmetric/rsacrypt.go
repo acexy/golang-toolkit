@@ -19,16 +19,16 @@ const (
 	PaddingTypeOAEP PaddingType = 2
 )
 
-type RsaKey struct {
+type rsaKey struct {
 	privateKey *rsa.PrivateKey
 	publicKey  *rsa.PublicKey
 }
 
-func (r *RsaKey) PrivateKey() interface{} {
+func (r *rsaKey) PrivateKey() interface{} {
 	return r.privateKey
 }
 
-func (r *RsaKey) PublicKey() interface{} {
+func (r *rsaKey) PublicKey() interface{} {
 	return r.publicKey
 }
 
@@ -48,7 +48,7 @@ func (r *RsaKeyManager) Create() (KeyPair, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &RsaKey{
+	return &rsaKey{
 		publicKey:  &privateKey.PublicKey,
 		privateKey: privateKey,
 	}, nil
@@ -58,13 +58,13 @@ func (r *RsaKeyManager) Load() (KeyPair, error) {
 	return nil, errors.New("not support now")
 }
 
-type RsaAsymmetric struct {
+type RsaEncrypt struct {
 	paddingType  PaddingType
 	hashForOAEP  hash.Hash
 	labelForOAEP []byte
 }
 
-func (a *RsaAsymmetric) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
+func (a *RsaEncrypt) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
 	publicKey := keyPair.PublicKey()
 	if publicKey == nil {
 		return nil, errors.New("empty public key")
@@ -80,7 +80,7 @@ func (a *RsaAsymmetric) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
 	return nil, errors.New("not supported paddingType")
 }
 
-func (a *RsaAsymmetric) EncryptBase64(keyPair KeyPair, base64Raw string) (string, error) {
+func (a *RsaEncrypt) EncryptBase64(keyPair KeyPair, base64Raw string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {
 		return "", err
@@ -92,7 +92,7 @@ func (a *RsaAsymmetric) EncryptBase64(keyPair KeyPair, base64Raw string) (string
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-func (a *RsaAsymmetric) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) {
+func (a *RsaEncrypt) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) {
 	privateKey := keyPair.PrivateKey()
 	if privateKey == nil {
 		return nil, errors.New("empty privateKey key")
@@ -108,7 +108,7 @@ func (a *RsaAsymmetric) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) 
 	return nil, errors.New("not supported paddingType")
 }
 
-func (a *RsaAsymmetric) DecryptBase64(keyPair KeyPair, base64Cipher string) (string, error) {
+func (a *RsaEncrypt) DecryptBase64(keyPair KeyPair, base64Cipher string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Cipher)
 	if err != nil {
 		return "", err
@@ -121,18 +121,19 @@ func (a *RsaAsymmetric) DecryptBase64(keyPair KeyPair, base64Cipher string) (str
 }
 
 // NewRsaWithPaddingPKCS1 创建一个标准的RSA Padding-PKCS1模式实例
-func NewRsaWithPaddingPKCS1() *RsaAsymmetric {
-	var rsaAsymmetric RsaAsymmetric
-	rsaAsymmetric.paddingType = PaddingTypePKCS1
-	return &rsaAsymmetric
+func NewRsaWithPaddingPKCS1() *RsaEncrypt {
+	var rsaEncrypt RsaEncrypt
+	rsaEncrypt.paddingType = PaddingTypePKCS1
+	return &rsaEncrypt
 }
 
-func NewRsaWithPaddingOAEP(hash hash.Hash, label []byte) (*RsaAsymmetric, error) {
+func NewRsaWithPaddingOAEP(hash hash.Hash, label []byte) (*RsaEncrypt, error) {
 	if hash == nil {
 		return nil, errors.New("nil hash function")
 	}
-	var rsaAsymmetric RsaAsymmetric
-	rsaAsymmetric.paddingType = PaddingTypeOAEP
-	rsaAsymmetric.hashForOAEP = hash
-	return &rsaAsymmetric, nil
+	var rsaEncrypt RsaEncrypt
+	rsaEncrypt.paddingType = PaddingTypeOAEP
+	rsaEncrypt.hashForOAEP = hash
+	rsaEncrypt.labelForOAEP = label
+	return &rsaEncrypt, nil
 }

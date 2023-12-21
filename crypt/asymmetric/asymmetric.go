@@ -16,7 +16,7 @@ type KeyPairManager interface {
 	Load() (KeyPair, error)
 }
 
-type Crypt interface {
+type CryptEncrypt interface {
 
 	// Encrypt 加密
 	Encrypt(keyPair KeyPair, raw []byte) ([]byte, error)
@@ -29,4 +29,13 @@ type Crypt interface {
 
 	// DecryptBase64 使用标准Base64传递的数据进行解密
 	DecryptBase64(keyPair KeyPair, base64Cipher string) (string, error)
+}
+
+type CryptSign interface {
+
+	// Sign 数据签名
+	Sign(keyPair KeyPair, raw []byte) ([]byte, error)
+
+	// Verify 签名验证
+	Verify(keyPair KeyPair, sign []byte) ([]byte, error)
 }
