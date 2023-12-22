@@ -1,8 +1,10 @@
 package asymmetric
 
 import (
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"hash"
@@ -58,82 +60,124 @@ func (r *RsaKeyManager) Load() (KeyPair, error) {
 	return nil, errors.New("not support now")
 }
 
-type RsaEncrypt struct {
+type rsaEncrypt struct {
 	paddingType  PaddingType
 	hashForOAEP  hash.Hash
 	labelForOAEP []byte
 }
 
-func (a *RsaEncrypt) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
+func (r *rsaEncrypt) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
 	publicKey := keyPair.PublicKey()
 	if publicKey == nil {
 		return nil, errors.New("empty public key")
 	}
-	switch a.paddingType {
+	switch r.paddingType {
 	case PaddingTypePKCS1:
 		return rsa.EncryptPKCS1v15(rand.Reader, publicKey.(*rsa.PublicKey), raw)
 	case PaddingTypeOAEP:
-		return rsa.EncryptOAEP(a.hashForOAEP, rand.Reader, publicKey.(*rsa.PublicKey), raw, a.labelForOAEP)
+		return rsa.EncryptOAEP(r.hashForOAEP, rand.Reader, publicKey.(*rsa.PublicKey), raw, r.labelForOAEP)
 	default:
 
 	}
 	return nil, errors.New("not supported paddingType")
 }
 
-func (a *RsaEncrypt) EncryptBase64(keyPair KeyPair, base64Raw string) (string, error) {
+func (r *rsaEncrypt) EncryptBase64(keyPair KeyPair, base64Raw string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {
 		return "", err
 	}
-	result, err := a.Encrypt(keyPair, content)
+	result, err := r.Encrypt(keyPair, content)
 	if err != nil {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-func (a *RsaEncrypt) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) {
+func (r *rsaEncrypt) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) {
 	privateKey := keyPair.PrivateKey()
 	if privateKey == nil {
 		return nil, errors.New("empty privateKey key")
 	}
-	switch a.paddingType {
+	switch r.paddingType {
 	case PaddingTypePKCS1:
 		return rsa.DecryptPKCS1v15(rand.Reader, privateKey.(*rsa.PrivateKey), cipher)
 	case PaddingTypeOAEP:
-		return rsa.DecryptOAEP(a.hashForOAEP, rand.Reader, privateKey.(*rsa.PrivateKey), cipher, a.labelForOAEP)
+		return rsa.DecryptOAEP(r.hashForOAEP, rand.Reader, privateKey.(*rsa.PrivateKey), cipher, r.labelForOAEP)
 	default:
 
 	}
 	return nil, errors.New("not supported paddingType")
 }
 
-func (a *RsaEncrypt) DecryptBase64(keyPair KeyPair, base64Cipher string) (string, error) {
+func (r *rsaEncrypt) DecryptBase64(keyPair KeyPair, base64Cipher string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Cipher)
 	if err != nil {
 		return "", err
 	}
-	result, err := a.Decrypt(keyPair, content)
+	result, err := r.Decrypt(keyPair, content)
 	if err != nil {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-// NewRsaWithPaddingPKCS1 创建一个标准的RSA Padding-PKCS1模式实例
-func NewRsaWithPaddingPKCS1() *RsaEncrypt {
-	var rsaEncrypt RsaEncrypt
-	rsaEncrypt.paddingType = PaddingTypePKCS1
-	return &rsaEncrypt
+type rsaSign struct {
+	paddingType     PaddingType
+	hashForOAEP     hash.Hash
+	labelForOAEP    []byte
+	hashForSign     hash.Hash
+	hashTypeForSign crypto.Hash
 }
 
-func NewRsaWithPaddingOAEP(hash hash.Hash, label []byte) (*RsaEncrypt, error) {
+func (r *rsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
+	if r.hashForSign == nil {
+		return nil, errors.New("nil hash function")
+	}
+	privateKey := keyPair.PrivateKey()
+	if privateKey == nil {
+		return nil, errors.New("empty privateKey key")
+	}
+	hased := r.hashForSign.Sum(raw)
+	switch r.paddingType {
+	case PaddingTypePKCS1:
+		return rsa.SignPKCS1v15(rand.Reader, privateKey.(*rsa.PrivateKey), r.hashTypeForSign, hased)
+	case PaddingTypeOAEP:
+	default:
+
+	}
+	return nil, errors.New("not supported paddingType")
+
+}
+
+// Verify 签名验证
+func (r *rsaSign) Verify(keyPair KeyPair, sign []byte) ([]byte, error) {
+	return nil, nil
+}
+
+// NewRsaEncryptWithPaddingPKCS1 创建一个标准的RSA加密 Padding-PKCS1模式实例
+func NewRsaEncryptWithPaddingPKCS1() *rsaEncrypt {
+	var encrypt rsaEncrypt
+	encrypt.paddingType = PaddingTypePKCS1
+	return &encrypt
+}
+
+// NewRsaEncryptWithPaddingOAEP 创建一个标准的RSA加密 Padding-OAEP模式实例
+func NewRsaEncryptWithPaddingOAEP(hash hash.Hash, label []byte) (*rsaEncrypt, error) {
 	if hash == nil {
 		return nil, errors.New("nil hash function")
 	}
-	var rsaEncrypt RsaEncrypt
-	rsaEncrypt.paddingType = PaddingTypeOAEP
-	rsaEncrypt.hashForOAEP = hash
-	rsaEncrypt.labelForOAEP = label
-	return &rsaEncrypt, nil
+	var encrypt rsaEncrypt
+	encrypt.paddingType = PaddingTypeOAEP
+	encrypt.hashForOAEP = hash
+	encrypt.labelForOAEP = label
+	return &encrypt, nil
+}
+
+func NewRsaSignWithPaddingPKCS1AndSHA256() *rsaSign {
+	var sign rsaSign
+	sign.paddingType = PaddingTypePKCS1
+	sign.hashForSign = sha256.New()
+	sign.hashTypeForSign = crypto.SHA256
+	return &sign
 }

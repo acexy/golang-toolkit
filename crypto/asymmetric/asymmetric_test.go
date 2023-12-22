@@ -18,7 +18,7 @@ func TestRSAPKCS1(t *testing.T) {
 		fmt.Println(err.Error())
 		return
 	}
-	rsaPKCS1 := NewRsaWithPaddingPKCS1()
+	rsaPKCS1 := NewRsaEncryptWithPaddingPKCS1()
 
 	raw := []byte("hello rsa")
 	result, err := rsaPKCS1.Encrypt(keyPair, raw)
@@ -49,7 +49,7 @@ func TestRSAOAEP(t *testing.T) {
 		return
 	}
 	label := []byte("label")
-	rsaOAEP, err := NewRsaWithPaddingOAEP(sha1.New(), label)
+	rsaOAEP, err := NewRsaEncryptWithPaddingOAEP(sha1.New(), label)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
