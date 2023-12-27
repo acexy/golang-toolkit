@@ -37,5 +37,11 @@ type CryptSign interface {
 	Sign(keyPair KeyPair, raw []byte) ([]byte, error)
 
 	// Verify 签名验证
-	Verify(keyPair KeyPair, sign []byte) ([]byte, error)
+	Verify(keyPair KeyPair, raw, sign []byte) error
+
+	// SignBase64 使用标准Base64传递的数据进行加签
+	SignBase64(keyPair KeyPair, base64Raw string) (string, error)
+
+	// VerifyBase64 使用标准Base64传递的数据进行验签
+	VerifyBase64(keyPair KeyPair, base64Raw, base64Sign string) error
 }

@@ -1,44 +1,75 @@
 package asymmetric
 
 import (
+	"crypto"
+	"crypto/md5"
+	"crypto/rsa"
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
 	"testing"
 )
 
-func TestRSAPKCS1(t *testing.T) {
-
+func TestEncryptRSAPKCS1(t *testing.T) {
 	var manager = RsaKeyManager{
 		CreateSetting: CreateSetting{Length: 512},
 	}
-
 	keyPair, err := manager.Create()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	rsaPKCS1 := NewRsaEncryptWithPaddingPKCS1()
+	encrypt := NewRsaEncryptWithPKCS1()
 
 	raw := []byte("hello rsa")
-	result, err := rsaPKCS1.Encrypt(keyPair, raw)
+	result, err := encrypt.Encrypt(keyPair, raw)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	result, err = rsaPKCS1.Decrypt(keyPair, result)
+	result, err = encrypt.Decrypt(keyPair, result)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 	fmt.Println(string(result))
-	bae64Result, _ := rsaPKCS1.EncryptBase64(keyPair, base64.StdEncoding.EncodeToString(raw))
-	bae64Result, _ = rsaPKCS1.DecryptBase64(keyPair, bae64Result)
+	bae64Result, _ := encrypt.EncryptBase64(keyPair, base64.StdEncoding.EncodeToString(raw))
+	bae64Result, _ = encrypt.DecryptBase64(keyPair, bae64Result)
 	fmt.Println(string(result))
 
 }
 
-func TestRSAOAEP(t *testing.T) {
+func TestEncryptRSAOAEP(t *testing.T) {
+	var manager = RsaKeyManager{
+		CreateSetting: CreateSetting{Length: 2048},
+	}
+	keyPair, err := manager.Create()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	label := []byte("label")
+	encrypt, err := NewRsaEncryptWithOAEP(sha1.New(), label)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	raw := []byte("hello rsa")
+	result, err := encrypt.Encrypt(keyPair, raw)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	result, err = encrypt.Decrypt(keyPair, result)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println(string(result))
+}
+
+func TestSignRSAPKCS1(t *testing.T) {
 	var manager = RsaKeyManager{
 		CreateSetting: CreateSetting{Length: 2048},
 	}
@@ -48,23 +79,49 @@ func TestRSAOAEP(t *testing.T) {
 		fmt.Println(err.Error())
 		return
 	}
-	label := []byte("label")
-	rsaOAEP, err := NewRsaEncryptWithPaddingOAEP(sha1.New(), label)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-
+	sign := NewRsaSignWithPKCS1AndSHA256()
 	raw := []byte("hello rsa")
-	result, err := rsaOAEP.Encrypt(keyPair, raw)
+
+	result, err := sign.Sign(keyPair, raw)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	result, err = rsaOAEP.Decrypt(keyPair, result)
+	err = sign.Verify(keyPair, raw, result)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	fmt.Println(string(result))
+	fmt.Println("NewRsaSignWithPKCS1AndSHA256 -> pass")
+
+	sign = NewRsaSignWithPKCS1AndSHA512()
+	base64Raw := base64.StdEncoding.EncodeToString(raw)
+	s, err := sign.SignBase64(keyPair, base64Raw)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	err = sign.VerifyBase64(keyPair, base64Raw, s)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println("NewRsaSignWithPKCS1AndSHA512 -> pass")
+
+	sign, err = NewRsaSignWithPSSAndOps(md5.New(), crypto.MD5, rsa.PSSSaltLengthAuto)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	s, err = sign.SignBase64(keyPair, base64Raw)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	err = sign.VerifyBase64(keyPair, base64Raw, s)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println("NewRsaSignWithPSSAndOps -> pass")
 }
