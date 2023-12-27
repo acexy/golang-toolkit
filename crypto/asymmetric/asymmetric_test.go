@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestEncryptRSAPKCS1(t *testing.T) {
+func TestRsaEncrypt(t *testing.T) {
 	var manager = RsaKeyManager{
 		CreateSetting: CreateSetting{Length: 512},
 	}
@@ -69,7 +69,7 @@ func TestEncryptRSAOAEP(t *testing.T) {
 	fmt.Println(string(result))
 }
 
-func TestSignRSAPKCS1(t *testing.T) {
+func TestRsaSign(t *testing.T) {
 	var manager = RsaKeyManager{
 		CreateSetting: CreateSetting{Length: 2048},
 	}
