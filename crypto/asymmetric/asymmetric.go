@@ -1,19 +1,19 @@
 package asymmetric
 
-// KeyPair 公私钥信息
-type KeyPair interface {
-	// PrivateKey 获取原始私钥
-	PrivateKey() interface{}
-	// PublicKey 获取原始公钥信息
-	PublicKey() interface{}
-}
-
 // KeyPairManager KeyPair管理器
 type KeyPairManager interface {
 	// Create 生成新的公私钥对
 	Create() (KeyPair, error)
 	// Load 加载公私钥
 	Load() (KeyPair, error)
+}
+
+// KeyPair 公私钥信息
+type KeyPair interface {
+	// PrivateKey 获取原始私钥
+	PrivateKey() interface{}
+	// PublicKey 获取原始公钥信息
+	PublicKey() interface{}
 }
 
 type CryptEncrypt interface {

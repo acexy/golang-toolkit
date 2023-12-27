@@ -38,12 +38,12 @@ func (r *rsaKey) PublicKey() interface{} {
 	return r.publicKey
 }
 
-type RsaCreateSetting struct {
+type CreateRsaSetting struct {
 	Length int
 }
 
 type RsaKeyManager struct {
-	CreateSetting RsaCreateSetting
+	CreateSetting CreateRsaSetting
 }
 
 func (r *RsaKeyManager) Create() (KeyPair, error) {

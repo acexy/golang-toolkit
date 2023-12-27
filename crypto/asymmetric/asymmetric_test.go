@@ -12,7 +12,7 @@ import (
 
 func TestRsaEncrypt(t *testing.T) {
 	var manager = RsaKeyManager{
-		CreateSetting: CreateSetting{Length: 512},
+		CreateSetting: CreateRsaSetting{Length: 12},
 	}
 	keyPair, err := manager.Create()
 	if err != nil {
@@ -41,7 +41,7 @@ func TestRsaEncrypt(t *testing.T) {
 
 func TestEncryptRSAOAEP(t *testing.T) {
 	var manager = RsaKeyManager{
-		CreateSetting: CreateSetting{Length: 2048},
+		CreateSetting: CreateRsaSetting{Length: 2048},
 	}
 	keyPair, err := manager.Create()
 	if err != nil {
@@ -71,7 +71,7 @@ func TestEncryptRSAOAEP(t *testing.T) {
 
 func TestRsaSign(t *testing.T) {
 	var manager = RsaKeyManager{
-		CreateSetting: CreateSetting{Length: 2048},
+		CreateSetting: CreateRsaSetting{Length: 2048},
 	}
 
 	keyPair, err := manager.Create()
