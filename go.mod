@@ -1,6 +1,6 @@
 module github.com/acexy/golang-toolkit
 
-go 1.18
+go 1.20
 
 require (
 	github.com/allegro/bigcache/v3 v3.1.0
@@ -11,6 +11,6 @@ require (
 )
 
 require (
-	golang.org/x/net v0.20.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 )
