@@ -2,6 +2,7 @@ package asymmetric
 
 import (
 	"crypto"
+	"crypto/elliptic"
 	"crypto/md5"
 	"crypto/rsa"
 	"crypto/sha1"
@@ -12,7 +13,7 @@ import (
 
 func TestRsaEncrypt(t *testing.T) {
 	var manager = RsaKeyManager{
-		CreateSetting: CreateRsaSetting{Length: 12},
+		CreateSetting: CreateRsaSetting{Length: 512},
 	}
 	keyPair, err := manager.Create()
 	if err != nil {
@@ -20,7 +21,6 @@ func TestRsaEncrypt(t *testing.T) {
 		return
 	}
 	encrypt := NewRsaEncryptWithPKCS1()
-
 	raw := []byte("hello rsa")
 	result, err := encrypt.Encrypt(keyPair, raw)
 	if err != nil {
@@ -73,7 +73,6 @@ func TestRsaSign(t *testing.T) {
 	var manager = RsaKeyManager{
 		CreateSetting: CreateRsaSetting{Length: 2048},
 	}
-
 	keyPair, err := manager.Create()
 	if err != nil {
 		fmt.Println(err.Error())
@@ -124,4 +123,34 @@ func TestRsaSign(t *testing.T) {
 		return
 	}
 	fmt.Println("NewRsaSignWithPSSAndOps -> pass")
+}
+
+func TestEcdsaSignRS(t *testing.T) {
+	manager := EcdsaKeyManager{CreateSetting: CreateEcdsaSetting{Curve: elliptic.P256()}}
+	keyPair, _ := manager.Create()
+	sign := NewEcdsaSign(crypto.SHA256.New())
+	raw := []byte("你好")
+	r, s, _ := sign.SignRS(keyPair, raw)
+	fmt.Println(r, s)
+	fmt.Println(sign.VerifyRS(keyPair, raw, r, s))
+
+	sign = NewEcdsaSign(nil)
+	r, s, _ = sign.SignRS(keyPair, raw)
+	fmt.Println(r, s)
+	fmt.Println(sign.VerifyRS(keyPair, raw, r, s))
+}
+
+func TestEcdsaSign(t *testing.T) {
+	manager := EcdsaKeyManager{CreateSetting: CreateEcdsaSetting{Curve: elliptic.P256()}}
+	keyPair, _ := manager.Create()
+	sign := NewEcdsaSign(crypto.SHA256.New())
+	raw := []byte("你好")
+	result, _ := sign.Sign(keyPair, raw)
+	fmt.Println(result)
+	fmt.Println(sign.Verify(keyPair, raw, result))
+
+	sign = NewEcdsaSign(nil)
+	result, _ = sign.Sign(keyPair, raw)
+	fmt.Println(result)
+	fmt.Println(sign.Verify(keyPair, raw, result))
 }

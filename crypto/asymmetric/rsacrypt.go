@@ -64,13 +64,13 @@ func (r *RsaKeyManager) Load() (KeyPair, error) {
 	return nil, errors.New("not support now")
 }
 
-type rsaEncrypt struct {
+type RsaEncrypt struct {
 	paddingType  PaddingType
 	hashForOAEP  hash.Hash
 	labelForOAEP []byte
 }
 
-func (r *rsaEncrypt) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
+func (r *RsaEncrypt) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
 	publicKey := keyPair.PublicKey()
 	if publicKey == nil {
 		return nil, errors.New("nil public key")
@@ -86,7 +86,7 @@ func (r *rsaEncrypt) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
 	return nil, errors.New("not supported paddingType")
 }
 
-func (r *rsaEncrypt) EncryptBase64(keyPair KeyPair, base64Raw string) (string, error) {
+func (r *RsaEncrypt) EncryptBase64(keyPair KeyPair, base64Raw string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {
 		return "", err
@@ -98,7 +98,7 @@ func (r *rsaEncrypt) EncryptBase64(keyPair KeyPair, base64Raw string) (string, e
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-func (r *rsaEncrypt) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) {
+func (r *RsaEncrypt) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) {
 	privateKey := keyPair.PrivateKey()
 	if privateKey == nil {
 		return nil, errors.New("nil privateKey key")
@@ -114,7 +114,7 @@ func (r *rsaEncrypt) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) {
 	return nil, errors.New("not supported paddingType")
 }
 
-func (r *rsaEncrypt) DecryptBase64(keyPair KeyPair, base64Cipher string) (string, error) {
+func (r *RsaEncrypt) DecryptBase64(keyPair KeyPair, base64Cipher string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Cipher)
 	if err != nil {
 		return "", err
@@ -126,7 +126,7 @@ func (r *rsaEncrypt) DecryptBase64(keyPair KeyPair, base64Cipher string) (string
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-type rsaSign struct {
+type RsaSign struct {
 	sync.Mutex
 	paddingType     PaddingType
 	hashForOAEP     hash.Hash
@@ -136,7 +136,7 @@ type rsaSign struct {
 	options         *rsa.PSSOptions
 }
 
-func (r *rsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
+func (r *RsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
 	defer r.Unlock()
 	r.Lock()
 	if r.hashForSign == nil {
@@ -160,7 +160,7 @@ func (r *rsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
 }
 
 // Verify 签名验证
-func (r *rsaSign) Verify(keyPair KeyPair, raw, sign []byte) error {
+func (r *RsaSign) Verify(keyPair KeyPair, raw, sign []byte) error {
 	defer r.Unlock()
 	r.Lock()
 	if r.hashForSign == nil {
@@ -183,7 +183,7 @@ func (r *rsaSign) Verify(keyPair KeyPair, raw, sign []byte) error {
 	return errors.New("not supported paddingType")
 }
 
-func (r *rsaSign) SignBase64(keyPair KeyPair, base64Raw string) (string, error) {
+func (r *RsaSign) SignBase64(keyPair KeyPair, base64Raw string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {
 		return "", err
@@ -195,7 +195,7 @@ func (r *rsaSign) SignBase64(keyPair KeyPair, base64Raw string) (string, error) 
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-func (r *rsaSign) VerifyBase64(keyPair KeyPair, base64Raw, base64Sign string) error {
+func (r *RsaSign) VerifyBase64(keyPair KeyPair, base64Raw, base64Sign string) error {
 	rawContent, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {
 		return err
@@ -208,18 +208,18 @@ func (r *rsaSign) VerifyBase64(keyPair KeyPair, base64Raw, base64Sign string) er
 }
 
 // NewRsaEncryptWithPKCS1 创建一个标准的RSA加密 Padding-PKCS1模式实例
-func NewRsaEncryptWithPKCS1() *rsaEncrypt {
-	var encrypt rsaEncrypt
+func NewRsaEncryptWithPKCS1() *RsaEncrypt {
+	var encrypt RsaEncrypt
 	encrypt.paddingType = PaddingTypePKCS1
 	return &encrypt
 }
 
 // NewRsaEncryptWithOAEP 创建一个标准的RSA加密 Padding-OAEP模式实例
-func NewRsaEncryptWithOAEP(hash hash.Hash, label []byte) (*rsaEncrypt, error) {
+func NewRsaEncryptWithOAEP(hash hash.Hash, label []byte) (*RsaEncrypt, error) {
 	if hash == nil {
 		return nil, errors.New("nil hash function")
 	}
-	var encrypt rsaEncrypt
+	var encrypt RsaEncrypt
 	encrypt.paddingType = PaddingTypeOAEP
 	encrypt.hashForOAEP = hash
 	encrypt.labelForOAEP = label
@@ -227,23 +227,23 @@ func NewRsaEncryptWithOAEP(hash hash.Hash, label []byte) (*rsaEncrypt, error) {
 }
 
 // NewRsaSignWithPKCS1AndSHA256 创建一个标准RSA签名 Padding-PKCS1 hash函数为sha256
-func NewRsaSignWithPKCS1AndSHA256() *rsaSign {
+func NewRsaSignWithPKCS1AndSHA256() *RsaSign {
 	sign, _ := NewRsaSignWithPKCS1(sha256.New(), crypto.SHA256)
 	return sign
 }
 
 // NewRsaSignWithPKCS1AndSHA512 创建一个标准RSA签名 Padding-PKCS1 hash函数为sha512
-func NewRsaSignWithPKCS1AndSHA512() *rsaSign {
+func NewRsaSignWithPKCS1AndSHA512() *RsaSign {
 	sign, _ := NewRsaSignWithPKCS1(sha512.New(), crypto.SHA512)
 	return sign
 }
 
 // NewRsaSignWithPKCS1 创建一个标准RSA签名 Padding-PKCS1 自定义hash函数
-func NewRsaSignWithPKCS1(hash hash.Hash, hashType crypto.Hash) (*rsaSign, error) {
+func NewRsaSignWithPKCS1(hash hash.Hash, hashType crypto.Hash) (*RsaSign, error) {
 	if hash == nil {
 		return nil, errors.New("nil hash function")
 	}
-	var sign rsaSign
+	var sign RsaSign
 	sign.paddingType = PaddingTypePKCS1
 	sign.hashForSign = hash
 	sign.hashTypeForSign = hashType
@@ -251,7 +251,7 @@ func NewRsaSignWithPKCS1(hash hash.Hash, hashType crypto.Hash) (*rsaSign, error)
 }
 
 // NewRsaSignWithPSSAndSHA256 创建一个标准RSA签名 Padding-PSS hash函数为sha256
-func NewRsaSignWithPSSAndSHA256(saltLength ...int) *rsaSign {
+func NewRsaSignWithPSSAndSHA256(saltLength ...int) *RsaSign {
 	length := -1
 	if len(saltLength) > 0 {
 		length = saltLength[0]
@@ -261,7 +261,7 @@ func NewRsaSignWithPSSAndSHA256(saltLength ...int) *rsaSign {
 }
 
 // NewRsaSignWithPSSAndSHA512 创建一个标准RSA签名 Padding-PSS hash函数为sha512
-func NewRsaSignWithPSSAndSHA512(saltLength ...int) *rsaSign {
+func NewRsaSignWithPSSAndSHA512(saltLength ...int) *RsaSign {
 	length := -1
 	if len(saltLength) > 0 {
 		length = saltLength[0]
@@ -271,16 +271,16 @@ func NewRsaSignWithPSSAndSHA512(saltLength ...int) *rsaSign {
 }
 
 // NewRsaSignWithPSS 创建一个标准RSA签名 Padding-PSS
-func NewRsaSignWithPSS(hash hash.Hash, hashType crypto.Hash) (*rsaSign, error) {
+func NewRsaSignWithPSS(hash hash.Hash, hashType crypto.Hash) (*RsaSign, error) {
 	return NewRsaSignWithPSSAndOps(hash, hashType, -1)
 }
 
 // NewRsaSignWithPSSAndOps NewRsaSignWithPSS 创建一个标准RSA签名 Padding-PSS 并指定saltLength
-func NewRsaSignWithPSSAndOps(hash hash.Hash, hashType crypto.Hash, saltLength int) (*rsaSign, error) {
+func NewRsaSignWithPSSAndOps(hash hash.Hash, hashType crypto.Hash, saltLength int) (*RsaSign, error) {
 	if hash == nil {
 		return nil, errors.New("nil hash function")
 	}
-	var sign rsaSign
+	var sign RsaSign
 	sign.paddingType = PaddingTypePSS
 	sign.hashForSign = hash
 	sign.hashTypeForSign = hashType
