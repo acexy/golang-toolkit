@@ -1,4 +1,4 @@
-package util
+package json
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ type Student struct {
 	School string
 }
 
-func TestJsonCopyStructPanic(t *testing.T) {
+func TestCopyStructPanic(t *testing.T) {
 	s := Student{
 		Name:   "acexy",
 		Sex:    1,
@@ -24,7 +24,7 @@ func TestJsonCopyStructPanic(t *testing.T) {
 	}
 
 	var person Person
-	JsonCopyStructPanic(s, &person)
+	CopyStructPanic(s, &person)
 	fmt.Printf("%+v\n", person)
 
 	ss := []*Student{{Name: "acexy", Sex: 1, School: "Q"}, {Name: "acexy", Sex: 1, School: "H"}}

@@ -2,7 +2,7 @@ package cache
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/log"
+	"github.com/acexy/golang-toolkit/logger"
 	"testing"
 	"time"
 )
@@ -21,12 +21,12 @@ func TestBigCache(t *testing.T) {
 
 	err := manager.Put("b1", "key1", "123")
 	if err != nil {
-		log.Logrus().Errorln(err)
+		logger.Logrus().Errorln(err)
 		return
 	}
 	err = manager.Put("b2", "key1", User{Name: "Q", Sex: 1})
 	if err != nil {
-		log.Logrus().Errorln(err)
+		logger.Logrus().Errorln(err)
 		return
 	}
 

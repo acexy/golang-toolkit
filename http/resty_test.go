@@ -2,7 +2,7 @@ package http
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/util"
+	"github.com/acexy/golang-toolkit/util/json"
 	"net/http"
 	"testing"
 	"time"
@@ -12,6 +12,14 @@ var client *RestyClient
 
 func init() {
 	client = NewRestyClient()
+}
+
+func TestPoxyClient(t *testing.T) {
+	response, err := NewRestyClient("localhost:7890").R().Get("https://google.com")
+	if err != nil {
+		return
+	}
+	fmt.Println(response.RawResponse)
 }
 
 func TestGet(t *testing.T) {
@@ -50,13 +58,13 @@ func TestGet(t *testing.T) {
 		return
 	}
 	fmt.Println(resp.String())
-	fmt.Println(util.ToJson(s))
+	fmt.Println(json.ToJson(s))
 
 	resp, err = req.Get("http://t.weather.sojson.com/api/weather/city/101030100")
 	if err != nil {
 		return
 	}
 	fmt.Println(resp.String())
-	fmt.Println(util.ToJson(s))
+	fmt.Println(json.ToJson(s))
 
 }

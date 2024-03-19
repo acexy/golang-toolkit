@@ -2,7 +2,7 @@ package cache
 
 import (
 	"context"
-	"github.com/acexy/golang-toolkit/util"
+	"github.com/acexy/golang-toolkit/util/json"
 	"github.com/allegro/bigcache/v3"
 	"time"
 )
@@ -16,7 +16,7 @@ func (b *BigCacheBucket) Get(key string, result any) error {
 	if err != nil {
 		return err
 	}
-	err = util.ParseJsonError(string(v), result)
+	err = json.ParseJsonError(string(v), result)
 	if err != nil {
 		return err
 	}
@@ -24,7 +24,7 @@ func (b *BigCacheBucket) Get(key string, result any) error {
 }
 
 func (b *BigCacheBucket) Put(key string, data any) error {
-	bytes, err := util.ToJsonBytesError(data)
+	bytes, err := json.ToJsonBytesError(data)
 	if err != nil {
 		return err
 	}
