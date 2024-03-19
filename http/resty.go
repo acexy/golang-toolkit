@@ -13,11 +13,11 @@ type RestyClient struct {
 	client *resty.Client
 }
 
-type restyRequest struct {
+type RestyRequest struct {
 	request *resty.Request
 }
 
-type restyMethod struct {
+type RestyMethod struct {
 	request *resty.Request
 	method  string
 	url     string
@@ -65,70 +65,70 @@ func (c *RestyClient) SetHeaders(headers map[string]string) *RestyClient {
 }
 
 // R GetRequest
-func (c *RestyClient) R() *restyRequest {
-	return &restyRequest{request: c.client.R()}
+func (c *RestyClient) R() *RestyRequest {
+	return &RestyRequest{request: c.client.R()}
 }
 
 // restyRequest 设置
 
-func (r *restyRequest) SetReturnStruct(any interface{}) *restyRequest {
+func (r *RestyRequest) SetReturnStruct(any interface{}) *RestyRequest {
 	r.request.SetResult(any)
 	return r
 }
 
-func (r *restyRequest) SetQueryValues(any interface{}) *restyRequest {
+func (r *RestyRequest) SetQueryValues(any interface{}) *RestyRequest {
 	queryParam, _ := query.Values(any)
 	r.request.QueryParam = queryParam
 	return r
 }
 
-func (r *restyRequest) SetPathValues(pathParams map[string]string) *restyRequest {
+func (r *RestyRequest) SetPathValues(pathParams map[string]string) *RestyRequest {
 	r.request.PathParams = pathParams
 	return r
 }
 
-func (r *restyRequest) WithContext(ctx context.Context) *restyRequest {
+func (r *RestyRequest) WithContext(ctx context.Context) *RestyRequest {
 	r.request.SetContext(ctx)
 	return r
 }
 
-func (r *restyRequest) SetHeaders(headers map[string]string) *restyRequest {
+func (r *RestyRequest) SetHeaders(headers map[string]string) *RestyRequest {
 	r.request.SetHeaders(headers)
 	return r
 }
 
-func (r *restyRequest) SetHeader(key, value string) *restyRequest {
+func (r *RestyRequest) SetHeader(key, value string) *RestyRequest {
 	r.request.SetHeader(key, value)
 	return r
 }
 
 // M set Method
-func (r *restyRequest) M(httpMethod string, url string) *restyMethod {
-	return &restyMethod{
+func (r *RestyRequest) M(httpMethod string, url string) *RestyMethod {
+	return &RestyMethod{
 		request: r.request,
 		method:  httpMethod,
 		url:     url,
 	}
 }
 
-func (m *restyMethod) SetRequestBody(bodyString *string, contentType ContentType) *restyMethod {
+func (m *RestyMethod) SetRequestBody(bodyString *string, contentType ContentType) *RestyMethod {
 	m.request.SetBody(&bodyString)
 	m.request.SetHeader(HeadContentType, string(contentType))
 	return m
 }
 
-func (m *restyMethod) SetBodyJson(bodyJson *string) *restyMethod {
+func (m *RestyMethod) SetBodyJson(bodyJson *string) *RestyMethod {
 	m.SetRequestBody(bodyJson, ContentTypeJson)
 	return m
 }
 
-func (m *restyMethod) SetBodyForm(formEncode map[string]string) *restyMethod {
+func (m *RestyMethod) SetBodyForm(formEncode map[string]string) *RestyMethod {
 	m.request.SetFormData(formEncode)
 	return m
 }
 
 // E Execution
-func (m *restyMethod) E() (*resty.Response, error) {
+func (m *RestyMethod) E() (*resty.Response, error) {
 	switch m.method {
 	case http.MethodGet:
 		return m.request.Get(m.url)
@@ -148,18 +148,18 @@ func (m *restyMethod) E() (*resty.Response, error) {
 	return nil, nil
 }
 
-func (r *restyRequest) Get(url string) (*resty.Response, error) {
+func (r *RestyRequest) Get(url string) (*resty.Response, error) {
 	return r.request.Get(url)
 }
 
-func (r *restyRequest) PostForm(url string, formEncode map[string]string) (*resty.Response, error) {
+func (r *RestyRequest) PostForm(url string, formEncode map[string]string) (*resty.Response, error) {
 	if len(formEncode) == 0 {
 		return r.request.Post(url)
 	}
 	return r.request.SetFormData(formEncode).Post(url)
 }
 
-func (r *restyRequest) PostJson(url string, jsonString string) (*resty.Response, error) {
+func (r *RestyRequest) PostJson(url string, jsonString string) (*resty.Response, error) {
 	r.request.SetBody(jsonString)
 	r.request.SetHeader(HeadContentType, string(ContentTypeJson))
 	return r.request.Post(url)
