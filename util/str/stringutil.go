@@ -8,9 +8,15 @@ func CharLength(str string) int {
 }
 
 // Substring 字符串截取指定长度 包含start下标，不含end下标
-func Substring(str string, start, end int) string {
+func Substring(str string, start int, end ...int) string {
 	raw := []rune(str)
-	return string(raw[start:end])
+	var e int
+	if len(end) > 0 {
+		e = end[0]
+	} else {
+		e = CharLength(str)
+	}
+	return string(raw[start:e])
 }
 
 // HasText 检查是否具有有意义的内容

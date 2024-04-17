@@ -70,6 +70,24 @@ func ToJsonBytesPanic(any any) (jsonBytes []byte) {
 	return
 }
 
+// ParseBytes 将byte数据转化成对象 忽略任何错误
+func ParseBytes(bytes []byte, any any) {
+	_ = ParseBytesError(bytes, any)
+}
+
+// ParseBytesError 将byte数据转化成对象 返回任何错误
+func ParseBytesError(bytes []byte, any any) error {
+	return json.Unmarshal(bytes, any)
+}
+
+// ParseBytesPanic 将byte数据转化成对象 任何错误将触发panic
+func ParseBytesPanic(bytes []byte, any any) {
+	err := ParseBytesError(bytes, any)
+	if err != nil {
+		panic(err)
+	}
+}
+
 // ParseJson 转对象 忽略任何错误
 func ParseJson(jsonString string, any any) {
 	_ = ParseJsonError(jsonString, any)
@@ -77,7 +95,7 @@ func ParseJson(jsonString string, any any) {
 
 // ParseJsonError 转对象 返回任何错误
 func ParseJsonError(jsonString string, any any) error {
-	return json.Unmarshal([]byte(jsonString), any)
+	return ParseBytesError([]byte(jsonString), any)
 }
 
 // ParseJsonPanic 转对象 任何错误将触发panic

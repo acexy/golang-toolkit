@@ -7,7 +7,6 @@ import (
 )
 
 type CachingManager struct {
-	rw     sync.RWMutex
 	caches map[string]CachingBucket
 }
 
@@ -24,13 +23,23 @@ type CachingBucket interface {
 	Evict(key string) error
 }
 
-func NewCacheBucketManager(bucketName string, bucket CachingBucket) *CachingManager {
-	var cachingManager *CachingManager
+var once sync.Once
+var cachingManager *CachingManager
 
-	cachingManager = &CachingManager{
-		caches: make(map[string]CachingBucket),
+func NewCacheBucketManager(bucketName string, bucket CachingBucket) *CachingManager {
+	if cachingManager == nil {
+		NewEmptyCacheBucketManager()
 	}
 	cachingManager.caches[bucketName] = bucket
+	return cachingManager
+}
+
+func NewEmptyCacheBucketManager() *CachingManager {
+	once.Do(func() {
+		cachingManager = &CachingManager{
+			caches: make(map[string]CachingBucket),
+		}
+	})
 	return cachingManager
 }
 
@@ -43,8 +52,6 @@ func (c *CachingManager) AddBucket(bucketName string, bucket CachingBucket) {
 }
 
 func (c *CachingManager) GetBucket(bucketName string) CachingBucket {
-	c.rw.RLock()
-	defer c.rw.RUnlock()
 	return c.caches[bucketName]
 }
 
