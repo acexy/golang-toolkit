@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"github.com/acexy/golang-toolkit/util/str"
 	"github.com/go-resty/resty/v2"
 	"github.com/google/go-querystring/query"
 	"net/http"
@@ -27,7 +28,7 @@ type RestyMethod struct {
 // proxyHttpHost 可以指定代理 localhost:7890
 func NewRestyClient(proxyHttpHost ...string) *RestyClient {
 	var client = &RestyClient{}
-	if len(proxyHttpHost) > 0 {
+	if len(proxyHttpHost) > 0 && str.HasText(proxyHttpHost[0]) {
 		httpClient := &http.Client{
 			Transport: &http.Transport{
 				Proxy: func(*http.Request) (*url.URL, error) {
