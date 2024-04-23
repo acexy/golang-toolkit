@@ -39,6 +39,7 @@ func (l *LogrusConfig) EnableConsole(level logrus.Level, disableColor bool) {
 		format.DisableColors = true
 	} else {
 		format.ForceColors = true
+		format.EnvironmentOverrideColors = true
 	}
 	consoleLogger.SetFormatter(format)
 }
