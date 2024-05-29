@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"github.com/acexy/golang-toolkit/util/str"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
@@ -15,8 +16,8 @@ var (
 	callerPrettyfier = func(frame *runtime.Frame) (function string, file string) {
 		fileName := path.Base(frame.File)
 		fun := frame.Function
-		if !strings.HasPrefix(fun, "\"") || !strings.HasSuffix(fun, "\"") {
-			fun = "\"" + fun + "\""
+		if strings.HasPrefix(fun, "\"") && strings.HasSuffix(fun, "\"") {
+			str.Substring(fun, 1, str.CharLength(fun)-1)
 		}
 		return fun, fileName + fmt.Sprintf(":%v", frame.Line)
 	}
