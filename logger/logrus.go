@@ -7,13 +7,18 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strings"
 	"sync"
 )
 
 var (
 	callerPrettyfier = func(frame *runtime.Frame) (function string, file string) {
 		fileName := path.Base(frame.File)
-		return frame.Function, fileName + fmt.Sprintf(":%v", frame.Line)
+		fun := frame.Function
+		if !strings.HasPrefix(fun, "\"") || !strings.HasSuffix(fun, "\"") {
+			fun = "\"" + fun + "\""
+		}
+		return fun, fileName + fmt.Sprintf(":%v", frame.Line)
 	}
 	consoleLogger *logrus.Logger
 	fileLogger    *logrus.Logger
@@ -45,7 +50,6 @@ func (l *LogrusConfig) EnableConsole(level logrus.Level, disableColor bool) {
 }
 
 func enableFile(level logrus.Level, formatter logrus.Formatter, fileConfig ...*lumberjack.Logger) {
-	fileSet = true
 	fileLogger = logrus.New()
 	fileLogger.SetReportCaller(true)
 	fileLogger.SetLevel(level)
