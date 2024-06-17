@@ -1,7 +1,8 @@
-package http
+package httpclient
 
 import (
 	"context"
+	"errors"
 	"github.com/acexy/golang-toolkit/util/str"
 	"github.com/go-resty/resty/v2"
 	"github.com/google/go-querystring/query"
@@ -25,14 +26,14 @@ type RestyMethod struct {
 }
 
 // NewRestyClient 创建一个httpClient对象
-// proxyHttpHost 可以指定代理 localhost:7890
+// proxyHttpHost 可以指定代理 如 localhost:7890
 func NewRestyClient(proxyHttpHost ...string) *RestyClient {
 	var client = &RestyClient{}
 	if len(proxyHttpHost) > 0 && str.HasText(proxyHttpHost[0]) {
 		httpClient := &http.Client{
 			Transport: &http.Transport{
 				Proxy: func(*http.Request) (*url.URL, error) {
-					return &url.URL{Scheme: "http", Host: proxyHttpHost[0]}, nil
+					return &url.URL{Scheme: "httpclient", Host: proxyHttpHost[0]}, nil
 				},
 			},
 		}
@@ -146,11 +147,15 @@ func (m *RestyMethod) E() (*resty.Response, error) {
 	case http.MethodPatch:
 		return m.request.Patch(m.url)
 	}
-	return nil, nil
+	return nil, errors.New("Unknown Method " + m.method)
 }
 
 func (r *RestyRequest) Get(url string) (*resty.Response, error) {
 	return r.request.Get(url)
+}
+
+func (r *RestyRequest) Post(url string) (*resty.Response, error) {
+	return r.request.Post(url)
 }
 
 func (r *RestyRequest) PostForm(url string, formEncode map[string]string) (*resty.Response, error) {
