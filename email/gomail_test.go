@@ -9,7 +9,7 @@ func TestSendMail(t *testing.T) {
 	err := mail.SendMail(NewContent([]*ToAddress{
 		{Address: "to1@example.com", Name: "to1"},
 		{Address: "to2@example.com"},
-	}, "test").SetContent("text/plain", "test"))
+	}, "test").SetContent("text/plain", "test").SetAttach([]string{"/Users/acexy/Downloads/newlog"}))
 	if err != nil {
 		t.Error("send mail error", err)
 	}
