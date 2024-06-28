@@ -16,8 +16,9 @@ Golang Toolkit
 
 - 第三方库清单
 
-| 库                                    | 类型          |
-|--------------------------------------|-------------|
-| github.com/go-resty/resty/v2         | http client |
-| github.com/sirupsen/logrus           | logger      |
+| 库                            | 类型          |
+|------------------------------|-------------|
+| github.com/go-resty/resty/v2 | http client |
+| github.com/sirupsen/logrus   | logger      |
 | github.com/allegro/bigcache  | cache |
+| gopkg.in/gomail.v2           | email |
