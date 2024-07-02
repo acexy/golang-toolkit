@@ -25,7 +25,6 @@ type ToAddress struct {
 }
 
 type Content struct {
-
 	// 接收地址
 	toAddresses []*ToAddress
 
@@ -34,6 +33,9 @@ type Content struct {
 
 	contentType string
 	body        string
+
+	// 附件文件路径
+	attachments []string
 }
 
 func NewContent(toAddresses []*ToAddress, subject string) *Content {
@@ -46,6 +48,13 @@ func NewContent(toAddresses []*ToAddress, subject string) *Content {
 func (c *Content) SetContent(contentType, body string) *Content {
 	c.contentType = contentType
 	c.body = body
+	return c
+}
+
+func (c *Content) SetAttach(attach []string) *Content {
+	if len(attach) != 0 {
+		c.attachments = attach
+	}
 	return c
 }
 
@@ -87,6 +96,12 @@ func (c *Content) toMessage() (*gomail.Message, error) {
 	}
 
 	message.SetBody(c.contentType, c.body)
+
+	if len(c.attachments) > 0 {
+		for _, attachment := range c.attachments {
+			message.Attach(attachment)
+		}
+	}
 
 	return message, nil
 }

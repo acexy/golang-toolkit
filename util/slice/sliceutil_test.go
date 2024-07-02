@@ -14,3 +14,33 @@ func TestContains(t *testing.T) {
 	fmt.Println(Contains(stringSlice, "banana")) // 输出: true
 	fmt.Println(Contains(stringSlice, "grape"))  // 输出: false
 }
+
+type people struct {
+	name string
+	age  int
+}
+
+func TestContainsWithFn(t *testing.T) {
+	peoples := []people{
+		{name: "张三", age: 28},
+		{name: "李四", age: 20},
+		{name: "王五", age: 22},
+		{name: "赵六", age: 20},
+	}
+	fmt.Println(ContainsWithFn(peoples, func(item *people) bool {
+		return item.age == 21
+	}))
+}
+
+func TestFilterWithFn(t *testing.T) {
+	peoples := []people{
+		{name: "张三", age: 28},
+		{name: "李四", age: 20},
+		{name: "王五", age: 22},
+		{name: "赵六", age: 20},
+	}
+
+	fmt.Println(FilterWithFn(peoples, func(item *people) bool {
+		return item.age == 20
+	}))
+}
