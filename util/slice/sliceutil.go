@@ -10,7 +10,7 @@ func Contains[T comparable](slice []T, elem T) bool {
 	return false
 }
 
-// ContainsWithFn ContainsWhitFn 检查指定的元素是否存在切片中
+// ContainsWithFn ContainsWhitFn 通过函数检查指定的元素是否存在切片中
 func ContainsWithFn[T comparable](slice []T, fn func(item *T) bool) bool {
 	for _, item := range slice {
 		flag := fn(&item)
