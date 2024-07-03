@@ -1,4 +1,4 @@
-package cache
+package caching
 
 import (
 	"errors"
@@ -6,11 +6,11 @@ import (
 	"sync"
 )
 
-type CachingManager struct {
-	caches map[string]CachingBucket
+type CacheManager struct {
+	caches map[string]CacheBucket
 }
 
-type CachingBucket interface {
+type CacheBucket interface {
 
 	// Get 获取指定key对应的值
 	// result 值类型指针
@@ -24,9 +24,9 @@ type CachingBucket interface {
 }
 
 var once sync.Once
-var cachingManager *CachingManager
+var cachingManager *CacheManager
 
-func NewCacheBucketManager(bucketName string, bucket CachingBucket) *CachingManager {
+func NewCacheBucketManager(bucketName string, bucket CacheBucket) *CacheManager {
 	if cachingManager == nil {
 		NewEmptyCacheBucketManager()
 	}
@@ -34,16 +34,16 @@ func NewCacheBucketManager(bucketName string, bucket CachingBucket) *CachingMana
 	return cachingManager
 }
 
-func NewEmptyCacheBucketManager() *CachingManager {
+func NewEmptyCacheBucketManager() *CacheManager {
 	once.Do(func() {
-		cachingManager = &CachingManager{
-			caches: make(map[string]CachingBucket),
+		cachingManager = &CacheManager{
+			caches: make(map[string]CacheBucket),
 		}
 	})
 	return cachingManager
 }
 
-func (c *CachingManager) AddBucket(bucketName string, bucket CachingBucket) {
+func (c *CacheManager) AddBucket(bucketName string, bucket CacheBucket) {
 	if _, flag := c.caches[bucketName]; !flag {
 		c.caches[bucketName] = bucket
 	} else {
@@ -51,11 +51,11 @@ func (c *CachingManager) AddBucket(bucketName string, bucket CachingBucket) {
 	}
 }
 
-func (c *CachingManager) GetBucket(bucketName string) CachingBucket {
+func (c *CacheManager) GetBucket(bucketName string) CacheBucket {
 	return c.caches[bucketName]
 }
 
-func (c *CachingManager) Get(bucketName, key string, result any) error {
+func (c *CacheManager) Get(bucketName, key string, result any) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
 		logger.Logrus().Warnln("bad bucketName", bucketName)
@@ -64,7 +64,7 @@ func (c *CachingManager) Get(bucketName, key string, result any) error {
 	return bucket.Get(key, result)
 }
 
-func (c *CachingManager) Put(bucketName, key string, data any) error {
+func (c *CacheManager) Put(bucketName, key string, data any) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
 		logger.Logrus().Warnln("bad bucketName", bucketName)
@@ -73,7 +73,7 @@ func (c *CachingManager) Put(bucketName, key string, data any) error {
 	return bucket.Put(key, data)
 }
 
-func (c *CachingManager) Evict(bucketName, key string) error {
+func (c *CacheManager) Evict(bucketName, key string) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
 		logger.Logrus().Warnln("bad bucketName", bucketName)

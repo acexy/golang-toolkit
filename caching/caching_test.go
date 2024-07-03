@@ -1,4 +1,4 @@
-package cache
+package caching
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var manager *CachingManager
+var manager *CacheManager
 
 type User struct {
 	Name string
