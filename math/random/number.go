@@ -14,18 +14,18 @@ func RandRangeInt(min, max int) int {
 	return rand.Intn(max-min+1) + min
 }
 
-type NumberRandom struct {
+type seedRandom struct {
 	rand *rand.Rand
 }
 
-func NewNumberRandom(seed int64) *NumberRandom {
-	return &NumberRandom{rand: rand.New(rand.NewSource(seed))}
+func NewRandom(seed int64) *seedRandom {
+	return &seedRandom{rand: rand.New(rand.NewSource(seed))}
 }
 
-func (r *NumberRandom) RandInt(max int) int {
-	return r.rand.Intn(max)
+func (s *seedRandom) RandInt(max int) int {
+	return s.rand.Intn(max)
 }
 
-func (r *NumberRandom) RandRangeInt(min, max int) int {
-	return r.rand.Intn(max-min+1) + min
+func (s *seedRandom) RandRangeInt(min, max int) int {
+	return s.rand.Intn(max-min+1) + min
 }
