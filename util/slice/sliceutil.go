@@ -104,10 +104,7 @@ func Complement[T comparable](sliceAll, slicePart []T, compare ...func(*T, *T) b
 	}
 	result := make([]T, 0)
 
-	// 创建一个 map 来存储 slicePart 的元素，用于快速查找
 	cache := make(map[T]struct{})
-
-	// 如果没有自定义比较函数，使用默认的比较方式
 	if compareFn == nil {
 		for _, v := range slicePart {
 			cache[v] = struct{}{}
