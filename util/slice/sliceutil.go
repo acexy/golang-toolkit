@@ -32,3 +32,59 @@ func FilterWithFn[T comparable](slice []T, fn func(item *T) bool) []T {
 	}
 	return result
 }
+
+// Intersection 求两个切片的交集 两个集合中共同的元素所组成的集合
+func Intersection[T comparable](sliceA, sliceB []T) []T {
+	set := make(map[T]struct{})
+	result := make([]T, 0)
+
+	for _, value := range sliceA {
+		set[value] = struct{}{}
+	}
+
+	for _, value := range sliceB {
+		if _, found := set[value]; found {
+			result = append(result, value)
+			delete(set, value) // 防止结果中出现重复元素
+		}
+	}
+	return result
+}
+
+// Union 求两个切片的并集 两个集合中所有元素（不重复）所组成的集合。
+func Union[T comparable](sliceA, sliceB []T) []T {
+	set := make(map[T]struct{})
+	result := make([]T, 0)
+
+	for _, value := range sliceA {
+		if _, found := set[value]; !found {
+			set[value] = struct{}{}
+			result = append(result, value)
+		}
+	}
+
+	for _, value := range sliceB {
+		if _, found := set[value]; !found {
+			set[value] = struct{}{}
+			result = append(result, value)
+		}
+	}
+	return result
+}
+
+// Complement 求两个切片的补集 全集中(sliceAll)不属于某个集合(slicePart)的元素所组成的集合
+func Complement[T comparable](sliceAll, slicePart []T) []T {
+	set := make(map[T]struct{})
+	result := make([]T, 0)
+
+	for _, value := range slicePart {
+		set[value] = struct{}{}
+	}
+
+	for _, value := range sliceAll {
+		if _, found := set[value]; !found {
+			result = append(result, value)
+		}
+	}
+	return result
+}

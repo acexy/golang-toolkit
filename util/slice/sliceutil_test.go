@@ -44,3 +44,24 @@ func TestFilterWithFn(t *testing.T) {
 		return item.age == 20
 	}))
 }
+func TestIntersection(t *testing.T) {
+	intSlice1 := []int{1, 2, 3, 4, 3, 5}
+	intSlice2 := []int{3, 4, 4, 5, 6, 7}
+	fmt.Println(Intersection(intSlice1, intSlice2))
+
+	intSlice3 := []int{1, 2, 3, 4, 5}
+	intSlice4 := []int{6, 6, 7, 7, 8, 9, 0}
+	fmt.Println(Intersection(intSlice3, intSlice4))
+}
+
+func TestUnion(t *testing.T) {
+	intSlice1 := []int{1, 2, 3, 4, 3, 5}
+	intSlice2 := []int{3, 4, 4, 5, 6, 7}
+	fmt.Println(Union(intSlice1, intSlice2))
+}
+
+func TestComplement(t *testing.T) {
+	intSlice1 := []int{1, 2, 3, 4, 3, 5}
+	intSlice2 := []int{3, 4, 4, 5}
+	fmt.Println(Complement(intSlice1, intSlice2))
+}
