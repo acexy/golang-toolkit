@@ -2,6 +2,7 @@ package conversion
 
 import (
 	"fmt"
+	"unsafe"
 )
 
 func fromNumber(value int64) string {
@@ -57,4 +58,9 @@ func FromFloat32(value float32) string {
 
 func FromFloat64(value float64) string {
 	return fromFloat(value)
+}
+
+// FromBytes 通过go 1.22新函数直接通过字节数组转换成字符串 不进行内存分配高性能
+func FromBytes(bytes []byte) string {
+	return unsafe.String(unsafe.SliceData(bytes), len(bytes))
 }
