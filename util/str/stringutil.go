@@ -1,6 +1,9 @@
 package str
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+)
 
 // CharLength 返回字符串的字符长度
 func CharLength(str string) int {
@@ -63,4 +66,14 @@ func (b *Builder) WriteRune(r rune) *Builder {
 
 func (b *Builder) ToString() string {
 	return b.b.String()
+}
+
+// LowFirstChar 首字母小写
+func LowFirstChar(value string) string {
+	if value == "" {
+		return ""
+	}
+	runes := []rune(value)
+	runes[0] = unicode.ToLower(runes[0])
+	return string(runes)
 }
