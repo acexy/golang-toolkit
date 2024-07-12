@@ -3,6 +3,7 @@ package json
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
 // ToJson 转json字符串 忽略任何错误
@@ -17,7 +18,7 @@ func ToJsonError(any any) (jsonString string, err error) {
 	if err != nil {
 		return
 	}
-	jsonString = string(jsonBytes)
+	jsonString = conversion.FromBytes(jsonBytes)
 	return
 }
 
@@ -34,7 +35,7 @@ func ToJsonFormatError(any any) (string, error) {
 		return "", err
 	}
 	var formattedJSON bytes.Buffer
-	err = json.Indent(&formattedJSON, []byte(jsonString), "", "  ")
+	err = json.Indent(&formattedJSON, conversion.ParseBytes(jsonString), "", "  ")
 	if err == nil {
 		return formattedJSON.String(), nil
 	}
@@ -95,7 +96,7 @@ func ParseJson(jsonString string, any any) {
 
 // ParseJsonError 转对象 返回任何错误
 func ParseJsonError(jsonString string, any any) error {
-	return ParseBytesError([]byte(jsonString), any)
+	return ParseBytesError(conversion.ParseBytes(jsonString), any)
 }
 
 // ParseJsonPanic 转对象 任何错误将触发panic

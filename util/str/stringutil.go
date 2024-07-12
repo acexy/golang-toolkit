@@ -27,11 +27,6 @@ func HasText(str string) bool {
 	return CharLength(strings.TrimSpace(str)) > 0
 }
 
-// HasLength 检查是否没有任何长度的值
-func HasLength(str string) bool {
-	return str != ""
-}
-
 type Builder struct {
 	b strings.Builder
 }
