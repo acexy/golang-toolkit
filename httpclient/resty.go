@@ -44,7 +44,7 @@ func NewRestyClient(proxyHttpHost ...string) *RestyClient {
 	return client
 }
 
-// client 设置
+// client 公共属性设置
 
 func (c *RestyClient) SetBaseUrl(baseUrl string) *RestyClient {
 	c.client.SetBaseURL(baseUrl)
@@ -66,13 +66,15 @@ func (c *RestyClient) SetHeaders(headers map[string]string) *RestyClient {
 	return c
 }
 
-// R GetRequest
+// R 获取Request实例
 func (c *RestyClient) R() *RestyRequest {
 	return &RestyRequest{request: c.client.R()}
 }
 
-// restyRequest 设置
+// 对 restyRequest进行设置
 
+// SetReturnStruct 使用默认响应Body内容与结构体绑定
+// 仅支持响应码 200 - 299 内容类型为 JSON or XML时
 func (r *RestyRequest) SetReturnStruct(any interface{}) *RestyRequest {
 	r.request.SetResult(any)
 	return r
