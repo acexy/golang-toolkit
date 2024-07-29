@@ -2,6 +2,8 @@ package slice
 
 import (
 	"fmt"
+	"github.com/acexy/golang-toolkit/math/conversion"
+	"github.com/acexy/golang-toolkit/util/str"
 	"testing"
 )
 
@@ -109,4 +111,51 @@ func TestComplement(t *testing.T) {
 	fmt.Println(Complement(peoples1, peoples2, func(a, b *people) bool {
 		return a.name == b.name && a.age == b.age
 	}))
+}
+
+type Person struct {
+	Name string
+	Age  int
+}
+
+func TestToMap(t *testing.T) {
+	// 示例1: 整数切片
+	ints := []int{1, 2, 3, 4, 5, 6}
+	intMap := ToMap(ints, func(t *int) (*string, *int, bool) {
+		if *t > 3 {
+			str := conversion.FromInt(*t)
+			return &str, t, true
+		}
+		return nil, nil, false
+	})
+	fmt.Println(intMap)
+
+	// 示例2: 字符串切片
+	strings := []string{"apple", "banana", "cherry", "date"}
+	stringMap := ToMap(strings, func(t *string) (*string, *string, bool) {
+		if str.CharLength(*t) > 4 {
+			return t, t, true
+		}
+		return nil, nil, false
+	})
+	fmt.Println(stringMap)
+
+	// 定义一个结构体切片
+	people := []Person{
+		{Name: "Alice", Age: 25},
+		{Name: "Bob", Age: 30},
+		{Name: "Charlie", Age: 35},
+		{Name: "Dave", Age: 40},
+	}
+
+	// 调用通用方法
+	personMap := ToMap(people, func(t *Person) (*string, *int, bool) {
+		if t.Age > 30 {
+			return &t.Name, &t.Age, true
+		}
+		return nil, nil, false
+	})
+
+	// 打印结果
+	fmt.Println(personMap)
 }

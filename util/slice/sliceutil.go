@@ -121,6 +121,20 @@ func Complement[T comparable](sliceAll, slicePart []T, compare ...func(*T, *T) b
 			}
 		}
 	}
+	return result
+}
 
+// ToMap 将切片按照指定的过滤处理形成map
+func ToMap[T any, K comparable, V any](slice []T, filter func(*T) (*K, *V, bool)) map[K]V {
+	if len(slice) == 0 {
+		return nil
+	}
+	result := make(map[K]V, len(slice))
+	for _, item := range slice {
+		key, value, ok := filter(&item)
+		if ok {
+			result[*key] = *value
+		}
+	}
 	return result
 }
