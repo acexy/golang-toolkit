@@ -1,4 +1,4 @@
-package slice
+package coll
 
 import (
 	"fmt"
@@ -12,14 +12,14 @@ type people struct {
 	age  int
 }
 
-func TestContains(t *testing.T) {
+func TestSliceContains(t *testing.T) {
 	intSlice := []int{1, 2, 3, 4, 5}
 	stringSlice := []string{"apple", "banana", "cherry"}
 
-	fmt.Println(Contains(intSlice, 3))           // 输出: true
-	fmt.Println(Contains(intSlice, 6))           // 输出: false
-	fmt.Println(Contains(stringSlice, "banana")) // 输出: true
-	fmt.Println(Contains(stringSlice, "grape"))  // 输出: false
+	fmt.Println(SliceContains(intSlice, 3))           // 输出: true
+	fmt.Println(SliceContains(intSlice, 6))           // 输出: false
+	fmt.Println(SliceContains(stringSlice, "banana")) // 输出: true
+	fmt.Println(SliceContains(stringSlice, "grape"))  // 输出: false
 
 	peoples := []people{
 		{name: "张三", age: 28},
@@ -27,12 +27,12 @@ func TestContains(t *testing.T) {
 		{name: "王五", age: 22},
 		{name: "赵六", age: 20},
 	}
-	fmt.Println(Contains(peoples, people{name: "张三", age: 29}, func(a, b *people) bool {
+	fmt.Println(SliceContains(peoples, people{name: "张三", age: 29}, func(a, b *people) bool {
 		return a.name == b.name && a.age == b.age
 	}))
 }
 
-func TestFilter(t *testing.T) {
+func TestSliceFilter(t *testing.T) {
 	peoples := []people{
 		{name: "张三", age: 28},
 		{name: "李四", age: 20},
@@ -40,18 +40,18 @@ func TestFilter(t *testing.T) {
 		{name: "赵六", age: 20},
 	}
 
-	fmt.Println(Filter(peoples, func(item *people) bool {
+	fmt.Println(SliceFilter(peoples, func(item *people) bool {
 		return item.age == 20
 	}))
 }
-func TestIntersection(t *testing.T) {
+func TestSliceIntersection(t *testing.T) {
 	intSlice1 := []int{3, 4, 4, 5, 6, 7}
 	intSlice2 := []int{1, 2, 3, 4, 3, 5}
-	fmt.Println(Intersection(intSlice1, intSlice2))
+	fmt.Println(SliceIntersection(intSlice1, intSlice2))
 
 	intSlice3 := []int{1, 2, 3, 4, 5}
 	intSlice4 := []int{6, 6, 7, 7, 8, 9, 0}
-	fmt.Println(Intersection(intSlice3, intSlice4))
+	fmt.Println(SliceIntersection(intSlice3, intSlice4))
 	peoples1 := []people{
 		{name: "张三", age: 28},
 		{name: "李四", age: 20},
@@ -62,15 +62,15 @@ func TestIntersection(t *testing.T) {
 		{name: "李四", age: 20},
 		{name: "赵六", age: 20},
 	}
-	fmt.Println(Intersection(peoples1, peoples2, func(a, b *people) bool {
+	fmt.Println(SliceIntersection(peoples1, peoples2, func(a, b *people) bool {
 		return a.name == b.name && a.age == b.age
 	}))
 }
 
-func TestUnion(t *testing.T) {
+func TestSliceUnion(t *testing.T) {
 	intSlice1 := []int{1, 2, 3, 4, 3, 5}
 	intSlice2 := []int{3, 4, 4, 5, 6, 7}
-	fmt.Println(Union(intSlice1, intSlice2))
+	fmt.Println(SliceUnion(intSlice1, intSlice2))
 
 	peoples1 := []people{
 		{name: "张三", age: 28},
@@ -86,15 +86,15 @@ func TestUnion(t *testing.T) {
 		{name: "赵六", age: 21},
 		{name: "赵六", age: 21},
 	}
-	fmt.Println(Union(peoples1, peoples2, func(a, b *people) bool {
+	fmt.Println(SliceUnion(peoples1, peoples2, func(a, b *people) bool {
 		return a.name == b.name && a.age == b.age
 	}))
 }
 
-func TestComplement(t *testing.T) {
+func TestSliceComplement(t *testing.T) {
 	intSlice1 := []int{1, 2, 3, 4, 3, 5}
 	intSlice2 := []int{3, 4, 4, 5}
-	fmt.Println(Complement(intSlice1, intSlice2))
+	fmt.Println(SliceComplement(intSlice1, intSlice2))
 	peoples1 := []people{
 		{name: "张三", age: 28},
 		{name: "李四", age: 20},
@@ -108,7 +108,7 @@ func TestComplement(t *testing.T) {
 		{name: "赵六", age: 21},
 		{name: "赵六", age: 21},
 	}
-	fmt.Println(Complement(peoples1, peoples2, func(a, b *people) bool {
+	fmt.Println(SliceComplement(peoples1, peoples2, func(a, b *people) bool {
 		return a.name == b.name && a.age == b.age
 	}))
 }
@@ -118,10 +118,10 @@ type Person struct {
 	Age  int
 }
 
-func TestToMap(t *testing.T) {
+func TestSliceToMap(t *testing.T) {
 	// 示例1: 整数切片
 	ints := []int{1, 2, 3, 4, 5, 6}
-	intMap := ToMap(ints, func(t *int) (*string, *int, bool) {
+	intMap := SliceToMap(ints, func(t *int) (*string, *int, bool) {
 		if *t > 3 {
 			str := conversion.FromInt(*t)
 			return &str, t, true
@@ -132,7 +132,7 @@ func TestToMap(t *testing.T) {
 
 	// 示例2: 字符串切片
 	strings := []string{"apple", "banana", "cherry", "date"}
-	stringMap := ToMap(strings, func(t *string) (*string, *string, bool) {
+	stringMap := SliceToMap(strings, func(t *string) (*string, *string, bool) {
 		if str.CharLength(*t) > 4 {
 			return t, t, true
 		}
@@ -149,7 +149,7 @@ func TestToMap(t *testing.T) {
 	}
 
 	// 调用通用方法
-	personMap := ToMap(people, func(t *Person) (*string, *int, bool) {
+	personMap := SliceToMap(people, func(t *Person) (*string, *int, bool) {
 		if t.Age > 30 {
 			return &t.Name, &t.Age, true
 		}
