@@ -50,7 +50,7 @@ func NonZeroFieldValue(value interface{}) (map[string]interface{}, error) {
 	return nonZeroValue, nil
 }
 
-// DeepCopy 深拷贝 源和目标需要是同类型的
+// DeepCopy 深拷贝 源和目标需要是同类型
 func DeepCopy(src interface{}) interface{} {
 	if src == nil {
 		return nil
@@ -59,35 +59,6 @@ func DeepCopy(src interface{}) interface{} {
 	dstVal := reflect.New(srcVal.Type()).Elem()
 	deepCopyRecursive(srcVal, dstVal)
 	return dstVal.Interface()
-}
-
-// CopySameFields 复制结构体中相同的字段相同类型的属性值
-func CopySameFields(src, dst interface{}) error {
-	srcVal := reflect.ValueOf(src)
-	dstVal := reflect.ValueOf(dst)
-
-	if srcVal.Kind() == reflect.Ptr {
-		srcVal = srcVal.Elem()
-	}
-	if dstVal.Kind() == reflect.Ptr {
-		dstVal = dstVal.Elem()
-	}
-
-	if srcVal.Kind() != reflect.Struct || dstVal.Kind() != reflect.Struct {
-		return errors.New("both src and dst must be structs or pointers to structs")
-	}
-
-	srcType := srcVal.Type()
-
-	for i := 0; i < srcVal.NumField(); i++ {
-		srcField := srcVal.Field(i)
-		srcFieldName := srcType.Field(i).Name
-		dstField := dstVal.FieldByName(srcFieldName)
-		if dstField.IsValid() && dstField.Type() == srcField.Type() && dstField.CanSet() {
-			dstField.Set(srcField)
-		}
-	}
-	return nil
 }
 
 func deepCopyRecursive(src, dst reflect.Value) {
