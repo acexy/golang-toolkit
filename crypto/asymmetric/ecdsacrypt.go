@@ -4,8 +4,11 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"errors"
+	"github.com/acexy/golang-toolkit/math/conversion"
 	"hash"
 	"math/big"
 	"sync"
@@ -17,6 +20,7 @@ type CreateEcdsaSetting struct {
 
 type EcdsaKeyManager struct {
 	CreateSetting CreateEcdsaSetting
+	ecdsaKey      *ecdsaKey
 }
 
 func (e *EcdsaKeyManager) Create() (KeyPair, error) {
@@ -27,14 +31,63 @@ func (e *EcdsaKeyManager) Create() (KeyPair, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ecdsaKey{
+	e.ecdsaKey = &ecdsaKey{
 		publicKey:  &privateKey.PublicKey,
 		privateKey: privateKey,
-	}, nil
+	}
+	return e.ecdsaKey, nil
 }
 
-func (e *EcdsaKeyManager) Load() (KeyPair, error) {
-	return nil, errors.New("not support now")
+func (e *EcdsaKeyManager) Load(pubPem, priPem string) (KeyPair, error) {
+	block, _ := pem.Decode(conversion.ParseBytes(pubPem))
+	if block == nil {
+		return nil, errors.New("bak public key")
+	}
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	ecdsaPubKey, ok := pub.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, errors.New("bak public key")
+	}
+	block, _ = pem.Decode(conversion.ParseBytes(priPem))
+	if block == nil {
+		return nil, errors.New("bak private key")
+	}
+	pri, err := x509.ParseECPrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	key := &ecdsaKey{
+		publicKey:  ecdsaPubKey,
+		privateKey: pri,
+	}
+	return key, nil
+}
+
+func (e *EcdsaKeyManager) ToPublicPem() string {
+	publicKey := e.ecdsaKey.PublicKey().(*ecdsa.PublicKey)
+	der, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		return ""
+	}
+	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
+		Type:  "EC PUBLIC KEY",
+		Bytes: der,
+	}))
+}
+
+func (e *EcdsaKeyManager) ToPrivatePem() string {
+	privateKey := e.ecdsaKey.PrivateKey().(*ecdsa.PrivateKey)
+	der, err := x509.MarshalECPrivateKey(privateKey)
+	if err != nil {
+		return ""
+	}
+	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
+		Type:  "EC PRIVATE KEY",
+		Bytes: der,
+	}))
 }
 
 type ecdsaKey struct {

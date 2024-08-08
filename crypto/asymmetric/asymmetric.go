@@ -5,7 +5,11 @@ type KeyPairManager interface {
 	// Create 生成新的公私钥对
 	Create() (KeyPair, error)
 	// Load 加载公私钥
-	Load() (KeyPair, error)
+	Load(pubPem, priPem string) (KeyPair, error)
+	// ToPublicPem 将公钥转换为PEM格式
+	ToPublicPem() string
+	// ToPrivatePem 将私钥转换为PEM格式
+	ToPrivatePem() string
 }
 
 // KeyPair 公私钥信息
