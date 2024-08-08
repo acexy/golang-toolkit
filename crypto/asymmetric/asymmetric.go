@@ -6,10 +6,6 @@ type KeyPairManager interface {
 	Create() (KeyPair, error)
 	// Load 加载公私钥
 	Load(pubPem, priPem string) (KeyPair, error)
-	// ToPublicPem 将公钥转换为PEM格式
-	ToPublicPem() string
-	// ToPrivatePem 将私钥转换为PEM格式
-	ToPrivatePem() string
 }
 
 // KeyPair 公私钥信息
@@ -18,6 +14,10 @@ type KeyPair interface {
 	PrivateKey() interface{}
 	// PublicKey 获取原始公钥信息
 	PublicKey() interface{}
+	// ToPublicPKCS1Pem  将公钥转换为pkcs1 PEM格式
+	ToPublicPKCS1Pem() string
+	// ToPrivatePKCS1Pem 将私钥转换为pkcs1 PEM格式
+	ToPrivatePKCS1Pem() string
 }
 
 type CryptEncrypt interface {

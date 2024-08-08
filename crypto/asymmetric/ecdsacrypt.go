@@ -20,7 +20,6 @@ type CreateEcdsaSetting struct {
 
 type EcdsaKeyManager struct {
 	CreateSetting CreateEcdsaSetting
-	ecdsaKey      *ecdsaKey
 }
 
 func (e *EcdsaKeyManager) Create() (KeyPair, error) {
@@ -31,11 +30,10 @@ func (e *EcdsaKeyManager) Create() (KeyPair, error) {
 	if err != nil {
 		return nil, err
 	}
-	e.ecdsaKey = &ecdsaKey{
+	return &ecdsaKey{
 		publicKey:  &privateKey.PublicKey,
 		privateKey: privateKey,
-	}
-	return e.ecdsaKey, nil
+	}, nil
 }
 
 func (e *EcdsaKeyManager) Load(pubPem, priPem string) (KeyPair, error) {
@@ -66,8 +64,21 @@ func (e *EcdsaKeyManager) Load(pubPem, priPem string) (KeyPair, error) {
 	return key, nil
 }
 
-func (e *EcdsaKeyManager) ToPublicPem() string {
-	publicKey := e.ecdsaKey.PublicKey().(*ecdsa.PublicKey)
+type ecdsaKey struct {
+	privateKey *ecdsa.PrivateKey
+	publicKey  *ecdsa.PublicKey
+}
+
+func (e *ecdsaKey) PrivateKey() interface{} {
+	return e.privateKey
+}
+
+func (e *ecdsaKey) PublicKey() interface{} {
+	return e.publicKey
+}
+
+func (e *ecdsaKey) ToPublicPKCS1Pem() string {
+	publicKey := e.PublicKey().(*ecdsa.PublicKey)
 	der, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
 		return ""
@@ -78,8 +89,8 @@ func (e *EcdsaKeyManager) ToPublicPem() string {
 	}))
 }
 
-func (e *EcdsaKeyManager) ToPrivatePem() string {
-	privateKey := e.ecdsaKey.PrivateKey().(*ecdsa.PrivateKey)
+func (e *ecdsaKey) ToPrivatePKCS1Pem() string {
+	privateKey := e.PrivateKey().(*ecdsa.PrivateKey)
 	der, err := x509.MarshalECPrivateKey(privateKey)
 	if err != nil {
 		return ""
@@ -88,19 +99,6 @@ func (e *EcdsaKeyManager) ToPrivatePem() string {
 		Type:  "EC PRIVATE KEY",
 		Bytes: der,
 	}))
-}
-
-type ecdsaKey struct {
-	privateKey *ecdsa.PrivateKey
-	publicKey  *ecdsa.PublicKey
-}
-
-func (r *ecdsaKey) PrivateKey() interface{} {
-	return r.privateKey
-}
-
-func (r *ecdsaKey) PublicKey() interface{} {
-	return r.publicKey
 }
 
 type EcdsaSign struct {

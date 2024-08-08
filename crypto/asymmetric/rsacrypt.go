@@ -41,13 +41,30 @@ func (r *rsaKey) PublicKey() interface{} {
 	return r.publicKey
 }
 
+func (r *rsaKey) ToPublicPKCS1Pem() string {
+	publicKey := r.PublicKey().(*rsa.PublicKey)
+	der := x509.MarshalPKCS1PublicKey(publicKey)
+	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: der,
+	}))
+}
+
+func (r *rsaKey) ToPrivatePKCS1Pem() string {
+	privateKey := r.PrivateKey().(*rsa.PrivateKey)
+	der := x509.MarshalPKCS1PrivateKey(privateKey)
+	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: der,
+	}))
+}
+
 type CreateRsaSetting struct {
 	Length int
 }
 
 type RsaKeyManager struct {
 	CreateSetting CreateRsaSetting
-	rsaKey        *rsaKey
 }
 
 func (r *RsaKeyManager) Create() (KeyPair, error) {
@@ -58,11 +75,10 @@ func (r *RsaKeyManager) Create() (KeyPair, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.rsaKey = &rsaKey{
+	return &rsaKey{
 		publicKey:  &privateKey.PublicKey,
 		privateKey: privateKey,
-	}
-	return r.rsaKey, nil
+	}, nil
 }
 
 func (r *RsaKeyManager) Load(pubPem, priPem string) (KeyPair, error) {
@@ -82,29 +98,10 @@ func (r *RsaKeyManager) Load(pubPem, priPem string) (KeyPair, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.rsaKey = &rsaKey{
+	return &rsaKey{
 		publicKey:  pub,
 		privateKey: pri,
-	}
-	return r.rsaKey, nil
-}
-
-func (r *RsaKeyManager) ToPublicPem() string {
-	publicKey := r.rsaKey.PublicKey().(*rsa.PublicKey)
-	der := x509.MarshalPKCS1PublicKey(publicKey)
-	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: der,
-	}))
-}
-
-func (r *RsaKeyManager) ToPrivatePem() string {
-	privateKey := r.rsaKey.PrivateKey().(*rsa.PrivateKey)
-	der := x509.MarshalPKCS1PrivateKey(privateKey)
-	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: der,
-	}))
+	}, nil
 }
 
 type RsaEncrypt struct {

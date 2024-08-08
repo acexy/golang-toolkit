@@ -15,15 +15,15 @@ func TestRsaKey(t *testing.T) {
 	var manager = RsaKeyManager{
 		CreateSetting: CreateRsaSetting{Length: 512},
 	}
-	_, err := manager.Create()
+	key, err := manager.Create()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
 	// 打印PEM编码的公共密钥
-	fmt.Printf("PEM格式的公钥:\n%s\n", manager.ToPublicPem())
-	fmt.Printf("PEM格式的私钥:\n%s\n", manager.ToPrivatePem())
+	fmt.Printf("PEM格式的公钥:\n%s\n", key.ToPublicPKCS1Pem())
+	fmt.Printf("PEM格式的私钥:\n%s\n", key.ToPrivatePKCS1Pem())
 }
 
 func TestRsaEncrypt(t *testing.T) {
@@ -155,10 +155,10 @@ func TestRsaSign(t *testing.T) {
 
 func TestEcdsaKey(t *testing.T) {
 	manager := EcdsaKeyManager{CreateSetting: CreateEcdsaSetting{Curve: elliptic.P256()}}
-	_, _ = manager.Create()
+	key, _ := manager.Create()
 	// 打印PEM编码的公共密钥
-	fmt.Printf("PEM格式的公钥:\n%s\n", manager.ToPublicPem())
-	fmt.Printf("PEM格式的私钥:\n%s\n", manager.ToPrivatePem())
+	fmt.Printf("PEM格式的公钥:\n%s\n", key.ToPublicPKCS1Pem())
+	fmt.Printf("PEM格式的私钥:\n%s\n", key.ToPrivatePKCS1Pem())
 }
 
 func TestEcdsaSignRS(t *testing.T) {
