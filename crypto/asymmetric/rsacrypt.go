@@ -6,8 +6,11 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/sha512"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"errors"
+	"github.com/acexy/golang-toolkit/math/conversion"
 	"hash"
 	"sync"
 )
@@ -38,6 +41,24 @@ func (r *rsaKey) PublicKey() interface{} {
 	return r.publicKey
 }
 
+func (r *rsaKey) ToPublicPKCS1Pem() string {
+	publicKey := r.PublicKey().(*rsa.PublicKey)
+	der := x509.MarshalPKCS1PublicKey(publicKey)
+	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: der,
+	}))
+}
+
+func (r *rsaKey) ToPrivatePKCS1Pem() string {
+	privateKey := r.PrivateKey().(*rsa.PrivateKey)
+	der := x509.MarshalPKCS1PrivateKey(privateKey)
+	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: der,
+	}))
+}
+
 type CreateRsaSetting struct {
 	Length int
 }
@@ -60,8 +81,27 @@ func (r *RsaKeyManager) Create() (KeyPair, error) {
 	}, nil
 }
 
-func (r *RsaKeyManager) Load() (KeyPair, error) {
-	return nil, errors.New("not support now")
+func (r *RsaKeyManager) Load(pubPem, priPem string) (KeyPair, error) {
+	block, _ := pem.Decode(conversion.ParseBytes(pubPem))
+	if block == nil {
+		return nil, errors.New("bak public key")
+	}
+	pub, err := x509.ParsePKCS1PublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	block, _ = pem.Decode(conversion.ParseBytes(priPem))
+	if block == nil {
+		return nil, errors.New("bak private key")
+	}
+	pri, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	return &rsaKey{
+		publicKey:  pub,
+		privateKey: pri,
+	}, nil
 }
 
 type RsaEncrypt struct {

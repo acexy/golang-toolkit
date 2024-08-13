@@ -5,7 +5,7 @@ type KeyPairManager interface {
 	// Create 生成新的公私钥对
 	Create() (KeyPair, error)
 	// Load 加载公私钥
-	Load() (KeyPair, error)
+	Load(pubPem, priPem string) (KeyPair, error)
 }
 
 // KeyPair 公私钥信息
@@ -14,6 +14,10 @@ type KeyPair interface {
 	PrivateKey() interface{}
 	// PublicKey 获取原始公钥信息
 	PublicKey() interface{}
+	// ToPublicPKCS1Pem  将公钥转换为pkcs1 PEM格式
+	ToPublicPKCS1Pem() string
+	// ToPrivatePKCS1Pem 将私钥转换为pkcs1 PEM格式
+	ToPrivatePKCS1Pem() string
 }
 
 type CryptEncrypt interface {

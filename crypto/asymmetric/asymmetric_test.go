@@ -8,14 +8,43 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
+	"github.com/acexy/golang-toolkit/math/conversion"
 	"testing"
 )
 
-func TestRsaEncrypt(t *testing.T) {
+func TestRsaKey(t *testing.T) {
 	var manager = RsaKeyManager{
 		CreateSetting: CreateRsaSetting{Length: 512},
 	}
-	keyPair, err := manager.Create()
+	key, err := manager.Create()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	// 打印PEM编码的公共密钥
+	fmt.Printf("PEM格式的公钥:\n%s\n", key.ToPublicPKCS1Pem())
+	fmt.Printf("PEM格式的私钥:\n%s\n", key.ToPrivatePKCS1Pem())
+}
+
+func TestRsaEncrypt(t *testing.T) {
+	//var manager = RsaKeyManager{
+	//	CreateSetting: CreateRsaSetting{Length: 512},
+	//}
+	//keyPair, err := manager.Create()
+	var manager = RsaKeyManager{}
+	keyPair, err := manager.Load(`-----BEGIN RSA PUBLIC KEY-----
+MEgCQQDdfMR8nyWFdEyg2aWkM4QjcTCvR7gqjGBo5rEASOOoCP52VfmRH686Koen
+nTnq46LL3TjvJf0Q52tTKBj3X16BAgMBAAE=
+-----END RSA PUBLIC KEY-----`, `-----BEGIN RSA PRIVATE KEY-----
+MIIBPAIBAAJBAN18xHyfJYV0TKDZpaQzhCNxMK9HuCqMYGjmsQBI46gI/nZV+ZEf
+rzoqh6edOerjosvdOO8l/RDna1MoGPdfXoECAwEAAQJBAM6R5iOgvnroS+uc8irh
+zTTNBa4EgtRUFjrgJWbxlDoLZPUZq+ckSpivuVdHZWfjsIJ7M0kzYWs4BBpgzbay
+xH0CIQDmRdVdf9xM/Sa0+oUfaFWrHD9gv0jNLlJ3GlKOQ6KVOwIhAPY7qEXJGTEw
+hRxZEN0EOjVtyVYlzzITxXYVAPtyya9zAiBR8eP+A/RHyYauvMAG70AdRk4fhbLI
+oYVjMRDT46nF5QIhALFquMtXo6w6rp6HWkw1wI9AxKIq6gjGEDAN4EBNLB8bAiEA
+xniLzimI7cQ8x+phTalMOazWfXdtnVcWxfWzQAVTaFE=
+-----END RSA PRIVATE KEY-----`)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -27,7 +56,10 @@ func TestRsaEncrypt(t *testing.T) {
 		fmt.Println(err.Error())
 		return
 	}
-	result, err = encrypt.Decrypt(keyPair, result)
+	decodeString, _ := base64.StdEncoding.DecodeString(`Kp2ws5r7Ia56s5dpypk0BIAUrXt7FtFP4sDP8ppGRF+kBcluiB/4gezea7ar4H6be8cN/gUIQMPLJncgeRJ8dg==`)
+	fmt.Println(decodeString)
+	fmt.Println(conversion.ParesBytesFromHex("2a9db0b39afb21ae7ab39769ca9934048014ad7b7b16d14fe2c0cff29a46445fa405c96e881ff881ecde6bb6abe07e9b7bc70dfe050840c3cb26772079127c76"))
+	result, err = encrypt.Decrypt(keyPair, conversion.ParesBytesFromHex("305c300d06092a864886f70d0101010500034b003048024100dd7cc47c9f2585744ca0d9a5a43384237130af47b82a8c6068e6b10048e3a808fe7655f9911faf3a2a87a79d39eae3a2cbdd38ef25fd10e76b532818f75f5e810203010001"))
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -125,9 +157,30 @@ func TestRsaSign(t *testing.T) {
 	fmt.Println("NewRsaSignWithPSSAndOps -> pass")
 }
 
-func TestEcdsaSignRS(t *testing.T) {
+func TestEcdsaKey(t *testing.T) {
 	manager := EcdsaKeyManager{CreateSetting: CreateEcdsaSetting{Curve: elliptic.P256()}}
-	keyPair, _ := manager.Create()
+	key, _ := manager.Create()
+	// 打印PEM编码的公共密钥
+	fmt.Printf("PEM格式的公钥:\n%s\n", key.ToPublicPKCS1Pem())
+	fmt.Printf("PEM格式的私钥:\n%s\n", key.ToPrivatePKCS1Pem())
+}
+
+func TestEcdsaSignRS(t *testing.T) {
+	//manager := EcdsaKeyManager{CreateSetting: CreateEcdsaSetting{Curve: elliptic.P256()}}
+	//keyPair, _ := manager.Create()
+	manager := EcdsaKeyManager{}
+	keyPair, err := manager.Load(`-----BEGIN EC PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEaEgWXspJ7qHq3ZAC811gnXGECvgz
+a7yDsRYEOjeUjKzRe2VqQew39pYpkLGtUo4HY63NIWs5vvrDutsqTOwMFw==
+-----END EC PUBLIC KEY-----`, `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIKThaZ1D5ut5opXP5SDvTXi5TnKcoSnTnAfj/xPyVM0moAoGCCqGSM49
+AwEHoUQDQgAEaEgWXspJ7qHq3ZAC811gnXGECvgza7yDsRYEOjeUjKzRe2VqQew3
+9pYpkLGtUo4HY63NIWs5vvrDutsqTOwMFw==
+-----END EC PRIVATE KEY-----`)
+	if err != nil {
+		println(err)
+		return
+	}
 	sign := NewEcdsaSign(crypto.SHA256.New())
 	raw := []byte("你好")
 	r, s, _ := sign.SignRS(keyPair, raw)

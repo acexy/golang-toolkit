@@ -4,8 +4,11 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"errors"
+	"github.com/acexy/golang-toolkit/math/conversion"
 	"hash"
 	"math/big"
 	"sync"
@@ -33,8 +36,32 @@ func (e *EcdsaKeyManager) Create() (KeyPair, error) {
 	}, nil
 }
 
-func (e *EcdsaKeyManager) Load() (KeyPair, error) {
-	return nil, errors.New("not support now")
+func (e *EcdsaKeyManager) Load(pubPem, priPem string) (KeyPair, error) {
+	block, _ := pem.Decode(conversion.ParseBytes(pubPem))
+	if block == nil {
+		return nil, errors.New("bak public key")
+	}
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	ecdsaPubKey, ok := pub.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, errors.New("bak public key")
+	}
+	block, _ = pem.Decode(conversion.ParseBytes(priPem))
+	if block == nil {
+		return nil, errors.New("bak private key")
+	}
+	pri, err := x509.ParseECPrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	key := &ecdsaKey{
+		publicKey:  ecdsaPubKey,
+		privateKey: pri,
+	}
+	return key, nil
 }
 
 type ecdsaKey struct {
@@ -42,12 +69,36 @@ type ecdsaKey struct {
 	publicKey  *ecdsa.PublicKey
 }
 
-func (r *ecdsaKey) PrivateKey() interface{} {
-	return r.privateKey
+func (e *ecdsaKey) PrivateKey() interface{} {
+	return e.privateKey
 }
 
-func (r *ecdsaKey) PublicKey() interface{} {
-	return r.publicKey
+func (e *ecdsaKey) PublicKey() interface{} {
+	return e.publicKey
+}
+
+func (e *ecdsaKey) ToPublicPKCS1Pem() string {
+	publicKey := e.PublicKey().(*ecdsa.PublicKey)
+	der, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		return ""
+	}
+	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
+		Type:  "EC PUBLIC KEY",
+		Bytes: der,
+	}))
+}
+
+func (e *ecdsaKey) ToPrivatePKCS1Pem() string {
+	privateKey := e.PrivateKey().(*ecdsa.PrivateKey)
+	der, err := x509.MarshalECPrivateKey(privateKey)
+	if err != nil {
+		return ""
+	}
+	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
+		Type:  "EC PRIVATE KEY",
+		Bytes: der,
+	}))
 }
 
 type EcdsaSign struct {
