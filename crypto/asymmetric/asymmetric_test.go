@@ -8,6 +8,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
+	"github.com/acexy/golang-toolkit/math/conversion"
 	"testing"
 )
 
@@ -55,7 +56,10 @@ xniLzimI7cQ8x+phTalMOazWfXdtnVcWxfWzQAVTaFE=
 		fmt.Println(err.Error())
 		return
 	}
-	result, err = encrypt.Decrypt(keyPair, result)
+	decodeString, _ := base64.StdEncoding.DecodeString(`Kp2ws5r7Ia56s5dpypk0BIAUrXt7FtFP4sDP8ppGRF+kBcluiB/4gezea7ar4H6be8cN/gUIQMPLJncgeRJ8dg==`)
+	fmt.Println(decodeString)
+	fmt.Println(conversion.ParesBytesFromHex("2a9db0b39afb21ae7ab39769ca9934048014ad7b7b16d14fe2c0cff29a46445fa405c96e881ff881ecde6bb6abe07e9b7bc70dfe050840c3cb26772079127c76"))
+	result, err = encrypt.Decrypt(keyPair, conversion.ParesBytesFromHex("305c300d06092a864886f70d0101010500034b003048024100dd7cc47c9f2585744ca0d9a5a43384237130af47b82a8c6068e6b10048e3a808fe7655f9911faf3a2a87a79d39eae3a2cbdd38ef25fd10e76b532818f75f5e810203010001"))
 	if err != nil {
 		fmt.Println(err.Error())
 		return
