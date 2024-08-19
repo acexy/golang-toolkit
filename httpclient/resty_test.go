@@ -104,3 +104,40 @@ func TestProxy(t *testing.T) {
 	}
 
 }
+
+func TestMultiProxy(t *testing.T) {
+	restyClient := NewRestyClientWithMultiProxy([]string{
+		"http://localhost:7890",
+		"http://localhost:1234",
+	})
+
+	restyClient.SetTimeout(time.Second * 3)
+	resp, err := restyClient.R().Get("https://www.google.com")
+	if err != nil {
+		t.Errorf("%v\n", err)
+	} else {
+		fmt.Println(conversion.FromBytes(resp.Body()))
+	}
+
+	resp, err = restyClient.R().M(http.MethodGet, "https://www.google.com").E()
+	if err != nil {
+		t.Errorf("%v\n", err)
+	} else {
+		fmt.Println(conversion.FromBytes(resp.Body()))
+	}
+
+	resp, err = restyClient.R().Get("https://www.google.com")
+	if err != nil {
+		t.Errorf("%v\n", err)
+	} else {
+		fmt.Println(conversion.FromBytes(resp.Body()))
+	}
+
+	resp, err = restyClient.R().M(http.MethodGet, "https://google.com").E()
+	if err != nil {
+		t.Errorf("%v\n", err)
+	} else {
+		fmt.Println(conversion.FromBytes(resp.Body()))
+	}
+
+}
