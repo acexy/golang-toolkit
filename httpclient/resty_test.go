@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"fmt"
+	"github.com/acexy/golang-toolkit/math/conversion"
 	"github.com/acexy/golang-toolkit/util/json"
 	"net/http"
 	"testing"
@@ -66,5 +67,40 @@ func TestGet(t *testing.T) {
 	}
 	fmt.Println(resp.String())
 	fmt.Println(json.ToJson(s))
+}
+
+func TestProxy(t *testing.T) {
+	restyClient := NewRestyClient()
+
+	restyClient.SetTimeout(time.Second * 3)
+	resp, err := restyClient.R().Get("https://www.google.com")
+	if err != nil {
+		t.Errorf("%v\n", err)
+	} else {
+		fmt.Println(conversion.FromBytes(resp.Body()))
+	}
+
+	restyClient.SetProxy("http://127.0.0.1:7890")
+	resp, err = restyClient.R().M(http.MethodGet, "https://www.google.com").E()
+	if err != nil {
+		t.Errorf("%v\n", err)
+	} else {
+		fmt.Println(conversion.FromBytes(resp.Body()))
+	}
+
+	resp, err = restyClient.R().Get("https://www.google.com")
+	if err != nil {
+		t.Errorf("%v\n", err)
+	} else {
+		fmt.Println(conversion.FromBytes(resp.Body()))
+	}
+
+	restyClient.SetProxy("http://127.0.0.1:1234")
+	resp, err = restyClient.R().M(http.MethodGet, "https://google.com").E()
+	if err != nil {
+		t.Errorf("%v\n", err)
+	} else {
+		fmt.Println(conversion.FromBytes(resp.Body()))
+	}
 
 }

@@ -11,14 +11,17 @@ import (
 	"time"
 )
 
+// RestyClient resty客户端
 type RestyClient struct {
 	client *resty.Client
 }
 
+// RestyRequest resty请求对象
 type RestyRequest struct {
 	request *resty.Request
 }
 
+// RestyMethod resty请求方法对象
 type RestyMethod struct {
 	request *resty.Request
 	method  string
@@ -46,23 +49,33 @@ func NewRestyClient(proxyHttpHost ...string) *RestyClient {
 
 // client 公共属性设置
 
+// SetBaseUrl 设置BaseUrl
 func (c *RestyClient) SetBaseUrl(baseUrl string) *RestyClient {
 	c.client.SetBaseURL(baseUrl)
 	return c
 }
 
+// SetTimeout 设置超时时间
 func (c *RestyClient) SetTimeout(timeout time.Duration) *RestyClient {
 	c.client.SetTimeout(timeout)
 	return c
 }
 
+// SetHeader 设置请求头
 func (c *RestyClient) SetHeader(key, value string) *RestyClient {
 	c.client.SetHeader(key, value)
 	return c
 }
 
+// SetHeaders 设置请求头
 func (c *RestyClient) SetHeaders(headers map[string]string) *RestyClient {
 	c.client.SetHeaders(headers)
+	return c
+}
+
+// SetProxy 设置代理
+func (c *RestyClient) SetProxy(proxy string) *RestyClient {
+	c.client.SetProxy(proxy)
 	return c
 }
 
@@ -151,6 +164,8 @@ func (m *RestyMethod) E() (*resty.Response, error) {
 	}
 	return nil, errors.New("Unknown Method " + m.method)
 }
+
+// 常用的快捷请求方法，默认使用resty.R()
 
 func (r *RestyRequest) Get(url string) (*resty.Response, error) {
 	return r.request.Get(url)
