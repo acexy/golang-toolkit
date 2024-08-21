@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"github.com/acexy/golang-toolkit/logger"
 	"github.com/acexy/golang-toolkit/math/random"
@@ -9,7 +10,6 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/google/go-querystring/query"
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -49,15 +49,9 @@ type RestyMethod struct {
 func NewRestyClient(proxyHttpHost ...string) *RestyClient {
 	var client = &RestyClient{}
 	if len(proxyHttpHost) > 0 && str.HasText(proxyHttpHost[0]) {
-		httpClient := &http.Client{
-			Transport: &http.Transport{
-				Proxy: func(*http.Request) (*url.URL, error) {
-					return &url.URL{Scheme: "httpclient", Host: proxyHttpHost[0]}, nil
-				},
-			},
-		}
 		client.initProxy = true
-		client.client = resty.NewWithClient(httpClient)
+		client.client = resty.New()
+		client.client.SetProxy(proxyHttpHost[0])
 	} else {
 		client.client = resty.New()
 	}
@@ -99,6 +93,16 @@ func (r *randomChoose) Choose(all []string) string {
 }
 
 // client 公共属性设置
+
+func (r *RestyClient) DisableTLSVerify() *RestyClient {
+	r.client.SetTransport(&http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true, // 不验证证书签名
+		},
+	})
+	return r
+}
 
 // SetBaseUrl 设置BaseUrl
 func (r *RestyClient) SetBaseUrl(baseUrl string) *RestyClient {

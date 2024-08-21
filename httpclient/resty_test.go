@@ -16,9 +16,9 @@ func init() {
 }
 
 func TestPoxyClient(t *testing.T) {
-	response, err := NewRestyClient("localhost:7890").R().Get("https://google.com")
+	response, err := NewRestyClient("https://127.0.0.1:8080").DisableTLSVerify().R().Get("https://baidu.com")
 	if err != nil {
-		return
+		fmt.Printf("%+v\n", err)
 	}
 	fmt.Println(response.RawResponse)
 }
