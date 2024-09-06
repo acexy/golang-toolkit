@@ -141,3 +141,9 @@ func TestMultiProxy(t *testing.T) {
 	}
 
 }
+
+func TestDownloadFile(t *testing.T) {
+	restyClient := NewRestyClient()
+	response, _ := restyClient.R().SetDownloadFile("/Users/acexy/Downloads/a").Get("https://images.performgroup.com/di/library/omnisport/3/a5/parejo_u3lcc7qycemx1c1kzmdibicha.jpg?t=-1784964847&w=1200&h=630")
+	println(response.Header().Get("content-type"))
+}

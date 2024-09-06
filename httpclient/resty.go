@@ -10,6 +10,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/google/go-querystring/query"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -149,6 +150,18 @@ func (r *RestyClient) R() *RestyRequest {
 // 仅支持响应码 200 - 299 内容类型为 JSON or XML时
 func (r *RestyRequest) SetReturnStruct(any interface{}) *RestyRequest {
 	r.request.SetResult(any)
+	return r
+}
+
+// SetDownloadFile 将原始内容下载为文件
+// filepath 文件完整路径(含文件名)
+func (r *RestyRequest) SetDownloadFile(filepath string) *RestyRequest {
+	outputFile, err := os.Create(filepath)
+	if err != nil {
+		logger.Logrus().WithError(err).Println("Failed to create output file", filepath)
+	}
+	defer outputFile.Close()
+	r.request.SetOutput(filepath)
 	return r
 }
 
