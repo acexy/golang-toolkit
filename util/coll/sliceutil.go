@@ -32,6 +32,17 @@ func SliceFilter[T comparable](slice []T, filter func(item *T) bool) []T {
 	return result
 }
 
+// SliceAnyMatch 检查切片中是否存在任意满足条件的元素
+func SliceAnyMatch[T comparable](slice []T, filter func(item *T) bool) bool {
+	for _, item := range slice {
+		flag := filter(&item)
+		if flag {
+			return true
+		}
+	}
+	return false
+}
+
 // SliceIntersection 求两个切片的交集 两个集合中共同的元素所组成的集合
 func SliceIntersection[T comparable](sliceA, sliceB []T, compare ...func(*T, *T) bool) []T {
 	var compareFn func(*T, *T) bool
