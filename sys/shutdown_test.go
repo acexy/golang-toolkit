@@ -25,7 +25,7 @@ func TestShutdownCallback(t *testing.T) {
 		_ = syscall.Kill(os.Getpid(), syscall.SIGTERM)
 	}()
 	ShutdownCallback(func() {
-		time.Sleep(2 * time.Second)
+		time.Sleep(10 * time.Second)
 		fmt.Println("callback finish")
 	})
 	fmt.Println("shutdown")
