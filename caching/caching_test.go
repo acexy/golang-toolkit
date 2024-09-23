@@ -3,6 +3,7 @@ package caching
 import (
 	"fmt"
 	"github.com/acexy/golang-toolkit/logger"
+	"github.com/acexy/golang-toolkit/sys"
 	"testing"
 	"time"
 )
@@ -14,17 +15,19 @@ type User struct {
 	Sex  uint8
 }
 
-func TestBigCache(t *testing.T) {
-
+func init() {
 	manager = NewCacheBucketManager("b1", NewSimpleBigCache(time.Second*10))
 	manager.AddBucket("b2", NewSimpleBigCache(time.Second*3))
+}
 
-	err := manager.Put("b1", "key1", "123")
+func TestBigCache(t *testing.T) {
+
+	err := manager.Put("b1", NewNemCacheKey("key1"), "123")
 	if err != nil {
 		logger.Logrus().Errorln(err)
 		return
 	}
-	err = manager.Put("b2", "key1", User{Name: "Q", Sex: 1})
+	err = manager.Put("b2", NewNemCacheKey("key1"), User{Name: "Q", Sex: 1})
 	if err != nil {
 		logger.Logrus().Errorln(err)
 		return
@@ -33,7 +36,7 @@ func TestBigCache(t *testing.T) {
 	go func() {
 		for {
 			var result string
-			err := manager.Get("b1", "key1", &result)
+			err := manager.Get("b1", NewNemCacheKey("key1"), &result)
 			if err != nil {
 				return
 			}
@@ -45,7 +48,7 @@ func TestBigCache(t *testing.T) {
 	go func() {
 		for {
 			var result User
-			err := manager.Get("b2", "key1", &result)
+			err := manager.Get("b2", NewNemCacheKey("key1"), &result)
 			if err != nil {
 				return
 			}
@@ -54,5 +57,15 @@ func TestBigCache(t *testing.T) {
 		}
 	}()
 
-	time.Sleep(time.Minute)
+	sys.ShutdownHolding()
+}
+
+func TestKeyFormat(t *testing.T) {
+	key := NewNemCacheKey("key:%s")
+	_ = manager.Put("b1", key, 3, "1")
+
+	var result int
+	_ = manager.Get("b1", key, &result, "1")
+
+	fmt.Println(result)
 }

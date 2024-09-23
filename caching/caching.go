@@ -2,9 +2,27 @@ package caching
 
 import (
 	"errors"
+	"fmt"
 	"github.com/acexy/golang-toolkit/logger"
 	"sync"
 )
+
+type MemCacheKey struct {
+	// 最终key值的格式化格式 将使用 fmt.Sprintf(key.KeyFormat, keyAppend) 进行处理
+	KeyFormat string
+}
+
+// NewNemCacheKey 创建一个缓存key
+func NewNemCacheKey(keyFormat string) MemCacheKey {
+	return MemCacheKey{KeyFormat: keyFormat}
+}
+
+func originKeyString(keyFormat string, keyAppend ...interface{}) string {
+	if len(keyAppend) > 0 {
+		return fmt.Sprintf(keyFormat, keyAppend...)
+	}
+	return keyFormat
+}
 
 type CacheManager struct {
 	caches map[string]CacheBucket
@@ -14,13 +32,13 @@ type CacheBucket interface {
 
 	// Get 获取指定key对应的值
 	// result 值类型指针
-	Get(key string, result any) error
+	Get(key MemCacheKey, result any, keyAppend ...interface{}) error
 
 	// Put 设置key对应值
-	Put(key string, data any) error
+	Put(key MemCacheKey, data any, keyAppend ...interface{}) error
 
 	// Evict 清除缓存
-	Evict(key string) error
+	Evict(key MemCacheKey, keyAppend ...interface{}) error
 }
 
 var once sync.Once
@@ -55,29 +73,29 @@ func (c *CacheManager) GetBucket(bucketName string) CacheBucket {
 	return c.caches[bucketName]
 }
 
-func (c *CacheManager) Get(bucketName, key string, result any) error {
+func (c *CacheManager) Get(bucketName string, key MemCacheKey, result any, keyAppend ...interface{}) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
 		logger.Logrus().Warnln("bad bucketName", bucketName)
 		return errors.New("bad bucketName " + bucketName)
 	}
-	return bucket.Get(key, result)
+	return bucket.Get(key, result, keyAppend...)
 }
 
-func (c *CacheManager) Put(bucketName, key string, data any) error {
+func (c *CacheManager) Put(bucketName string, key MemCacheKey, data any, keyAppend ...interface{}) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
 		logger.Logrus().Warnln("bad bucketName", bucketName)
 		return errors.New("bad bucketName " + bucketName)
 	}
-	return bucket.Put(key, data)
+	return bucket.Put(key, data, keyAppend...)
 }
 
-func (c *CacheManager) Evict(bucketName, key string) error {
+func (c *CacheManager) Evict(bucketName string, key MemCacheKey, keyAppend ...interface{}) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
 		logger.Logrus().Warnln("bad bucketName", bucketName)
 		return errors.New("bad bucketName " + bucketName)
 	}
-	return bucket.Evict(key)
+	return bucket.Evict(key, keyAppend...)
 }
