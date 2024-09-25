@@ -22,15 +22,24 @@ var (
 	logrusOnce    sync.Once
 )
 
-type LogrusConfig struct {
-}
+type Level uint32
+
+const (
+	PanicLevel Level = iota
+	FatalLevel
+	ErrorLevel
+	WarnLevel
+	InfoLevel
+	DebugLevel
+	TraceLevel
+)
 
 // EnableConsole 启用该设置后，日志内容将向标准控台输出
-func (l *LogrusConfig) EnableConsole(level logrus.Level, disableColor bool) {
+func EnableConsole(level Level, disableColor bool) {
 	consoleLogger = logrus.New()
 	consoleLogger.SetOutput(os.Stdout)
 	consoleLogger.SetReportCaller(true)
-	consoleLogger.SetLevel(level)
+	consoleLogger.SetLevel(logrus.Level(level))
 	format := &logrus.TextFormatter{
 		FullTimestamp:    true,
 		CallerPrettyfier: callerPrettyfier,
@@ -44,10 +53,10 @@ func (l *LogrusConfig) EnableConsole(level logrus.Level, disableColor bool) {
 	consoleLogger.SetFormatter(format)
 }
 
-func enableFile(level logrus.Level, formatter logrus.Formatter, fileConfig ...*lumberjack.Logger) {
+func enableFile(level Level, formatter logrus.Formatter, fileConfig ...*lumberjack.Logger) {
 	fileLogger = logrus.New()
 	fileLogger.SetReportCaller(true)
-	fileLogger.SetLevel(level)
+	fileLogger.SetLevel(logrus.Level(level))
 	fileLogger.SetFormatter(formatter)
 	if len(fileConfig) == 0 {
 		fileLogger.SetOutput(&lumberjack.Logger{
@@ -63,7 +72,7 @@ func enableFile(level logrus.Level, formatter logrus.Formatter, fileConfig ...*l
 }
 
 // EnableFileWithJson 启用该配置后将写入日志文件，并将日志输出json格式
-func (l *LogrusConfig) EnableFileWithJson(level logrus.Level, fileConfig ...*lumberjack.Logger) {
+func EnableFileWithJson(level Level, fileConfig ...*lumberjack.Logger) {
 	if fileSet {
 		panic("repeated initialization")
 	}
@@ -75,7 +84,7 @@ func (l *LogrusConfig) EnableFileWithJson(level logrus.Level, fileConfig ...*lum
 }
 
 // EnableFileWithText 启用该配置后写入日志文件，将日志输出为text格式
-func (l *LogrusConfig) EnableFileWithText(level logrus.Level, fileConfig ...*lumberjack.Logger) {
+func EnableFileWithText(level Level, fileConfig ...*lumberjack.Logger) {
 	if fileSet {
 		panic("repeated initialization")
 	}
@@ -91,8 +100,7 @@ func Logrus() *logrus.Logger {
 	logrusOnce.Do(func() {
 		if consoleLogger == nil && fileLogger == nil {
 			// 如果未手动初始化，则执行默认初始化配置
-			config := &LogrusConfig{}
-			config.EnableConsole(logrus.TraceLevel, false)
+			EnableConsole(TraceLevel, false)
 		}
 		if consoleLogger != nil && fileLogger != nil {
 			consoleLogger.ReportCaller = false
