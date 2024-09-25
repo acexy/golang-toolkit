@@ -11,8 +11,18 @@ type BigCacheBucket struct {
 	cache *bigcache.BigCache
 }
 
-func (b *BigCacheBucket) Get(key string, result any) error {
-	v, err := b.cache.Get(key)
+func NewBigCacheByConfig(config bigcache.Config) *BigCacheBucket {
+	cache, _ := bigcache.New(context.Background(), config)
+	return &BigCacheBucket{cache: cache}
+}
+
+func NewSimpleBigCache(duration time.Duration) *BigCacheBucket {
+	cache, _ := bigcache.New(context.Background(), bigcache.DefaultConfig(duration))
+	return &BigCacheBucket{cache: cache}
+}
+
+func (b *BigCacheBucket) Get(key MemCacheKey, result any, keyAppend ...interface{}) error {
+	v, err := b.cache.Get(originKeyString(key.KeyFormat, keyAppend...))
 	if err != nil {
 		return err
 	}
@@ -23,28 +33,18 @@ func (b *BigCacheBucket) Get(key string, result any) error {
 	return nil
 }
 
-func (b *BigCacheBucket) Put(key string, data any) error {
+func (b *BigCacheBucket) Put(key MemCacheKey, data any, keyAppend ...interface{}) error {
 	bytes, err := json.ToJsonBytesError(data)
 	if err != nil {
 		return err
 	}
-	err = b.cache.Set(key, bytes)
+	err = b.cache.Set(originKeyString(key.KeyFormat, keyAppend...), bytes)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (b *BigCacheBucket) Evict(key string) error {
-	return b.cache.Delete(key)
-}
-
-func NewBigCacheByConfig(config bigcache.Config) *BigCacheBucket {
-	cache, _ := bigcache.New(context.Background(), config)
-	return &BigCacheBucket{cache: cache}
-}
-
-func NewSimpleBigCache(duration time.Duration) *BigCacheBucket {
-	cache, _ := bigcache.New(context.Background(), bigcache.DefaultConfig(duration))
-	return &BigCacheBucket{cache: cache}
+func (b *BigCacheBucket) Evict(key MemCacheKey, keyAppend ...interface{}) error {
+	return b.cache.Delete(originKeyString(key.KeyFormat, keyAppend...))
 }

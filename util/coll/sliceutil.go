@@ -12,9 +12,10 @@ func SliceContains[T comparable](slice []T, elem T, compare ...func(*T, *T) bool
 			if compareFn(&item, &elem) {
 				return true
 			}
-		}
-		if item == elem {
-			return true
+		} else {
+			if item == elem {
+				return true
+			}
 		}
 	}
 	return false

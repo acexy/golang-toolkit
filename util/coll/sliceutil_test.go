@@ -30,6 +30,8 @@ func TestSliceContains(t *testing.T) {
 	fmt.Println(SliceContains(peoples, people{name: "张三", age: 29}, func(a, b *people) bool {
 		return a.name == b.name && a.age == b.age
 	}))
+	list := []string{"US"}
+	fmt.Println(SliceContains(list, ""))
 }
 
 func TestSliceFilter(t *testing.T) {
