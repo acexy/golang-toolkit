@@ -51,3 +51,9 @@ func TestConsoleAndFile(t *testing.T) {
 	Logrus().WithError(errors.New("ERROR")).WithField("field", "value").Error("error")
 	Logrus().WithField("field", "value").Traceln("----------------------")
 }
+
+func TestFileWrite(t *testing.T) {
+	EnableConsole(TraceLevel, false)
+	EnableFileWithText(TraceLevel)
+	Logrus().Info("应用启动中")
+}

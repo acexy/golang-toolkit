@@ -81,6 +81,13 @@ func EnableFileWithJson(level Level, fileConfig ...*lumberjack.Logger) {
 		DataKey:          "data",
 		CallerPrettyfier: callerPrettyfier,
 	}, fileConfig...)
+	if consoleLogger != nil {
+		consoleLogger.ReportCaller = false
+		fileLogger.AddHook(&autoConsole{})
+		activeLogger = fileLogger
+	} else {
+		activeLogger = fileLogger
+	}
 }
 
 // EnableFileWithText 启用该配置后写入日志文件，将日志输出为text格式
@@ -94,6 +101,13 @@ func EnableFileWithText(level Level, fileConfig ...*lumberjack.Logger) {
 		FullTimestamp:    true,
 		CallerPrettyfier: callerPrettyfier,
 	}, fileConfig...)
+	if consoleLogger != nil {
+		consoleLogger.ReportCaller = false
+		fileLogger.AddHook(&autoConsole{})
+		activeLogger = fileLogger
+	} else {
+		activeLogger = fileLogger
+	}
 }
 
 func Logrus() *logrus.Logger {
