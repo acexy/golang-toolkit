@@ -1,19 +1,19 @@
 package coll
 
 // SliceContains 检查指定的元素是否存在切片中
-// compare 比较函数，如果为空 则直接使用值比较
-func SliceContains[T comparable](slice []T, elem T, compare ...func(*T, *T) bool) bool {
+// compare 比较函数，如果为空 则直接使用值比较 func(*T, *T) 第一个参数为切片中元素， 第二个参数为目标元素
+func SliceContains[T comparable](slice []T, target T, compare ...func(*T, *T) bool) bool {
 	var compareFn func(*T, *T) bool
 	if len(compare) > 0 {
 		compareFn = compare[0]
 	}
 	for _, item := range slice {
 		if compareFn != nil {
-			if compareFn(&item, &elem) {
+			if compareFn(&item, &target) {
 				return true
 			}
 		} else {
-			if item == elem {
+			if item == target {
 				return true
 			}
 		}
@@ -31,17 +31,6 @@ func SliceFilter[T comparable](slice []T, filter func(item *T) bool) []T {
 		}
 	}
 	return result
-}
-
-// SliceAnyMatch 检查切片中是否存在任意满足条件的元素
-func SliceAnyMatch[T comparable](slice []T, filter func(item *T) bool) bool {
-	for _, item := range slice {
-		flag := filter(&item)
-		if flag {
-			return true
-		}
-	}
-	return false
 }
 
 // SliceIntersection 求两个切片的交集 两个集合中共同的元素所组成的集合
