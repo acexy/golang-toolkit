@@ -34,12 +34,11 @@ const (
 	TraceLevel
 )
 
-// EnableConsole 启用该设置后，日志内容将向标准控台输出
-func EnableConsole(level Level, disableColor bool) {
-	consoleLogger = logrus.New()
-	consoleLogger.SetOutput(os.Stdout)
-	consoleLogger.SetReportCaller(true)
-	consoleLogger.SetLevel(logrus.Level(level))
+func enableConsole(level Level, disableColor bool) *logrus.Logger {
+	logger := logrus.New()
+	logger.SetOutput(os.Stdout)
+	logger.SetReportCaller(true)
+	logger.SetLevel(logrus.Level(level))
 	format := &logrus.TextFormatter{
 		FullTimestamp:    true,
 		CallerPrettyfier: callerPrettyfier,
@@ -50,7 +49,13 @@ func EnableConsole(level Level, disableColor bool) {
 		format.ForceColors = true
 		format.EnvironmentOverrideColors = true
 	}
-	consoleLogger.SetFormatter(format)
+	logger.SetFormatter(format)
+	return logger
+}
+
+// EnableConsole 启用该设置后，日志内容将向标准控台输出
+func EnableConsole(level Level, disableColor bool) {
+	consoleLogger = enableConsole(level, disableColor)
 }
 
 func enableFile(level Level, formatter logrus.Formatter, fileConfig ...*lumberjack.Logger) {
@@ -114,18 +119,7 @@ func Logrus() *logrus.Logger {
 	logrusOnce.Do(func() {
 		if consoleLogger == nil && fileLogger == nil {
 			// 如果未手动初始化，则执行默认初始化配置
-			EnableConsole(TraceLevel, false)
-		}
-		if consoleLogger != nil && fileLogger != nil {
-			consoleLogger.ReportCaller = false
-			fileLogger.AddHook(&autoConsole{})
-			activeLogger = fileLogger
-		} else {
-			if consoleLogger != nil {
-				activeLogger = consoleLogger
-			} else {
-				activeLogger = fileLogger
-			}
+			activeLogger = enableConsole(TraceLevel, false)
 		}
 	})
 	return activeLogger
