@@ -1,14 +1,13 @@
 package sha256
 
 import (
-	"encoding/hex"
+	"fmt"
+	"github.com/acexy/golang-toolkit/math/conversion"
 	"testing"
 )
 
-func TestHexSha256(t *testing.T) {
-	t.Log(HexSha256("hello world"))
-}
-
-func TestBytesSha256(t *testing.T) {
-	t.Log(hex.EncodeToString(BytesSha256([]byte("hello world"))))
+func TestSha256(t *testing.T) {
+	fmt.Println(Sha256Hex("sha256"))
+	fmt.Println(Sha256Base64("sha256"))
+	fmt.Println(Sha256Bytes(conversion.ParseBytes("sha256")))
 }

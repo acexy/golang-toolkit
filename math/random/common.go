@@ -6,6 +6,7 @@ import "time"
 // 0 <= percentage <= 100 超出范围将永远返回false
 var seed = NewRandom(time.Now().Unix())
 
+// ProbabilityTrue 在指定的百分比范围内返回true
 func ProbabilityTrue(percentage int) bool {
 	if percentage < 0 || percentage > 100 {
 		return false
