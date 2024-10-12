@@ -1,4 +1,4 @@
-package md5
+package hashing
 
 import (
 	"fmt"
@@ -8,10 +8,10 @@ import (
 )
 
 func TestHexMd5(t *testing.T) {
-	fmt.Println(HexMd5("1"))
+	fmt.Println(Md5Hex("1"))
 }
 
 func TestFileHexMd5(t *testing.T) {
 	u, _ := user.Current()
-	fmt.Println(FileHexMd5(u.HomeDir + string(os.PathSeparator) + ".zprofile"))
+	fmt.Println(Md5FileHex(u.HomeDir + string(os.PathSeparator) + ".zprofile"))
 }

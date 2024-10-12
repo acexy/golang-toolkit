@@ -1,4 +1,4 @@
-package md5
+package hashing
 
 import (
 	sdkmd5 "crypto/md5"
@@ -7,19 +7,19 @@ import (
 	"os"
 )
 
-// HexMd5 Md5字符串返回HexString
-func HexMd5(data string) string {
-	hash := BytesMd5([]byte(data))
+// Md5Hex Md5字符串返回HexString
+func Md5Hex(data string) string {
+	hash := Md5Bytes([]byte(data))
 	return hex.EncodeToString(hash[:])
 }
 
-// BytesMd5 对字节做Md5
-func BytesMd5(bytes []byte) [sdkmd5.Size]byte {
+// Md5Bytes 对字节做Md5
+func Md5Bytes(bytes []byte) [sdkmd5.Size]byte {
 	return sdkmd5.Sum(bytes)
 }
 
-// FileHexMd5 计算文件md5返回Hex
-func FileHexMd5(absFilePath string) (string, error) {
+// Md5FileHex 计算文件md5返回Hex
+func Md5FileHex(absFilePath string) (string, error) {
 	file, err := os.Open(absFilePath)
 	if err != nil {
 		return "", err
