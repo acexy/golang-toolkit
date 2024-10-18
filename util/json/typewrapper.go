@@ -1,12 +1,9 @@
 package json
 
 import (
-	"encoding/json"
 	"sync"
 	"time"
 )
-
-type TimeStampType int
 
 const (
 	// TimestampTypeMilli 时间戳类型 毫秒级别
@@ -16,19 +13,23 @@ const (
 )
 
 var wrapperOnce sync.Once
-var defaultOptions *TypeWrapperOptions = &TypeWrapperOptions{
-
+var defaultOptions = &TypeWrapperOptions{
 	// 默认毫秒
-	TimeStampType: TimestampTypeMilli,
+	TimestampType: TimestampTypeMilli,
 }
 
-type TypeWrapperOptions struct {
+type TimeStampType int
 
+type TypeWrapperOptions struct {
 	// 序列化/反序列化 时间戳类型
-	TimeStampType TimeStampType
+	TimestampType TimeStampType
 }
 
 type SetWrapperOption func(*TypeWrapperOptions)
+
+type Timestamp struct {
+	time.Time
+}
 
 func GlobalWrapperSetting(opt ...SetWrapperOption) {
 	wrapperOnce.Do(func() {
@@ -38,29 +39,38 @@ func GlobalWrapperSetting(opt ...SetWrapperOption) {
 	})
 }
 
-type Timestamp struct {
-	time.Time
-}
-
-func (t Timestamp) MarshalJSON() ([]byte, error) {
+func Time2Timestamp(time time.Time) ([]byte, error) {
 	var timestamp int64
-	if defaultOptions.TimeStampType == TimestampTypeSecond {
-		timestamp = t.Time.Unix()
-	} else if defaultOptions.TimeStampType == TimestampTypeMilli {
-		timestamp = t.Time.UnixMilli()
+	if defaultOptions.TimestampType == TimestampTypeSecond {
+		timestamp = time.Unix()
+	} else if defaultOptions.TimestampType == TimestampTypeMilli {
+		timestamp = time.UnixMilli()
 	}
 	return ToJsonBytesError(timestamp)
 }
 
-func (t Timestamp) UnmarshalJSON(data []byte) error {
+func Timestamp2Time(timestampBytes []byte) (time.Time, error) {
 	var timestamp int64
-	if err := json.Unmarshal(data, &timestamp); err != nil {
+	if err := ParseBytesError(timestampBytes, &timestamp); err != nil {
+		return time.Time{}, err
+	}
+	if defaultOptions.TimestampType == TimestampTypeSecond {
+		return time.Unix(timestamp, 0), nil
+	} else if defaultOptions.TimestampType == TimestampTypeMilli {
+		return time.UnixMilli(timestamp), nil
+	}
+	return time.Time{}, nil
+}
+
+func (t Timestamp) MarshalJSON() ([]byte, error) {
+	return Time2Timestamp(t.Time)
+}
+
+func (t Timestamp) UnmarshalJSON(data []byte) error {
+	formatTime, err := Timestamp2Time(data)
+	if err != nil {
 		return err
 	}
-	if defaultOptions.TimeStampType == TimestampTypeSecond {
-		t.Time = time.Unix(timestamp, 0)
-	} else if defaultOptions.TimeStampType == TimestampTypeMilli {
-		t.Time = time.UnixMilli(timestamp)
-	}
+	t.Time = formatTime
 	return nil
 }
