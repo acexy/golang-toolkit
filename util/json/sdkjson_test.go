@@ -3,6 +3,7 @@ package json
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 type Person struct {
@@ -31,4 +32,23 @@ func TestCopyStructPanic(t *testing.T) {
 
 	fmt.Println(ToJson(ss))
 	fmt.Println(ToJsonFormat(ss))
+}
+
+type User struct {
+	Name string    `json:"name"`
+	Time Timestamp `json:"time"`
+}
+
+func TestTimestamp(t *testing.T) {
+	user := User{
+		Name: "acexy",
+		Time: Timestamp{time.Now()},
+	}
+	//GlobalWrapperSetting(func(options *TypeWrapperOptions) {
+	//	options.TimeStampType = TimestampTypeSecond
+	//})
+	fmt.Println(ToJson(user))
+	ParseJson("{\"name\":\"acexy\",\"time\":1729136314}", &user)
+	fmt.Println(user)
+
 }
