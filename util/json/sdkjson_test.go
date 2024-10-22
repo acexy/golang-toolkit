@@ -45,10 +45,9 @@ func TestTimestamp(t *testing.T) {
 		Time: Timestamp{time.Now()},
 	}
 	//GlobalWrapperSetting(func(options *TypeWrapperOptions) {
-	//	options.TimeStampType = TimestampTypeSecond
+	//	options.TimestampType = TimestampTypeSecond
 	//})
 	fmt.Println(ToJson(user))
-	ParseJson("{\"name\":\"acexy\",\"time\":1729136314}", &user)
+	ParseJson("{\"name\":\"acexy\",\"time\":1729136314000}", &user)
 	fmt.Println(user)
-
 }
