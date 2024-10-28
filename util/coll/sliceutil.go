@@ -1,21 +1,27 @@
 package coll
 
 // SliceContains 检查指定的元素是否存在切片中
-// compare 比较函数，如果为空 则直接使用值比较 func(*T, *T) 第一个参数为切片中元素， 第二个参数为目标元素
 func SliceContains[T comparable](slice []T, target T, compare ...func(*T, *T) bool) bool {
-	var compareFn func(*T, *T) bool
-	if len(compare) > 0 {
-		compareFn = compare[0]
-	}
-	for _, item := range slice {
-		if compareFn != nil {
-			if compareFn(&item, &target) {
+	// compare 比较函数，如果为空 则直接使用值比较 func(*T, *T) 第一个参数为切片中元素， 第二个参数为目标元素
+	for i := range slice {
+		if len(compare) > 0 && compare[0] != nil {
+			if compare[0](&slice[i], &target) {
 				return true
 			}
 		} else {
-			if item == target {
+			if slice[i] == target {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+// SliceAnyContains 检查指定的元素是否存在切片中，元素可以是任意类型
+func SliceAnyContains[T comparable](slice []T, target any, compare func(*T, *any) bool) bool {
+	for i := range slice {
+		if compare(&slice[i], &target) {
+			return true
 		}
 	}
 	return false
@@ -24,10 +30,10 @@ func SliceContains[T comparable](slice []T, target T, compare ...func(*T, *T) bo
 // SliceFilter 筛选切片 通过函数筛选出符合要求的元素
 func SliceFilter[T any](slice []T, filter func(item *T) bool) []T {
 	result := make([]T, 0)
-	for _, item := range slice {
-		flag := filter(&item)
+	for i := range slice {
+		flag := filter(&slice[i])
 		if flag {
-			result = append(result, item)
+			result = append(result, slice[i])
 		}
 	}
 	return result
@@ -45,25 +51,25 @@ func SliceIntersection[T comparable](slicePart1, slicePart2 []T, compare ...func
 	if compareFn == nil {
 		// 如果没有自定义的比较函数，使用默认的比较方式
 		setA := make(map[T]struct{})
-		for _, v := range slicePart1 {
-			setA[v] = struct{}{}
+		for i := range slicePart1 {
+			setA[slicePart1[i]] = struct{}{}
 		}
-		for _, v := range slicePart2 {
-			if _, found := setA[v]; found {
-				if _, added := cache[v]; !added {
-					cache[v] = struct{}{}
-					result = append(result, v)
+		for i := range slicePart2 {
+			if _, found := setA[slicePart2[i]]; found {
+				if _, added := cache[slicePart2[i]]; !added {
+					cache[slicePart2[i]] = struct{}{}
+					result = append(result, slicePart2[i])
 				}
 			}
 		}
 	} else {
 		// 使用自定义的比较函数
-		for _, v1 := range slicePart1 {
-			for _, v2 := range slicePart2 {
-				if compareFn(&v1, &v2) {
-					if _, found := cache[v1]; !found {
-						cache[v1] = struct{}{}
-						result = append(result, v1)
+		for i := range slicePart1 {
+			for j := range slicePart2 {
+				if compareFn(&slicePart1[i], &slicePart2[j]) {
+					if _, found := cache[slicePart1[i]]; !found {
+						cache[slicePart1[i]] = struct{}{}
+						result = append(result, slicePart1[i])
 					}
 				}
 			}
@@ -74,7 +80,7 @@ func SliceIntersection[T comparable](slicePart1, slicePart2 []T, compare ...func
 }
 
 // SliceUnion 求两个切片的并集 两个集合中所有元素（不重复）所组成的集合。
-func SliceUnion[T comparable](slicePart1, slicePart2 []T, compare ...func(*T, *T) bool) []T {
+func SliceUnion[T comparable](slicePart1, slicePart2 []T, compare ...func(part1Ele *T, part2Ele *T) bool) []T {
 	var compareFn func(*T, *T) bool
 	if len(compare) > 0 {
 		compareFn = compare[0]
@@ -82,43 +88,42 @@ func SliceUnion[T comparable](slicePart1, slicePart2 []T, compare ...func(*T, *T
 	result := make([]T, 0)
 
 	// 处理 slicePart1 中的元素
-	for _, v := range slicePart1 {
-		if !SliceContains(result, v, compareFn) {
-			result = append(result, v)
+	for i := range slicePart1 {
+		if !SliceContains(result, slicePart1[i], compareFn) {
+			result = append(result, slicePart1[i])
 		}
 	}
 
 	// 处理 slicePart2 中的元素
-	for _, v := range slicePart2 {
-		if !SliceContains(result, v, compareFn) {
-			result = append(result, v)
+	for i := range slicePart2 {
+		if !SliceContains(result, slicePart2[i], compareFn) {
+			result = append(result, slicePart2[i])
 		}
 	}
 	return result
 }
 
-// SliceComplement 求两个切片的补集 全集中(sliceAll)不属于某个集合(slicePart)的元素所组成的集合
-func SliceComplement[T comparable](sliceAll, slicePart []T, compare ...func(*T, *T) bool) []T {
+// SliceComplement 求两个切片的补集 全集中(slicePart1)不属于某个集合(slicePart2)的元素所组成的集合
+func SliceComplement[T comparable](slicePart1, slicePart2 []T, compare ...func(*T, *T) bool) []T {
 	var compareFn func(*T, *T) bool
 	if len(compare) > 0 {
 		compareFn = compare[0]
 	}
 	result := make([]T, 0)
-
 	cache := make(map[T]struct{})
 	if compareFn == nil {
-		for _, v := range slicePart {
-			cache[v] = struct{}{}
+		for i := range slicePart2 {
+			cache[slicePart2[i]] = struct{}{}
 		}
-		for _, v := range sliceAll {
-			if _, found := cache[v]; !found {
-				result = append(result, v)
+		for i := range slicePart1 {
+			if _, found := cache[slicePart1[i]]; !found {
+				result = append(result, slicePart1[i])
 			}
 		}
 	} else {
-		for _, v := range sliceAll {
-			if !SliceContains(slicePart, v, compareFn) {
-				result = append(result, v)
+		for i := range slicePart1 {
+			if !SliceContains(slicePart2, slicePart1[i], compareFn) {
+				result = append(result, slicePart1[i])
 			}
 		}
 	}
@@ -126,23 +131,23 @@ func SliceComplement[T comparable](sliceAll, slicePart []T, compare ...func(*T, 
 }
 
 // SliceCollect 将切片按照指定的映射处理为一个新的切片
-func SliceCollect[T, R any](input []*T, mapFn func(*T) *R) []*R {
+func SliceCollect[T, R any](input []T, mapFn func(*T) R) []R {
 	if len(input) == 0 {
 		return nil
 	}
-	output := make([]*R, len(input))
-	for i, v := range input {
-		output[i] = mapFn(v)
+	output := make([]R, len(input))
+	for i, _ := range input {
+		output[i] = mapFn(&input[i])
 	}
 	return output
 }
 
 // SliceForeach 遍历切片并执行指定的函数
-func SliceForeach[T any](slice []*T, fn func(*T)) {
+func SliceForeach[T any](slice []T, fn func(*T)) {
 	if len(slice) == 0 {
 		return
 	}
-	for _, v := range slice {
-		fn(v)
+	for i, _ := range slice {
+		fn(&slice[i])
 	}
 }
