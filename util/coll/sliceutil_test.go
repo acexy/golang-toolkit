@@ -133,7 +133,7 @@ type Person struct {
 	Age  int
 }
 
-func TestSliceToMap(t *testing.T) {
+func TestSliceFilterToMap(t *testing.T) {
 	// 示例1: 整数切片
 	ints := []int{1, 2, 3, 4, 5, 6}
 	intMap := SliceFilterToMap(ints, func(t int) (string, int, bool) {
