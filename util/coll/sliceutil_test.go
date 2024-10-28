@@ -2,8 +2,8 @@ package coll
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/math/conversion"
-	"github.com/acexy/golang-toolkit/util/str"
+	"github.com/acexy/golang-toolkit/util/json"
+	"reflect"
 	"testing"
 )
 
@@ -120,44 +120,33 @@ type Person struct {
 	Age  int
 }
 
-func TestSliceToMap(t *testing.T) {
-	// 示例1: 整数切片
-	ints := []int{1, 2, 3, 4, 5, 6}
-	intMap := SliceToMap(ints, func(t *int) (*string, *int, bool) {
-		if *t > 3 {
-			str := conversion.FromInt(*t)
-			return &str, t, true
-		}
-		return nil, nil, false
-	})
-	fmt.Println(intMap)
-
-	// 示例2: 字符串切片
-	strings := []string{"apple", "banana", "cherry", "date"}
-	stringMap := SliceToMap(strings, func(t *string) (*string, *string, bool) {
-		if str.CharLength(*t) > 4 {
-			return t, t, true
-		}
-		return nil, nil, false
-	})
-	fmt.Println(stringMap)
-
-	// 定义一个结构体切片
-	people := []Person{
+// 定义测试函数
+func TestSliceCollect(t *testing.T) {
+	// 输入切片
+	input := []*Person{
 		{Name: "Alice", Age: 25},
 		{Name: "Bob", Age: 30},
 		{Name: "Charlie", Age: 35},
-		{Name: "Dave", Age: 40},
 	}
 
-	// 调用通用方法
-	personMap := SliceToMap(people, func(t *Person) (*string, *int, bool) {
-		if t.Age > 30 {
-			return &t.Name, &t.Age, true
-		}
-		return nil, nil, false
-	})
+	// 定义映射函数，用于从 Person 提取 Age
+	collect := func(p *Person) *int {
+		return &p.Age
+	}
 
-	// 打印结果
-	fmt.Println(personMap)
+	// 调用 SliceCollect
+	output := SliceCollect(input, collect)
+
+	// 期望输出结果
+	expected := []*int{&input[0].Age, &input[1].Age, &input[2].Age}
+
+	// 检查结果是否正确
+	if !reflect.DeepEqual(output, expected) {
+		t.Errorf("Expected %v, but got %v", expected, output)
+	}
+
+	input = nil
+	// 调用 SliceCollect
+	output = SliceCollect(input, collect)
+	fmt.Println(json.ToJsonFormat(output))
 }
