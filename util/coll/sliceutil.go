@@ -130,8 +130,8 @@ func SliceComplement[T comparable](slicePart1, slicePart2 []T, compare ...func(p
 	return result
 }
 
-// SliceToMap 将切片按照指定的过滤处理形成map
-func SliceToMap[T any, K comparable, V any](slice []T, filter func(T) (K, V, bool)) map[K]V {
+// SliceFilterToMap 将切片按照指定的过滤处理形成map
+func SliceFilterToMap[T any, K comparable, V any](slice []T, filter func(T) (K, V, bool)) map[K]V {
 	if len(slice) == 0 {
 		return nil
 	}

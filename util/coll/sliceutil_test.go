@@ -136,7 +136,7 @@ type Person struct {
 func TestSliceToMap(t *testing.T) {
 	// 示例1: 整数切片
 	ints := []int{1, 2, 3, 4, 5, 6}
-	intMap := SliceToMap(ints, func(t int) (string, int, bool) {
+	intMap := SliceFilterToMap(ints, func(t int) (string, int, bool) {
 		if t > 3 {
 			fromInt := conversion.FromInt(t)
 			return fromInt, t, true
@@ -147,7 +147,7 @@ func TestSliceToMap(t *testing.T) {
 
 	// 示例2: 字符串切片
 	strings := []string{"apple", "banana", "cherry", "date"}
-	stringMap := SliceToMap(strings, func(t string) (string, string, bool) {
+	stringMap := SliceFilterToMap(strings, func(t string) (string, string, bool) {
 		if str.CharLength(t) > 4 {
 			return t, t, true
 		}
@@ -164,7 +164,7 @@ func TestSliceToMap(t *testing.T) {
 	}
 
 	// 调用通用方法
-	personMap := SliceToMap(people, func(t Person) (string, int, bool) {
+	personMap := SliceFilterToMap(people, func(t Person) (string, int, bool) {
 		if t.Age > 30 {
 			return t.Name, t.Age, true
 		}
