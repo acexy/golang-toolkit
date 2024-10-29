@@ -39,7 +39,7 @@ func TestIsCamelCase(t *testing.T) {
 }
 
 func TestCamelToSnake(t *testing.T) {
-	testCases := []string{"camelCase", "CamelCase", "simpleTestExample", "OneMoreExample"}
+	testCases := []string{"camelCase", "CamelCase", "simpleTestExample", "OneMoreExample", "like"}
 
 	for _, testCase := range testCases {
 		fmt.Printf("%s -> %s\n", testCase, CamelToSnake(testCase))
