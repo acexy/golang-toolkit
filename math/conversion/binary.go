@@ -72,8 +72,8 @@ func (b *Binary) To2Hex() (string, error) {
 	return appendLeftZero(b.ToHexValue(), 2), nil
 }
 
-// NewFormBytes 通过bytes转换
-func NewFormBytes(bytes []byte) *Binaries {
+// NewFromBytes 通过bytes转换
+func NewFromBytes(bytes []byte) *Binaries {
 	bs := make([]*Binary, len(bytes))
 	for i, v := range bytes {
 		bs[i] = NewFromByte(v)
