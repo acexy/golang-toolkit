@@ -29,3 +29,41 @@ func TestHasText(t *testing.T) {
 	fmt.Println(HasText("   a  "))
 	fmt.Println(HasText("     "))
 }
+
+func TestIsCamelCase(t *testing.T) {
+	// 测试字符串
+	testCases := []string{"camelCase", "PascalCase", "snake_case", "camel_case", "camelCase123", "camelCaseExample"}
+	for _, testCase := range testCases {
+		fmt.Printf("%s: %v\n", testCase, IsCamelCase(testCase))
+	}
+}
+
+func TestCamelToSnake(t *testing.T) {
+	testCases := []string{"camelCase", "CamelCase", "simpleTestExample", "OneMoreExample", "like"}
+
+	for _, testCase := range testCases {
+		fmt.Printf("%s -> %s\n", testCase, CamelToSnake(testCase))
+	}
+}
+
+func TestSnakeToCamel(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"", ""},                      // 空字符串
+		{"hello", "hello"},            // 单词
+		{"hello_world", "helloWorld"}, // 下划线分隔的小写
+		{"snake_case_example", "snakeCaseExample"},          // 多个单词
+		{"_leading_underscore", "leadingUnderscore"},        // 前置下划线
+		{"trailing_underscore_", "trailingUnderscore"},      // 后置下划线
+		{"mixed_case_example_TEST", "mixedCaseExampleTEST"}, // 混合大小写
+	}
+
+	for _, test := range tests {
+		result := SnakeToCamel(test.input)
+		if result != test.expected {
+			t.Errorf("SnakeToCamel(%q) = %q; want %q", test.input, result, test.expected)
+		}
+	}
+}

@@ -22,13 +22,13 @@ func TestSliceContains(t *testing.T) {
 	fmt.Println(SliceContains(stringSlice, "banana")) // 输出: true
 	fmt.Println(SliceContains(stringSlice, "grape"))  // 输出: false
 
-	peoples := []people{
+	peoples := []*people{
 		{name: "张三", age: 28},
 		{name: "李四", age: 20},
 		{name: "王五", age: 22},
 		{name: "赵六", age: 20},
 	}
-	fmt.Println(SliceContains(peoples, people{name: "张三", age: 28}, func(a, b people) bool {
+	fmt.Println(SliceContains(peoples, &people{name: "张三", age: 28}, func(a, b *people) bool {
 		return a.name == b.name && a.age == b.age
 	}))
 	list := []string{"US", ""}
@@ -133,10 +133,10 @@ type Person struct {
 	Age  int
 }
 
-func TestSliceToMap(t *testing.T) {
+func TestSliceFilterToMap(t *testing.T) {
 	// 示例1: 整数切片
 	ints := []int{1, 2, 3, 4, 5, 6}
-	intMap := SliceToMap(ints, func(t int) (string, int, bool) {
+	intMap := SliceFilterToMap(ints, func(t int) (string, int, bool) {
 		if t > 3 {
 			fromInt := conversion.FromInt(t)
 			return fromInt, t, true
@@ -147,7 +147,7 @@ func TestSliceToMap(t *testing.T) {
 
 	// 示例2: 字符串切片
 	strings := []string{"apple", "banana", "cherry", "date"}
-	stringMap := SliceToMap(strings, func(t string) (string, string, bool) {
+	stringMap := SliceFilterToMap(strings, func(t string) (string, string, bool) {
 		if str.CharLength(t) > 4 {
 			return t, t, true
 		}
@@ -156,7 +156,7 @@ func TestSliceToMap(t *testing.T) {
 	fmt.Println(stringMap)
 
 	// 定义一个结构体切片
-	people := []Person{
+	people := []*Person{
 		{Name: "Alice", Age: 25},
 		{Name: "Bob", Age: 30},
 		{Name: "Charlie", Age: 35},
@@ -164,7 +164,7 @@ func TestSliceToMap(t *testing.T) {
 	}
 
 	// 调用通用方法
-	personMap := SliceToMap(people, func(t Person) (string, int, bool) {
+	personMap := SliceFilterToMap(people, func(t *Person) (string, int, bool) {
 		if t.Age > 30 {
 			return t.Name, t.Age, true
 		}

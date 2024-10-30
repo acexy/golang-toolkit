@@ -1,6 +1,7 @@
 package str
 
 import (
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -71,4 +72,42 @@ func LowFirstChar(value string) string {
 	runes := []rune(value)
 	runes[0] = unicode.ToLower(runes[0])
 	return string(runes)
+}
+
+func UpFirstChar(value string) string {
+	if value == "" {
+		return ""
+	}
+	runes := []rune(value)
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
+}
+
+// IsCamelCase 判断是否是驼峰格式
+func IsCamelCase(s string) bool {
+	camelCasePattern := `^[a-z]+(?:[A-Z][a-z0-9]*)*$`
+	re := regexp.MustCompile(camelCasePattern)
+	return re.MatchString(s)
+}
+
+// CamelToSnake 将驼峰格式转换为下划线格式
+func CamelToSnake(s string) string {
+	re := regexp.MustCompile(`([A-Z])`)
+	snake := re.ReplaceAllString(s, `_$1`)
+	return strings.ToLower(snake)
+}
+
+// IsSnakeCase 是否为下划线格式
+func IsSnakeCase(s string) bool {
+	re := regexp.MustCompile(`^[a-z0-9]+(_[a-z0-9]+)*$`)
+	return re.MatchString(s)
+}
+
+// SnakeToCamel 下划线转驼峰
+func SnakeToCamel(s string) string {
+	parts := strings.Split(s, "_")
+	for i := 0; i < len(parts); i++ {
+		parts[i] = UpFirstChar(parts[i])
+	}
+	return LowFirstChar(strings.Join(parts, ""))
 }

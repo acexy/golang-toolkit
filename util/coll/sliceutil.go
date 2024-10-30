@@ -2,7 +2,6 @@ package coll
 
 // SliceContains 检查指定的元素是否存在切片中
 func SliceContains[T comparable](slice []T, target T, compare ...func(T, T) bool) bool {
-	// compare 比较函数，如果为空 则直接使用值比较 func(*T, *T) 第一个参数为切片中元素， 第二个参数为目标元素
 	for i := range slice {
 		if len(compare) > 0 && compare[0] != nil {
 			if compare[0](slice[i], target) {
@@ -130,8 +129,8 @@ func SliceComplement[T comparable](slicePart1, slicePart2 []T, compare ...func(p
 	return result
 }
 
-// SliceToMap 将切片按照指定的过滤处理形成map
-func SliceToMap[T any, K comparable, V any](slice []T, filter func(T) (K, V, bool)) map[K]V {
+// SliceFilterToMap 将切片按照指定的过滤处理形成map
+func SliceFilterToMap[T any, K comparable, V any](slice []T, filter func(T) (K, V, bool)) map[K]V {
 	if len(slice) == 0 {
 		return nil
 	}
@@ -145,7 +144,7 @@ func SliceToMap[T any, K comparable, V any](slice []T, filter func(T) (K, V, boo
 	return result
 }
 
-// SliceCollect 将切片按照指定的映射处理为一个新的切片
+// SliceCollect 将切片按照指定的采集映射方法处理为一个新的切片
 func SliceCollect[T, R any](input []T, mapFn func(T) R) []R {
 	if len(input) == 0 {
 		return nil
