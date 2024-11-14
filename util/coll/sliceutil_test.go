@@ -197,3 +197,13 @@ func TestSliceCollect(t *testing.T) {
 	//output = SliceCollect(input, collect)
 	//fmt.Println(json.ToJsonFormat(output))
 }
+
+func TestSliceDistinct(t *testing.T) {
+	input := []Person{
+		{Name: "Alice", Age: 25},
+		{Name: "Bob", Age: 30},
+		{Name: "Charlie", Age: 35},
+		{Name: "Charlie", Age: 35},
+	}
+	fmt.Println(SliceDistinct(input))
+}

@@ -14,3 +14,15 @@ func MapFirst[K comparable, V any](m map[K]V) (K, V) {
 	}
 	return key, value
 }
+
+// MapKeyToSlice 将map的key转换为slice
+func MapKeyToSlice[K comparable, V any](m map[K]V) []K {
+	if len(m) == 0 {
+		return nil
+	}
+	result := make([]K, 0)
+	for k, _ := range m {
+		result = append(result, k)
+	}
+	return result
+}
