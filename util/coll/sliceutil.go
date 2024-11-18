@@ -165,3 +165,14 @@ func SliceForeach[T any](slice []T, fn func(T)) {
 		fn(slice[i])
 	}
 }
+
+// SliceDistinct 去除切片的重复元素
+func SliceDistinct[T comparable](slice []T) []T {
+	if len(slice) == 0 {
+		return nil
+	}
+	mapValue := SliceFilterToMap(slice, func(ele T) (T, any, bool) {
+		return ele, struct{}{}, true
+	})
+	return MapKeyToSlice(mapValue)
+}
