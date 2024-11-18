@@ -20,6 +20,11 @@ func TestMapFirst(t *testing.T) {
 	fmt.Printf("取出的元素: key=%v, value=%v\n", key, value)
 }
 
+type User struct {
+	Name string
+	Age  int
+}
+
 func TestMapKeyToSlice(t *testing.T) {
 	exampleMap := map[string]int{
 		"one":   1,
@@ -30,4 +35,12 @@ func TestMapKeyToSlice(t *testing.T) {
 	}
 	keys := MapKeyToSlice(exampleMap)
 	fmt.Printf("取出的元素: %v\n", keys)
+	users := map[User]int{
+		User{"one", 1}: 0,
+		User{"two", 1}: 0,
+		User{"two", 2}: 0,
+		User{"two", 1}: 0,
+	}
+	userSeys := MapKeyToSlice(users)
+	fmt.Printf("取出的元素: %v\n", userSeys)
 }

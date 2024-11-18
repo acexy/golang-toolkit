@@ -11,6 +11,7 @@ func MapFirst[K comparable, V any](m map[K]V) (K, V) {
 	for k, v := range m {
 		key = k
 		value = v
+		return key, value
 	}
 	return key, value
 }
