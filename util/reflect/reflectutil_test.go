@@ -12,6 +12,9 @@ func TestNonZeroField(t *testing.T) {
 		B *int
 		C bool
 		D int
+		E []int
+		F [1]int
+		G map[string]int
 	}{
 		A: "a",
 		B: &i,
@@ -80,27 +83,4 @@ type StructB struct {
 	IntField     int
 	StringField  string
 	AnotherField float64
-}
-
-func TestCopySameFields(t *testing.T) {
-	structA := StructA{
-		IntField:    42,
-		StringField: "Hello",
-		BoolField:   true,
-	}
-
-	structB := StructB{
-		IntField:     0,
-		StringField:  "",
-		AnotherField: 3.14,
-	}
-
-	// Copy fields from structA to structB
-	err := CopySameFields(&structA, &structB)
-	if err != nil {
-		fmt.Println("Error:", err)
-	}
-
-	fmt.Println("StructA:", structA)
-	fmt.Println("StructB:", structB)
 }

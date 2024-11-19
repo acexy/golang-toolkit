@@ -27,3 +27,15 @@ func MapKeyToSlice[K comparable, V any](m map[K]V) []K {
 	}
 	return result
 }
+
+// MapToSlice 将map转换为slice
+func MapToSlice[K comparable, V, R any](m map[K]V, mapFn func(K, V) R) []R {
+	if len(m) == 0 {
+		return nil
+	}
+	result := make([]R, 0)
+	for k, v := range m {
+		result = append(result, mapFn(k, v))
+	}
+	return result
+}

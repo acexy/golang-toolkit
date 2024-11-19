@@ -2,6 +2,7 @@ package coll
 
 import (
 	"fmt"
+	"github.com/acexy/golang-toolkit/util/json"
 	"testing"
 )
 
@@ -43,4 +44,23 @@ func TestMapKeyToSlice(t *testing.T) {
 	}
 	userSeys := MapKeyToSlice(users)
 	fmt.Printf("取出的元素: %v\n", userSeys)
+}
+
+type U struct {
+	K string
+	V int
+}
+
+func TestMapToSlice(t *testing.T) {
+	exampleMap := map[string]int{
+		"one":   1,
+		"two":   2,
+		"three": 3,
+		"four":  4,
+		"five":  5,
+	}
+	result := MapToSlice(exampleMap, func(key string, value int) U {
+		return U{key, value}
+	})
+	fmt.Printf("取出的元素: %v\n", json.ToJson(result))
 }

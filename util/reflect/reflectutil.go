@@ -19,6 +19,10 @@ func NonZeroField(value interface{}) ([]string, error) {
 
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
+		// 跳过未导出的字段
+		if !field.CanInterface() {
+			continue
+		}
 		if !isZeroValue(field) {
 			fieldName := typ.Field(i).Name
 			nonZeroFields = append(nonZeroFields, fieldName)
@@ -41,6 +45,10 @@ func NonZeroFieldValue(value interface{}) (map[string]interface{}, error) {
 
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
+		// 跳过未导出的字段
+		if !field.CanInterface() {
+			continue
+		}
 		if !isZeroValue(field) {
 			fieldName := typ.Field(i).Name
 			nonZeroValue[fieldName] = field.Interface()
@@ -108,5 +116,18 @@ func deepCopyRecursive(src, dst reflect.Value) {
 }
 
 func isZeroValue(v reflect.Value) bool {
-	return v.Interface() == reflect.Zero(v.Type()).Interface()
+	if !v.IsValid() || !v.CanInterface() {
+		return true // 无效或不可导出的字段视为零值
+	}
+	// 根据类型检查零值
+	zero := reflect.Zero(v.Type())
+	switch v.Kind() {
+	case reflect.Slice, reflect.Array, reflect.Map, reflect.Chan:
+		return v.Len() == 0 // 切片、数组、映射或通道的零值为长度为0
+	case reflect.Ptr, reflect.Interface:
+		return v.IsNil() // 指针和接口零值为nil
+	default:
+		// 对于其他类型，使用通用比较
+		return reflect.DeepEqual(v.Interface(), zero.Interface())
+	}
 }
