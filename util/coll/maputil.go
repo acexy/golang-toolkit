@@ -1,6 +1,6 @@
 package coll
 
-// MapFirst 从map中抽取第一个元素，由于map的无序性，所以这里返回的结果并不确定
+// MapFirst 从map中抽取第一个元素
 func MapFirst[K comparable, V any](m map[K]V) (K, V) {
 	var key K
 	var value V
@@ -24,6 +24,17 @@ func MapKeyToSlice[K comparable, V any](m map[K]V) []K {
 	result := make([]K, 0)
 	for k, _ := range m {
 		result = append(result, k)
+	}
+	return result
+}
+
+func MapValueToSlice[K comparable, V any](m map[K]V) []V {
+	if len(m) == 0 {
+		return nil
+	}
+	result := make([]V, 0)
+	for _, v := range m {
+		result = append(result, v)
 	}
 	return result
 }
