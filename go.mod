@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/allegro/bigcache/v3 v3.1.0
-	github.com/go-resty/resty/v2 v2.16.0
+	github.com/go-resty/resty/v2 v2.16.1
 	github.com/google/go-querystring v1.1.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/sirupsen/logrus v1.9.3
