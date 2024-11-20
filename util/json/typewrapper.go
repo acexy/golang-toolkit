@@ -40,6 +40,9 @@ func GlobalWrapperSetting(opt ...SetWrapperOption) {
 }
 
 func Time2Timestamp(time time.Time) ([]byte, error) {
+	if time.IsZero() {
+		return ToJsonBytesError(0)
+	}
 	var timestamp int64
 	if defaultOptions.TimestampType == TimestampTypeSecond {
 		timestamp = time.Unix()

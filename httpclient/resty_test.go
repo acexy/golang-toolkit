@@ -59,14 +59,14 @@ func TestGet(t *testing.T) {
 		return
 	}
 	fmt.Println(resp.String())
-	fmt.Println(json.ToJsonString(s))
+	fmt.Println(json.ToJson(s))
 
 	resp, err = req.Get("http://t.weather.sojson.com/api/weather/city/101030100")
 	if err != nil {
 		return
 	}
 	fmt.Println(resp.String())
-	fmt.Println(json.ToJsonString(s))
+	fmt.Println(json.ToJson(s))
 }
 
 func TestProxy(t *testing.T) {
