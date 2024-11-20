@@ -28,6 +28,7 @@ func MapKeyToSlice[K comparable, V any](m map[K]V) []K {
 	return result
 }
 
+// MapValueToSlice 将map的value转换为slice
 func MapValueToSlice[K comparable, V any](m map[K]V) []V {
 	if len(m) == 0 {
 		return nil
