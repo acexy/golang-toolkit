@@ -13,6 +13,7 @@ require (
 )
 
 require (
+	github.com/petermattis/goid v0.0.0-20241025130422-66cb2e6d7274 // indirect
 	golang.org/x/net v0.31.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
