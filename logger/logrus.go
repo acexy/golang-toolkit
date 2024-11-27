@@ -15,7 +15,7 @@ var (
 	callerPrettyfier = func(frame *runtime.Frame) (function string, file string) {
 		fileName := path.Base(frame.File)
 		if sys.IsEnabledTraceIdLocal() {
-			return frame.Function, fmt.Sprintf(" [%s] %s:%v", sys.GetTraceId(), fileName, frame.Line)
+			return frame.Function, fmt.Sprintf("[%s] %s:%v", sys.GetTraceId(), fileName, frame.Line)
 		}
 		return frame.Function, fmt.Sprintf("%s:%v", fileName, frame.Line)
 	}
