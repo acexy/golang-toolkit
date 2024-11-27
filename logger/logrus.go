@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"github.com/acexy/golang-toolkit/sys"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
@@ -13,7 +14,10 @@ import (
 var (
 	callerPrettyfier = func(frame *runtime.Frame) (function string, file string) {
 		fileName := path.Base(frame.File)
-		return frame.Function, fileName + fmt.Sprintf(":%v", frame.Line)
+		if sys.IsEnabledTraceIdLocal() {
+			return frame.Function, fmt.Sprintf(" [%s] %s:%v", sys.GetTraceId(), fileName, frame.Line)
+		}
+		return frame.Function, fmt.Sprintf("%s:%v", fileName, frame.Line)
 	}
 	consoleLogger *logrus.Logger
 	fileLogger    *logrus.Logger
