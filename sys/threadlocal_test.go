@@ -18,11 +18,11 @@ func f1(local *Local[string]) {
 }
 
 func TestEnableTraceIdLocal(t *testing.T) {
-	EnableTraceIdLocal(nil)
-	fmt.Println(GetTraceId())
+	EnableLocalTraceId(nil)
+	fmt.Println(GetLocalTraceId())
 	f2()
 }
 
 func f2() {
-	fmt.Println(GetTraceId())
+	fmt.Println(GetLocalTraceId())
 }

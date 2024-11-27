@@ -55,8 +55,8 @@ func NewThreadLocal[T any](supplier ...Supplier[T]) *Local[T] {
 
 // ======= 默认Local 场景处理器
 
-// EnableTraceIdLocal 激活TraceIdLocal处理器 如果不指定supplier则使用默认策略 uuid
-func EnableTraceIdLocal(supplier Supplier[string]) {
+// EnableLocalTraceId 激活TraceIdLocal处理器 如果不指定supplier则使用默认策略 uuid
+func EnableLocalTraceId(supplier Supplier[string]) {
 	traceIdLocalOnce.Do(func() {
 		if supplier == nil {
 			supplier = func() string {
@@ -67,13 +67,13 @@ func EnableTraceIdLocal(supplier Supplier[string]) {
 	})
 }
 
-// IsEnabledTraceIdLocal 判断是否启用了TraceIdLocal处理器
-func IsEnabledTraceIdLocal() bool {
+// IsEnabledLocalTraceId 判断是否启用了TraceIdLocal处理器
+func IsEnabledLocalTraceId() bool {
 	return traceIdLocal != nil
 }
 
-// GetTraceId 获取当前线程的TraceId
-func GetTraceId() string {
+// GetLocalTraceId 获取当前线程的TraceId
+func GetLocalTraceId() string {
 	if traceIdLocal == nil {
 	}
 	return traceIdLocal.Get()

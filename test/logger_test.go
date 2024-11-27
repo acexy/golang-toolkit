@@ -7,6 +7,6 @@ import (
 )
 
 func TestWithTraceId(t *testing.T) {
-	sys.EnableTraceIdLocal(nil)
+	sys.EnableLocalTraceId(nil)
 	logger.Logrus().Info("nice")
 }
