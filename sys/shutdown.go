@@ -2,7 +2,6 @@ package sys
 
 import (
 	"context"
-	"github.com/acexy/golang-toolkit/logger"
 	"os"
 	"os/signal"
 	"syscall"
@@ -53,7 +52,6 @@ func ShutdownCallbackDeadline(f func(), deadline time.Duration, sig ...os.Signal
 	}()
 	select {
 	case <-ctx.Done():
-		logger.Logrus().Warningln("shutdown callback timeout")
 	case <-done:
 	}
 }

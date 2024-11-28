@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"github.com/acexy/golang-toolkit/sys"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
@@ -11,9 +12,13 @@ import (
 )
 
 var (
-	callerPrettyfier = func(frame *runtime.Frame) (function string, file string) {
+	callerPrettifier = func(frame *runtime.Frame) (function string, file string) {
 		fileName := path.Base(frame.File)
-		return frame.Function, fileName + fmt.Sprintf(":%v", frame.Line)
+		funcName := path.Base(frame.Function)
+		if sys.IsEnabledLocalTraceId() {
+			return funcName, fmt.Sprintf("[%s] %s:%v", sys.GetLocalTraceId(), fileName, frame.Line)
+		}
+		return funcName, fmt.Sprintf("%s:%v", fileName, frame.Line)
 	}
 	consoleLogger *logrus.Logger
 	fileLogger    *logrus.Logger
@@ -41,7 +46,7 @@ func enableConsole(level Level, disableColor bool) *logrus.Logger {
 	logger.SetLevel(logrus.Level(level))
 	format := &logrus.TextFormatter{
 		FullTimestamp:    true,
-		CallerPrettyfier: callerPrettyfier,
+		CallerPrettyfier: callerPrettifier,
 	}
 	if disableColor {
 		format.DisableColors = true
@@ -84,7 +89,7 @@ func EnableFileWithJson(level Level, fileConfig ...*lumberjack.Logger) {
 	fileSet = true
 	enableFile(level, &logrus.JSONFormatter{
 		DataKey:          "data",
-		CallerPrettyfier: callerPrettyfier,
+		CallerPrettyfier: callerPrettifier,
 	}, fileConfig...)
 	if consoleLogger != nil {
 		consoleLogger.ReportCaller = false
@@ -104,7 +109,7 @@ func EnableFileWithText(level Level, fileConfig ...*lumberjack.Logger) {
 	enableFile(level, &logrus.TextFormatter{
 		DisableColors:    true,
 		FullTimestamp:    true,
-		CallerPrettyfier: callerPrettyfier,
+		CallerPrettyfier: callerPrettifier,
 	}, fileConfig...)
 	if consoleLogger != nil {
 		consoleLogger.ReportCaller = false
@@ -129,7 +134,7 @@ type autoConsole struct {
 }
 
 func (h *autoConsole) Fire(entry *logrus.Entry) error {
-	fn, file := callerPrettyfier(entry.Caller)
+	fn, file := callerPrettifier(entry.Caller)
 	consoleLogger.WithFields(entry.Data).Logln(entry.Level, file, fn, entry.Message)
 	return nil
 }

@@ -13,3 +13,7 @@ func TestRandRangeInt(t *testing.T) {
 func TestRandString(t *testing.T) {
 	fmt.Println(RandString(5))
 }
+
+func TestUUID(t *testing.T) {
+	fmt.Println(UUID())
+}

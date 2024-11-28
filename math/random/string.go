@@ -1,5 +1,10 @@
 package random
 
+import (
+	"github.com/google/uuid"
+	"strings"
+)
+
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const lettersLen = 62
 
@@ -11,4 +16,9 @@ func RandString(length int) string {
 		result[i] = letters[index]
 	}
 	return string(result)
+}
+
+// UUID 生成UUID
+func UUID() string {
+	return strings.ReplaceAll(uuid.NewString(), "-", "")
 }
