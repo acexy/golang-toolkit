@@ -26,6 +26,21 @@ func SliceAnyContains[T comparable](slice []T, target any, compare func(ele T, t
 	return false
 }
 
+// SliceFilterOne 筛选切片 通过函数筛选出符合要求的第一个元素
+func SliceFilterOne[T any](slice []T, filter func(item T) bool) (T, bool) {
+	var t T
+	var exist bool
+	for i := range slice {
+		flag := filter(slice[i])
+		if flag {
+			t = slice[i]
+			exist = true
+			break
+		}
+	}
+	return t, exist
+}
+
 // SliceFilter 筛选切片 通过函数筛选出符合要求的元素
 func SliceFilter[T any](slice []T, filter func(item T) bool) []T {
 	result := make([]T, 0)

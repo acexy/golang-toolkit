@@ -55,7 +55,16 @@ func TestSliceFilter(t *testing.T) {
 		{name: "赵六", age: 20},
 	}
 
+	peoplesPt := []*people{
+		{name: "张三", age: 28},
+		{name: "李四", age: 20},
+		{name: "王五", age: 22},
+		{name: "赵六", age: 20},
+	}
 	fmt.Println(SliceFilter(peoples, func(item people) bool {
+		return item.age == 20
+	}))
+	fmt.Println(SliceFilterOne(peoplesPt, func(item *people) bool {
 		return item.age == 20
 	}))
 }
