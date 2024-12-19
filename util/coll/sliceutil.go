@@ -150,8 +150,8 @@ func SliceFilterToMap[T any, K comparable, V any](slice []T, filter func(T) (K, 
 		return nil
 	}
 	result := make(map[K]V, len(slice))
-	for _, item := range slice {
-		key, value, ok := filter(item)
+	for i := range slice {
+		key, value, ok := filter(slice[i])
 		if ok {
 			result[key] = value
 		}

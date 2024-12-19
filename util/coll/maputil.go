@@ -34,8 +34,8 @@ func MapValueToSlice[K comparable, V any](m map[K]V) []V {
 		return nil
 	}
 	result := make([]V, 0)
-	for _, v := range m {
-		result = append(result, v)
+	for i := range m {
+		result = append(result, m[i])
 	}
 	return result
 }
