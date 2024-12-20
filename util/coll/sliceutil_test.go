@@ -44,11 +44,11 @@ func TestSliceAnyContains(t *testing.T) {
 		{name: "王五", age: 22},
 		{name: "赵六", age: 20},
 	}
-	fmt.Println(SliceAnyContains(peoples, "张三", func(a people, any any) bool {
-		return a.name == (any).(string)
+	fmt.Println(SliceAnyContains(peoples, func(a people) bool {
+		return a.name == "张三"
 	}))
-	fmt.Println(SliceAnyIndexOf(peoples, "赵六", func(a people, any any) bool {
-		return a.name == (any).(string)
+	fmt.Println(SliceAnyIndexOf(peoples, func(a people) bool {
+		return a.name == "张三"
 	}))
 }
 

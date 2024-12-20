@@ -33,9 +33,9 @@ func SliceIndexOf[T comparable](slice []T, target T, compare ...func(T, T) bool)
 }
 
 // SliceAnyContains 检查指定的元素是否存在切片中，元素可以是任意类型
-func SliceAnyContains[T comparable](slice []T, target any, compare func(ele T, target any) bool) bool {
+func SliceAnyContains[T comparable](slice []T, compare func(ele T) bool) bool {
 	for i := range slice {
-		if compare(slice[i], target) {
+		if compare(slice[i]) {
 			return true
 		}
 	}
@@ -43,9 +43,9 @@ func SliceAnyContains[T comparable](slice []T, target any, compare func(ele T, t
 }
 
 // SliceAnyIndexOf 获取指定元素在切片中的索引，如果元素不存在则返回-1
-func SliceAnyIndexOf[T comparable](slice []T, target any, compare func(ele T, target any) bool) int {
+func SliceAnyIndexOf[T comparable](slice []T, compare func(ele T) bool) int {
 	for i := range slice {
-		if compare(slice[i], target) {
+		if compare(slice[i]) {
 			return i
 		}
 	}
