@@ -59,8 +59,11 @@ func TestMapToSlice(t *testing.T) {
 		"four":  4,
 		"five":  5,
 	}
-	result := MapToSlice(exampleMap, func(key string, value int) U {
-		return U{key, value}
+	result := MapFilterToSlice(exampleMap, func(key string, value int) (U, bool) {
+		if value > 3 {
+			return U{}, false
+		}
+		return U{key, value}, true
 	})
 	fmt.Printf("取出的元素: %v\n", json.ToJson(result))
 }

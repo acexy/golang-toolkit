@@ -69,7 +69,7 @@ func TestSliceFilter(t *testing.T) {
 	fmt.Println(SliceFilter(peoples, func(item people) bool {
 		return item.age == 20
 	}))
-	fmt.Println(SliceFilterOne(peoplesPt, func(item *people) bool {
+	fmt.Println(SliceFilterFirstOne(peoplesPt, func(item *people) bool {
 		return item.age == 20
 	}))
 }

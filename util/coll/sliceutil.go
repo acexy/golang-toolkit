@@ -52,8 +52,8 @@ func SliceAnyIndexOf[T comparable](slice []T, compare func(ele T) bool) int {
 	return -1
 }
 
-// SliceFilterOne 筛选切片 通过函数筛选出符合要求的第一个元素
-func SliceFilterOne[T any](slice []T, filter func(item T) bool) (T, bool) {
+// SliceFilterFirstOne 筛选切片 通过函数筛选出符合要求的第一个元素
+func SliceFilterFirstOne[T any](slice []T, filter func(item T) bool) (T, bool) {
 	var t T
 	var exist bool
 	for i := range slice {
@@ -193,6 +193,21 @@ func SliceCollect[T, R any](input []T, mapFn func(T) R) []R {
 	output := make([]R, len(input))
 	for i := range input {
 		output[i] = mapFn(input[i])
+	}
+	return output
+}
+
+// SliceFilterCollect 将切片按照指定的过滤条件采集映射方法处理为一个新的切片
+func SliceFilterCollect[T, R any](input []T, mapFn func(T) (R, bool)) []R {
+	if len(input) == 0 {
+		return nil
+	}
+	output := make([]R, 0)
+	for i := range input {
+		v, f := mapFn(input[i])
+		if f {
+			output = append(output, v)
+		}
 	}
 	return output
 }
