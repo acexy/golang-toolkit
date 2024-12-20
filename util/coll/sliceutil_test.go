@@ -17,8 +17,10 @@ func TestSliceContains(t *testing.T) {
 	intSlice := []int{1, 2, 3, 4, 5}
 	stringSlice := []string{"apple", "banana", "cherry"}
 
-	fmt.Println(SliceContains(intSlice, 3))           // 输出: true
-	fmt.Println(SliceContains(intSlice, 6))           // 输出: false
+	fmt.Println(SliceContains(intSlice, 3)) // 输出: true
+	fmt.Println(SliceIndexOf(intSlice, 3))
+	fmt.Println(SliceContains(intSlice, 6)) // 输出: false
+	fmt.Println(SliceIndexOf(intSlice, 6))
 	fmt.Println(SliceContains(stringSlice, "banana")) // 输出: true
 	fmt.Println(SliceContains(stringSlice, "grape"))  // 输出: false
 
@@ -43,6 +45,9 @@ func TestSliceAnyContains(t *testing.T) {
 		{name: "赵六", age: 20},
 	}
 	fmt.Println(SliceAnyContains(peoples, "张三", func(a people, any any) bool {
+		return a.name == (any).(string)
+	}))
+	fmt.Println(SliceAnyIndexOf(peoples, "赵六", func(a people, any any) bool {
 		return a.name == (any).(string)
 	}))
 }
