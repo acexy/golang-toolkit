@@ -171,13 +171,25 @@ func SliceCollect[T, R any](input []T, mapFn func(T) R) []R {
 	return output
 }
 
-// SliceForeach 遍历切片并执行指定的函数
-func SliceForeach[T any](slice []T, fn func(T)) {
+// SliceForeachAll 遍历所有切片并执行指定的函数
+func SliceForeachAll[T any](slice []T, fn func(T)) {
 	if len(slice) == 0 {
 		return
 	}
 	for i := range slice {
 		fn(slice[i])
+	}
+}
+
+// SliceForeach 遍历切片并执行指定的函数，如果返回false则停止遍历
+func SliceForeach[T any](slice []T, fn func(T) bool) {
+	if len(slice) == 0 {
+		return
+	}
+	for i := range slice {
+		if !fn(slice[i]) {
+			return
+		}
 	}
 }
 
