@@ -17,8 +17,10 @@ func TestSliceContains(t *testing.T) {
 	intSlice := []int{1, 2, 3, 4, 5}
 	stringSlice := []string{"apple", "banana", "cherry"}
 
-	fmt.Println(SliceContains(intSlice, 3))           // 输出: true
-	fmt.Println(SliceContains(intSlice, 6))           // 输出: false
+	fmt.Println(SliceContains(intSlice, 3)) // 输出: true
+	fmt.Println(SliceIndexOf(intSlice, 3))
+	fmt.Println(SliceContains(intSlice, 6)) // 输出: false
+	fmt.Println(SliceIndexOf(intSlice, 6))
 	fmt.Println(SliceContains(stringSlice, "banana")) // 输出: true
 	fmt.Println(SliceContains(stringSlice, "grape"))  // 输出: false
 
@@ -42,8 +44,11 @@ func TestSliceAnyContains(t *testing.T) {
 		{name: "王五", age: 22},
 		{name: "赵六", age: 20},
 	}
-	fmt.Println(SliceAnyContains(peoples, "张三", func(a people, any any) bool {
-		return a.name == (any).(string)
+	fmt.Println(SliceAnyContains(peoples, func(a people) bool {
+		return a.name == "张三"
+	}))
+	fmt.Println(SliceAnyIndexOf(peoples, func(a people) bool {
+		return a.name == "张三"
 	}))
 }
 
@@ -55,7 +60,16 @@ func TestSliceFilter(t *testing.T) {
 		{name: "赵六", age: 20},
 	}
 
+	peoplesPt := []*people{
+		{name: "张三", age: 28},
+		{name: "李四", age: 20},
+		{name: "王五", age: 22},
+		{name: "赵六", age: 20},
+	}
 	fmt.Println(SliceFilter(peoples, func(item people) bool {
+		return item.age == 20
+	}))
+	fmt.Println(SliceFilterFirstOne(peoplesPt, func(item *people) bool {
 		return item.age == 20
 	}))
 }

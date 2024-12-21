@@ -16,14 +16,55 @@ func SliceContains[T comparable](slice []T, target T, compare ...func(T, T) bool
 	return false
 }
 
-// SliceAnyContains 检查指定的元素是否存在切片中，元素可以是任意类型
-func SliceAnyContains[T comparable](slice []T, target any, compare func(ele T, target any) bool) bool {
+// SliceIndexOf 获取指定元素在切片中的索引，如果元素不存在则返回-1
+func SliceIndexOf[T comparable](slice []T, target T, compare ...func(T, T) bool) int {
 	for i := range slice {
-		if compare(slice[i], target) {
+		if len(compare) > 0 && compare[0] != nil {
+			if compare[0](slice[i], target) {
+				return i
+			}
+		} else {
+			if slice[i] == target {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+// SliceAnyContains 检查指定的元素是否存在切片中，元素可以是任意类型
+func SliceAnyContains[T comparable](slice []T, compare func(ele T) bool) bool {
+	for i := range slice {
+		if compare(slice[i]) {
 			return true
 		}
 	}
 	return false
+}
+
+// SliceAnyIndexOf 获取指定元素在切片中的索引，如果元素不存在则返回-1
+func SliceAnyIndexOf[T comparable](slice []T, compare func(ele T) bool) int {
+	for i := range slice {
+		if compare(slice[i]) {
+			return i
+		}
+	}
+	return -1
+}
+
+// SliceFilterFirstOne 筛选切片 通过函数筛选出符合要求的第一个元素
+func SliceFilterFirstOne[T any](slice []T, filter func(item T) bool) (T, bool) {
+	var t T
+	var exist bool
+	for i := range slice {
+		flag := filter(slice[i])
+		if flag {
+			t = slice[i]
+			exist = true
+			break
+		}
+	}
+	return t, exist
 }
 
 // SliceFilter 筛选切片 通过函数筛选出符合要求的元素
@@ -135,8 +176,8 @@ func SliceFilterToMap[T any, K comparable, V any](slice []T, filter func(T) (K, 
 		return nil
 	}
 	result := make(map[K]V, len(slice))
-	for _, item := range slice {
-		key, value, ok := filter(item)
+	for i := range slice {
+		key, value, ok := filter(slice[i])
 		if ok {
 			result[key] = value
 		}
@@ -156,13 +197,40 @@ func SliceCollect[T, R any](input []T, mapFn func(T) R) []R {
 	return output
 }
 
-// SliceForeach 遍历切片并执行指定的函数
-func SliceForeach[T any](slice []T, fn func(T)) {
+// SliceFilterCollect 将切片按照指定的过滤条件采集映射方法处理为一个新的切片
+func SliceFilterCollect[T, R any](input []T, mapFn func(T) (R, bool)) []R {
+	if len(input) == 0 {
+		return nil
+	}
+	output := make([]R, 0)
+	for i := range input {
+		v, f := mapFn(input[i])
+		if f {
+			output = append(output, v)
+		}
+	}
+	return output
+}
+
+// SliceForeachAll 遍历所有切片并执行指定的函数
+func SliceForeachAll[T any](slice []T, fn func(T)) {
 	if len(slice) == 0 {
 		return
 	}
 	for i := range slice {
 		fn(slice[i])
+	}
+}
+
+// SliceForeach 遍历切片并执行指定的函数，如果返回false则停止遍历
+func SliceForeach[T any](slice []T, fn func(T) bool) {
+	if len(slice) == 0 {
+		return
+	}
+	for i := range slice {
+		if !fn(slice[i]) {
+			return
+		}
 	}
 }
 
