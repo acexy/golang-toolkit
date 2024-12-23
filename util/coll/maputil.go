@@ -82,3 +82,19 @@ func MapFilterToSlice[K comparable, V, R any](m map[K]V, mapFn func(K, V) (R, bo
 	}
 	return result
 }
+
+// MapForeach 遍历map return false时停止迭代
+func MapForeach[K comparable, V any](m map[K]V, fn func(k K, v V) bool) {
+	for k, v := range m {
+		if !fn(k, v) {
+			return
+		}
+	}
+}
+
+// MapForeachAll 遍历map
+func MapForeachAll[K comparable, V any](m map[K]V, fn func(k K, v V)) {
+	for k, v := range m {
+		fn(k, v)
+	}
+}
