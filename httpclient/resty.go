@@ -165,17 +165,6 @@ func (r *RestyRequest) SetDownloadFile(filepath string) *RestyRequest {
 	return r
 }
 
-func (r *RestyRequest) SetQueryValues(any interface{}) *RestyRequest {
-	queryParam, _ := query.Values(any)
-	r.request.QueryParam = queryParam
-	return r
-}
-
-func (r *RestyRequest) SetPathValues(pathParams map[string]string) *RestyRequest {
-	r.request.PathParams = pathParams
-	return r
-}
-
 func (r *RestyRequest) WithContext(ctx context.Context) *RestyRequest {
 	r.request.SetContext(ctx)
 	return r
@@ -200,14 +189,29 @@ func (r *RestyRequest) M(httpMethod string, url string) *RestyMethod {
 	}
 }
 
-func (m *RestyMethod) SetRequestBody(bodyString *string, contentType ContentType) *RestyMethod {
-	m.request.request.SetBody(&bodyString)
-	m.request.SetHeader(HeadContentType, string(contentType))
+func (m *RestyMethod) SetRawBody(raw func(raw *resty.Request)) *RestyMethod {
+	raw(m.request.request)
+	return m
+}
+func (m *RestyMethod) SetRequestBody(body interface{}, contentType string) *RestyMethod {
+	m.request.request.SetBody(body)
+	m.request.SetHeader(HeadContentType, contentType)
 	return m
 }
 
-func (m *RestyMethod) SetBodyJson(bodyJson *string) *RestyMethod {
-	m.SetRequestBody(bodyJson, ContentTypeJson)
+func (m *RestyMethod) SetQueryValues(any interface{}) *RestyMethod {
+	queryParam, _ := query.Values(any)
+	m.request.request.QueryParam = queryParam
+	return m
+}
+
+func (m *RestyMethod) SetPathValues(pathParams map[string]string) *RestyMethod {
+	m.request.request.PathParams = pathParams
+	return m
+}
+
+func (m *RestyMethod) SetBodyJson(bodyJson string, charset ...string) *RestyMethod {
+	m.SetRequestBody(bodyJson, getContentType(ContentTypeJson, charset...))
 	return m
 }
 
@@ -264,9 +268,9 @@ func (r *RestyRequest) PostForm(url string, formEncode map[string]string) (*rest
 	return r.request.SetFormData(formEncode).Post(url)
 }
 
-func (r *RestyRequest) PostJson(url string, jsonString string) (*resty.Response, error) {
+func (r *RestyRequest) PostJson(url string, jsonString string, charset ...string) (*resty.Response, error) {
 	setProxy(r)
 	r.request.SetBody(jsonString)
-	r.request.SetHeader(HeadContentType, string(ContentTypeJson))
+	r.request.SetHeader(HeadContentType, getContentType(ContentTypeJson, charset...))
 	return r.request.Post(url)
 }
