@@ -1,5 +1,7 @@
 package coll
 
+import "sort"
+
 // SliceContains 检查指定的元素是否存在切片中
 func SliceContains[T comparable](slice []T, target T, compare ...func(T, T) bool) bool {
 	for i := range slice {
@@ -243,4 +245,24 @@ func SliceDistinct[T comparable](slice []T) []T {
 		return ele, struct{}{}, true
 	})
 	return MapKeyToSlice(mapValue)
+}
+
+// SliceSort 对切片进行排序
+// less: 元素排序的权重值
+// desc: 是否降序 默认为升序
+func SliceSort[T any](slice []T, less func(e T) int, desc ...bool) {
+	if len(slice) == 0 {
+		return
+	}
+	sort.Slice(slice, func(i, j int) bool {
+		asc := true
+		if len(desc) > 0 {
+			asc = !desc[0]
+		}
+		if asc {
+			return less(slice[i]) < less(slice[j])
+		} else {
+			return less(slice[i]) > less(slice[j])
+		}
+	})
 }

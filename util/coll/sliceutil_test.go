@@ -120,6 +120,22 @@ func TestSliceUnion(t *testing.T) {
 	}))
 }
 
+func TestSliceSort(t *testing.T) {
+	peoples1 := []people{
+		{name: "张三", age: 28},
+		{name: "李四", age: 20},
+		{name: "王五", age: 22},
+		{name: "赵六", age: 20},
+		{name: "赵六", age: 21},
+	}
+	fmt.Println(peoples1)
+	SliceSort(peoples1, func(e people) int {
+		return e.age
+	}, true)
+	fmt.Println(peoples1)
+
+}
+
 func TestSliceComplement(t *testing.T) {
 	intSlice1 := []int{1, 2, 3, 4, 3, 5}
 	intSlice2 := []int{3, 4, 4, 5}
