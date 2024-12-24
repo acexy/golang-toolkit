@@ -8,7 +8,6 @@ import (
 func TestSubstring(t *testing.T) {
 	fmt.Println(Substring("1234", 1, 3))
 	fmt.Println(Substring("你好 w", 1))
-
 	str := "&莫=1"
 	fmt.Println(Substring(str, 1))
 }
