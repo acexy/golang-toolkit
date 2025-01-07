@@ -1,8 +1,9 @@
 package caching
 
 import (
+	"bytes"
 	"context"
-	"github.com/acexy/golang-toolkit/util/json"
+	"encoding/gob"
 	"github.com/allegro/bigcache/v3"
 	"time"
 )
@@ -22,23 +23,25 @@ func NewSimpleBigCache(duration time.Duration) *BigCacheBucket {
 }
 
 func (b *BigCacheBucket) Get(key MemCacheKey, result any, keyAppend ...interface{}) error {
-	v, err := b.cache.Get(originKeyString(key.KeyFormat, keyAppend...))
+	bs, err := b.cache.Get(originKeyString(key.KeyFormat, keyAppend...))
 	if err != nil {
 		return err
 	}
-	err = json.ParseJsonError(string(v), result)
-	if err != nil {
+	dec := gob.NewDecoder(bytes.NewBuffer(bs))
+	if err = dec.Decode(result); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (b *BigCacheBucket) Put(key MemCacheKey, data any, keyAppend ...interface{}) error {
-	bytes, err := json.ToJsonBytesError(data)
+	var buf bytes.Buffer
+	err := gob.NewEncoder(&buf).Encode(data)
 	if err != nil {
 		return err
 	}
-	err = b.cache.Set(originKeyString(key.KeyFormat, keyAppend...), bytes)
+	bs := buf.Bytes()
+	err = b.cache.Set(originKeyString(key.KeyFormat, keyAppend...), bs)
 	if err != nil {
 		return err
 	}
