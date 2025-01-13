@@ -43,32 +43,32 @@ func ProbabilityTrue(percentage float64) bool {
 	return randomNumber < threshold
 }
 
-// ProbabilityResult 按照设置的各种key的概率返回对应的key
+// ProbabilityResult 按照设置的各种key(概率结果)执行随机返回对应的key(发生的结果)
 // 所有key的概率之和必须为100%
-func ProbabilityResult(percentage map[string]float64) string {
+func ProbabilityResult(percentage map[any]float64) any {
 	if len(percentage) == 0 {
-		return ""
+		return nil
 	}
 	total := decimal.Zero
 	for _, v := range percentage {
 		total = total.Add(decimal.NewFromFloat(v))
 	}
 	if total.Compare(decimal.NewFromFloat(100)) != 0 {
-		return ""
+		return nil
 	}
 	var maxScale int
-	coll.MapForeachAll(percentage, func(k string, v float64) {
+	coll.MapForeachAll(percentage, func(k any, v float64) {
 		maxScale = int(math.Max(float64(maxScale), float64(decimalPlaces(v))))
 	})
-	calcPercentage := coll.MapCollect(percentage, func(k string, v float64) (string, decimal.Decimal) {
+	calcPercentage := coll.MapCollect(percentage, func(k any, v float64) (any, decimal.Decimal) {
 		return k, decimal.NewFromFloat(v).Mul(decimal.NewFromFloat(math.Pow(10, float64(maxScale))))
 	})
 	sum := decimal.Zero
-	coll.MapForeachAll(calcPercentage, func(k string, v decimal.Decimal) {
+	coll.MapForeachAll(calcPercentage, func(k any, v decimal.Decimal) {
 		sum = sum.Add(v)
 	})
 	if sum.Compare(decimal.NewFromFloat(math.Pow(10, float64(maxScale))*100)) != 0 {
-		return ""
+		return nil
 	}
 	randomValue := rand.Intn(int(sum.IntPart() - 1)) // 随机数范围为 [0, total)
 	decimalRandomValue := decimal.NewFromInt(int64(randomValue))
@@ -79,5 +79,5 @@ func ProbabilityResult(percentage map[string]float64) string {
 			return key
 		}
 	}
-	return ""
+	return nil
 }
