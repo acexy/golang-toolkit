@@ -71,7 +71,7 @@ func ProbabilityResult(percentage map[any]float64) (any, error) {
 	if sum.Compare(decimal.NewFromFloat(math.Pow(10, float64(maxScale))*100)) != 0 {
 		return nil, errors.New("percentage is not 100%")
 	}
-	randomValue := rand.Intn(int(sum.IntPart() - 1)) // 随机数范围为 [0, total)
+	randomValue := RandInt(int(sum.IntPart() - 1)) // 随机数范围为 [0, total)
 	decimalRandomValue := decimal.NewFromInt(int64(randomValue))
 	cumulative := decimal.Zero
 	for key, scaledProb := range calcPercentage {
@@ -80,5 +80,5 @@ func ProbabilityResult(percentage map[any]float64) (any, error) {
 			return key, nil
 		}
 	}
-	return nil, errors.New("something wrong")
+	return nil, errors.New("")
 }
