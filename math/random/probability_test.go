@@ -23,12 +23,13 @@ func TestProbabilityResult(t *testing.T) {
 		"D": 0,
 	}
 	for i := 0; i < 10000; i++ {
-		result[ProbabilityResult(map[any]float64{
+		r, _ := ProbabilityResult(map[any]float64{
 			"A": 10.15,
 			"B": 20.85,
 			"C": 53.05,
 			"D": 15.95,
-		})]++
+		})
+		result[r]++
 	}
 	coll.MapForeachAll(result, func(k any, v int) {
 		println(k.(string), v)

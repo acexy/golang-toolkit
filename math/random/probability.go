@@ -1,6 +1,7 @@
 package random
 
 import (
+	"errors"
 	"fmt"
 	"github.com/acexy/golang-toolkit/util/coll"
 	"github.com/shopspring/decimal"
@@ -45,16 +46,16 @@ func ProbabilityTrue(percentage float64) bool {
 
 // ProbabilityResult 按照设置的各种key(概率结果)执行随机返回对应的key(发生的结果)
 // 所有key的概率之和必须为100%
-func ProbabilityResult(percentage map[any]float64) any {
+func ProbabilityResult(percentage map[any]float64) (any, error) {
 	if len(percentage) == 0 {
-		return nil
+		return nil, errors.New("empty param")
 	}
 	total := decimal.Zero
 	for _, v := range percentage {
 		total = total.Add(decimal.NewFromFloat(v))
 	}
 	if total.Compare(decimal.NewFromFloat(100)) != 0 {
-		return nil
+		return nil, errors.New("percentage is not 100%")
 	}
 	var maxScale int
 	coll.MapForeachAll(percentage, func(k any, v float64) {
@@ -68,7 +69,7 @@ func ProbabilityResult(percentage map[any]float64) any {
 		sum = sum.Add(v)
 	})
 	if sum.Compare(decimal.NewFromFloat(math.Pow(10, float64(maxScale))*100)) != 0 {
-		return nil
+		return nil, errors.New("percentage is not 100%")
 	}
 	randomValue := rand.Intn(int(sum.IntPart() - 1)) // 随机数范围为 [0, total)
 	decimalRandomValue := decimal.NewFromInt(int64(randomValue))
@@ -76,8 +77,8 @@ func ProbabilityResult(percentage map[any]float64) any {
 	for key, scaledProb := range calcPercentage {
 		cumulative = cumulative.Add(scaledProb)
 		if decimalRandomValue.Compare(cumulative) < 0 {
-			return key
+			return key, nil
 		}
 	}
-	return nil
+	return nil, errors.New("something wrong")
 }
