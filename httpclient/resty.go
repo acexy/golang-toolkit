@@ -72,7 +72,7 @@ func NewRestyClientWithMultiProxy(multiProxy []string, choose ...ChooseProxy) *R
 	if len(choose) > 0 {
 		client.chooseProxy = choose[0]
 	} else {
-		client.chooseProxy = &randomChoose{rand: random.NewRandom(time.Now().UnixNano()), len: len(multiProxy)}
+		client.chooseProxy = &randomChoose{}
 	}
 	client.client.SetLogger(logger.Logrus())
 	return client
@@ -85,12 +85,10 @@ type ChooseProxy interface {
 }
 
 type randomChoose struct {
-	rand *random.SeedRandom
-	len  int
 }
 
 func (r *randomChoose) Choose(all []string) string {
-	return all[r.rand.RandInt(r.len)]
+	return all[random.RandInt(len(all)-1)]
 }
 
 // client 公共属性设置
