@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/allegro/bigcache/v3 v3.1.0
-	github.com/go-resty/resty/v2 v2.16.3
+	github.com/go-resty/resty/v2 v2.16.4
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.6.0
 	github.com/shopspring/decimal v1.4.0
