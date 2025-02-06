@@ -61,7 +61,9 @@ func enableConsole(level Level, disableColor bool) *logrus.Logger {
 // EnableConsole 启用该设置后，日志内容将向标准控台输出
 func EnableConsole(level Level, disableColor bool) {
 	consoleLogger = enableConsole(level, disableColor)
-	activeLogger = consoleLogger
+	if activeLogger == nil {
+		activeLogger = consoleLogger
+	}
 }
 
 func enableFile(level Level, formatter logrus.Formatter, fileConfig ...*lumberjack.Logger) {
@@ -95,10 +97,8 @@ func EnableFileWithJson(level Level, fileConfig ...*lumberjack.Logger) {
 	if consoleLogger != nil {
 		consoleLogger.ReportCaller = false
 		fileLogger.AddHook(&autoConsole{})
-		activeLogger = fileLogger
-	} else {
-		activeLogger = fileLogger
 	}
+	activeLogger = fileLogger
 }
 
 // EnableFileWithText 启用该配置后写入日志文件，将日志输出为text格式
@@ -115,10 +115,8 @@ func EnableFileWithText(level Level, fileConfig ...*lumberjack.Logger) {
 	if consoleLogger != nil {
 		consoleLogger.ReportCaller = false
 		fileLogger.AddHook(&autoConsole{})
-		activeLogger = fileLogger
-	} else {
-		activeLogger = fileLogger
 	}
+	activeLogger = fileLogger
 }
 
 func Logrus() *logrus.Logger {
