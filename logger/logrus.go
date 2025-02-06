@@ -61,6 +61,7 @@ func enableConsole(level Level, disableColor bool) *logrus.Logger {
 // EnableConsole 启用该设置后，日志内容将向标准控台输出
 func EnableConsole(level Level, disableColor bool) {
 	consoleLogger = enableConsole(level, disableColor)
+	activeLogger = consoleLogger
 }
 
 func enableFile(level Level, formatter logrus.Formatter, fileConfig ...*lumberjack.Logger) {
