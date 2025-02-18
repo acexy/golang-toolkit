@@ -32,7 +32,7 @@ func UnixTimestamp() int64 {
 	return time.Now().Unix()
 }
 
-// FromUnixTimestamp 将 Unix 时间戳转为 time.Time
+// FromUnixTimestamp 将 Unix (秒级)时间戳转为 time.Time
 func FromUnixTimestamp(ts int64) time.Time {
 	return time.Unix(ts, 0)
 }
@@ -42,7 +42,7 @@ func UnixNano() int64 {
 	return time.Now().UnixNano()
 }
 
-// FromUnixNano 从 Unix 纳秒时间戳转为 time.Time
+// FromUnixNano 从 Unix (纳秒级)时间戳转为 time.Time
 func FromUnixNano(ts int64) time.Time {
 	sec := ts / int64(time.Second)
 	nsec := ts % int64(time.Second)
@@ -54,7 +54,7 @@ func UnixMilli() int64 {
 	return time.Now().Unix() * 1000
 }
 
-// FromUnixMilli 从 Unix 毫秒时间戳转为 time.Time
+// FromUnixMilli 从 Unix (毫秒级)时间戳转为 time.Time
 func FromUnixMilli(ts int64) time.Time {
 	sec := ts / 1000
 	nsec := (ts % 1000) * 1000000
