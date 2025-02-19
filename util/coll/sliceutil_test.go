@@ -237,3 +237,18 @@ func TestSliceDistinct(t *testing.T) {
 	}
 	fmt.Println(SliceDistinct(input))
 }
+func TestSliceGroupBy(t *testing.T) {
+	input := []Person{
+		{Name: "Alice", Age: 25},
+		{Name: "Bob", Age: 30},
+		{Name: "Charlie", Age: 35},
+		{Name: "Charlie", Age: 36},
+	}
+	fmt.Println(SliceGroupBy(input, func(t Person) string {
+		return t.Name
+	}))
+
+	fmt.Println(SliceAnyGroupBy(input, func(t Person) (string, int) {
+		return t.Name, t.Age
+	}))
+}

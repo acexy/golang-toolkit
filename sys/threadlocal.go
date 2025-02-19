@@ -1,8 +1,9 @@
 package sys
 
 import (
-	"github.com/acexy/golang-toolkit/math/random"
+	"github.com/google/uuid"
 	"github.com/timandy/routine"
+	"strings"
 	"sync"
 )
 
@@ -60,7 +61,7 @@ func EnableLocalTraceId(supplier Supplier[string]) {
 	traceIdLocalOnce.Do(func() {
 		if supplier == nil {
 			supplier = func() string {
-				return random.UUID()
+				return strings.ReplaceAll(uuid.NewString(), "-", "")
 			}
 		}
 		traceIdLocal = NewThreadLocal(supplier)
