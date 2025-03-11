@@ -1,6 +1,6 @@
 module github.com/acexy/golang-toolkit
 
-go 1.21
+go 1.23.5
 
 require (
 	github.com/allegro/bigcache/v3 v3.1.0
@@ -15,7 +15,8 @@ require (
 )
 
 require (
-	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
+	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
