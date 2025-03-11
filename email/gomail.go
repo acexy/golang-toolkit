@@ -106,10 +106,14 @@ func (c *Content) toMessage() (*gomail.Message, error) {
 	return message, nil
 }
 
-func NewGoMail(host string, port int, username, password string, fromAddress string) *GoMail {
+func NewGoMail(host string, port int, username, password string, fromAddress string, isSSL ...bool) *GoMail {
 	goMailOnce.Do(func() {
+		dialer := gomail.NewDialer(host, port, username, password)
+		if len(isSSL) > 0 && isSSL[0] {
+			dialer.SSL = true
+		}
 		goMail = &GoMail{
-			dialer:      gomail.NewDialer(host, port, username, password),
+			dialer:      dialer,
 			fromAddress: fromAddress,
 		}
 	})

@@ -117,7 +117,6 @@ func SliceIntersection[T comparable](slicePart1, slicePart2 []T, compare ...func
 			}
 		}
 	}
-
 	return result
 }
 
@@ -265,4 +264,24 @@ func SliceSort[T any](slice []T, less func(e T) int, desc ...bool) {
 			return less(slice[i]) > less(slice[j])
 		}
 	})
+}
+
+// SliceGroupBy 将切片按照指定的分组函数进行分组
+func SliceGroupBy[T any, K comparable](slice []T, groupFn func(T) K) map[K][]T {
+	result := make(map[K][]T)
+	for i := range slice {
+		k := groupFn(slice[i])
+		result[k] = append(result[k], slice[i])
+	}
+	return result
+}
+
+// SliceAnyGroupBy 将切片按照指定的分组函数进行分组
+func SliceAnyGroupBy[T, V any, K comparable](slice []T, groupFn func(T) (K, V)) map[K][]V {
+	result := make(map[K][]V)
+	for i := range slice {
+		k, v := groupFn(slice[i])
+		result[k] = append(result[k], v)
+	}
+	return result
 }
