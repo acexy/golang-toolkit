@@ -35,7 +35,7 @@ func (l *Local[T]) Delete() {
 }
 
 // GetGoroutineId 获取当前协程id
-func GetGoroutineId() int64 {
+func GetGoroutineId() uint64 {
 	return routine.Goid()
 }
 
