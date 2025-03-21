@@ -122,7 +122,7 @@ func NewGoMailWithName(host string, port int, username, password, fromAddress, f
 		goMail = &GoMail{
 			dialer:      dialer,
 			fromAddress: fromAddress,
-			fromName:    fromAddress,
+			fromName:    fromName,
 		}
 	})
 	return goMail
