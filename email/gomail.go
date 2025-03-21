@@ -60,7 +60,7 @@ func (c *Content) toMessage() (*gomail.Message, error) {
 	}
 	message := gomail.NewMessage()
 	if goMail.fromName != "" {
-		message.SetHeader("From", goMail.fromName)
+		message.SetHeader("From", goMail.fromName+"<"+goMail.fromAddress+">")
 	} else {
 		message.SetHeader("From", goMail.fromAddress)
 	}
