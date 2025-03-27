@@ -44,4 +44,8 @@ func TestGetValue(t *testing.T) {
 func TestNewGJson(t *testing.T) {
 	g := NewGJson(jsonString)
 	fmt.Println(g.Get("phone.0.number").StringValue())
+	value, _ := g.Get("phone").ArrayValue()
+	for _, v := range value {
+		fmt.Println(v.RawJsonString())
+	}
 }
