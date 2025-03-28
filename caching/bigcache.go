@@ -22,7 +22,7 @@ func NewSimpleBigCache(duration time.Duration) *BigCacheBucket {
 }
 
 func (b *BigCacheBucket) Get(key MemCacheKey, result any, keyAppend ...interface{}) error {
-	bs, err := b.cache.Get(originKeyString(key.KeyFormat, keyAppend...))
+	bs, err := b.cache.Get(OriginKeyString(key.KeyFormat, keyAppend...))
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (b *BigCacheBucket) Put(key MemCacheKey, data any, keyAppend ...interface{}
 	if err != nil {
 		return err
 	}
-	err = b.cache.Set(originKeyString(key.KeyFormat, keyAppend...), bs)
+	err = b.cache.Set(OriginKeyString(key.KeyFormat, keyAppend...), bs)
 	if err != nil {
 		return err
 	}
@@ -42,5 +42,5 @@ func (b *BigCacheBucket) Put(key MemCacheKey, data any, keyAppend ...interface{}
 }
 
 func (b *BigCacheBucket) Evict(key MemCacheKey, keyAppend ...interface{}) error {
-	return b.cache.Delete(originKeyString(key.KeyFormat, keyAppend...))
+	return b.cache.Delete(OriginKeyString(key.KeyFormat, keyAppend...))
 }

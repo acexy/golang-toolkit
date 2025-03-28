@@ -7,6 +7,9 @@ import (
 	"sync"
 )
 
+var once sync.Once
+var cachingManager *CacheManager
+
 type MemCacheKey struct {
 	// 最终key值的格式化格式 将使用 fmt.Sprintf(key.KeyFormat, keyAppend) 进行处理
 	KeyFormat string
@@ -17,7 +20,7 @@ func NewNemCacheKey(keyFormat string) MemCacheKey {
 	return MemCacheKey{KeyFormat: keyFormat}
 }
 
-func originKeyString(keyFormat string, keyAppend ...interface{}) string {
+func OriginKeyString(keyFormat string, keyAppend ...interface{}) string {
 	if len(keyAppend) > 0 {
 		return fmt.Sprintf(keyFormat, keyAppend...)
 	}
@@ -40,9 +43,6 @@ type CacheBucket interface {
 	// Evict 清除缓存
 	Evict(key MemCacheKey, keyAppend ...interface{}) error
 }
-
-var once sync.Once
-var cachingManager *CacheManager
 
 func NewCacheBucketManager(bucketName string, bucket CacheBucket) *CacheManager {
 	if cachingManager == nil {
