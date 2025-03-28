@@ -38,7 +38,7 @@ type CacheBucket interface {
 	Get(key MemCacheKey, result any, keyAppend ...interface{}) error
 
 	// GetBytes 获取指定key对应的值
-	GetBytes(rawKey string) ([]byte, error)
+	GetBytes(key MemCacheKey, keyAppend ...interface{}) ([]byte, error)
 
 	// Put 设置key对应值
 	Put(key MemCacheKey, data any, keyAppend ...interface{}) error

@@ -28,8 +28,8 @@ func (b *BigCacheBucket) Get(key MemCacheKey, result any, keyAppend ...interface
 	}
 	return gob.Decode(bs, result)
 }
-func (b *BigCacheBucket) GetBytes(rawKey string) ([]byte, error) {
-	return b.cache.Get(rawKey)
+func (b *BigCacheBucket) GetBytes(key MemCacheKey, keyAppend ...interface{}) ([]byte, error) {
+	return b.cache.Get(OriginKeyString(key.KeyFormat, keyAppend...))
 }
 
 func (b *BigCacheBucket) Put(key MemCacheKey, data any, keyAppend ...interface{}) error {
