@@ -10,6 +10,10 @@ import (
 var once sync.Once
 var cachingManager *CacheManager
 
+var (
+	SourceNotFound = errors.New("source not found")
+)
+
 type MemCacheKey struct {
 	// 最终key值的格式化格式 将使用 fmt.Sprintf(key.KeyFormat, keyAppend) 进行处理
 	KeyFormat string
@@ -34,7 +38,7 @@ type CacheManager struct {
 type CacheBucket interface {
 
 	// Get 获取指定key对应的值
-	// result 值类型指针
+	// result 值类型指针 如果未能查到内容应当返还
 	Get(key MemCacheKey, result any, keyAppend ...interface{}) error
 
 	// GetBytes 获取指定key对应的值

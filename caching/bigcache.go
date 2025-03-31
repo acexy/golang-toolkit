@@ -2,6 +2,7 @@ package caching
 
 import (
 	"context"
+	"errors"
 	"github.com/acexy/golang-toolkit/util/gob"
 	"github.com/allegro/bigcache/v3"
 	"time"
@@ -22,14 +23,21 @@ func NewSimpleBigCache(duration time.Duration) *BigCacheBucket {
 }
 
 func (b *BigCacheBucket) Get(key MemCacheKey, result any, keyAppend ...interface{}) error {
-	bs, err := b.cache.Get(OriginKeyString(key.KeyFormat, keyAppend...))
+	bs, err := b.GetBytes(key, keyAppend...)
 	if err != nil {
 		return err
 	}
 	return gob.Decode(bs, result)
 }
 func (b *BigCacheBucket) GetBytes(key MemCacheKey, keyAppend ...interface{}) ([]byte, error) {
-	return b.cache.Get(OriginKeyString(key.KeyFormat, keyAppend...))
+	bytes, err := b.cache.Get(OriginKeyString(key.KeyFormat, keyAppend...))
+	if err != nil {
+		if errors.Is(err, bigcache.ErrEntryNotFound) {
+			return nil, SourceNotFound
+		}
+		return nil, err
+	}
+	return bytes, nil
 }
 
 func (b *BigCacheBucket) Put(key MemCacheKey, data any, keyAppend ...interface{}) error {
