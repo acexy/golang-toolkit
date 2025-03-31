@@ -30,7 +30,7 @@ func (b *BigCacheBucket) Get(key MemCacheKey, result any, keyAppend ...interface
 	return gob.Decode(bs, result)
 }
 func (b *BigCacheBucket) GetBytes(key MemCacheKey, keyAppend ...interface{}) ([]byte, error) {
-	bytes, err := b.cache.Get(OriginKeyString(key.KeyFormat, keyAppend...))
+	bytes, err := b.cache.Get(key.RawKeyString(keyAppend...))
 	if err != nil {
 		if errors.Is(err, bigcache.ErrEntryNotFound) {
 			return nil, SourceNotFound
@@ -45,7 +45,7 @@ func (b *BigCacheBucket) Put(key MemCacheKey, data any, keyAppend ...interface{}
 	if err != nil {
 		return err
 	}
-	err = b.cache.Set(OriginKeyString(key.KeyFormat, keyAppend...), bs)
+	err = b.cache.Set(key.RawKeyString(keyAppend...), bs)
 	if err != nil {
 		return err
 	}
@@ -53,5 +53,5 @@ func (b *BigCacheBucket) Put(key MemCacheKey, data any, keyAppend ...interface{}
 }
 
 func (b *BigCacheBucket) Evict(key MemCacheKey, keyAppend ...interface{}) error {
-	return b.cache.Delete(OriginKeyString(key.KeyFormat, keyAppend...))
+	return b.cache.Delete(key.RawKeyString(keyAppend...))
 }

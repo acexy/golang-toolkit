@@ -24,11 +24,12 @@ func NewNemCacheKey(keyFormat string) MemCacheKey {
 	return MemCacheKey{KeyFormat: keyFormat}
 }
 
-func OriginKeyString(keyFormat string, keyAppend ...interface{}) string {
+// RawKeyString 获取原始的key字符串
+func (m MemCacheKey) RawKeyString(keyAppend ...interface{}) string {
 	if len(keyAppend) > 0 {
-		return fmt.Sprintf(keyFormat, keyAppend...)
+		return fmt.Sprintf(m.KeyFormat, keyAppend...)
 	}
-	return keyFormat
+	return m.KeyFormat
 }
 
 type CacheManager struct {
