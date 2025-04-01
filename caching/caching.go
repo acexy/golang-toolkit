@@ -11,7 +11,7 @@ var once sync.Once
 var cachingManager *CacheManager
 
 var (
-	SourceNotFound = errors.New("source not found")
+	CacheMiss = errors.New("cache miss")
 )
 
 type MemCacheKey struct {
