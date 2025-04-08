@@ -7,6 +7,13 @@ import (
 	"sync"
 )
 
+var once sync.Once
+var cachingManager *CacheManager
+
+var (
+	CacheMiss = errors.New("cache miss")
+)
+
 type MemCacheKey struct {
 	// 最终key值的格式化格式 将使用 fmt.Sprintf(key.KeyFormat, keyAppend) 进行处理
 	KeyFormat string
@@ -17,11 +24,12 @@ func NewNemCacheKey(keyFormat string) MemCacheKey {
 	return MemCacheKey{KeyFormat: keyFormat}
 }
 
-func originKeyString(keyFormat string, keyAppend ...interface{}) string {
+// RawKeyString 获取原始的key字符串
+func (m MemCacheKey) RawKeyString(keyAppend ...interface{}) string {
 	if len(keyAppend) > 0 {
-		return fmt.Sprintf(keyFormat, keyAppend...)
+		return fmt.Sprintf(m.KeyFormat, keyAppend...)
 	}
-	return keyFormat
+	return m.KeyFormat
 }
 
 type CacheManager struct {
@@ -31,8 +39,11 @@ type CacheManager struct {
 type CacheBucket interface {
 
 	// Get 获取指定key对应的值
-	// result 值类型指针
+	// result 值类型指针 如果未能查到内容应当返还
 	Get(key MemCacheKey, result any, keyAppend ...interface{}) error
+
+	// GetBytes 获取指定key对应的值
+	GetBytes(key MemCacheKey, keyAppend ...interface{}) ([]byte, error)
 
 	// Put 设置key对应值
 	Put(key MemCacheKey, data any, keyAppend ...interface{}) error
@@ -40,9 +51,6 @@ type CacheBucket interface {
 	// Evict 清除缓存
 	Evict(key MemCacheKey, keyAppend ...interface{}) error
 }
-
-var once sync.Once
-var cachingManager *CacheManager
 
 func NewCacheBucketManager(bucketName string, bucket CacheBucket) *CacheManager {
 	if cachingManager == nil {

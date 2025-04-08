@@ -2,6 +2,7 @@ package caching
 
 import (
 	"context"
+	"errors"
 	"github.com/acexy/golang-toolkit/util/gob"
 	"github.com/allegro/bigcache/v3"
 	"time"
@@ -22,11 +23,21 @@ func NewSimpleBigCache(duration time.Duration) *BigCacheBucket {
 }
 
 func (b *BigCacheBucket) Get(key MemCacheKey, result any, keyAppend ...interface{}) error {
-	bs, err := b.cache.Get(originKeyString(key.KeyFormat, keyAppend...))
+	bs, err := b.GetBytes(key, keyAppend...)
 	if err != nil {
 		return err
 	}
 	return gob.Decode(bs, result)
+}
+func (b *BigCacheBucket) GetBytes(key MemCacheKey, keyAppend ...interface{}) ([]byte, error) {
+	bytes, err := b.cache.Get(key.RawKeyString(keyAppend...))
+	if err != nil {
+		if errors.Is(err, bigcache.ErrEntryNotFound) {
+			return nil, CacheMiss
+		}
+		return nil, err
+	}
+	return bytes, nil
 }
 
 func (b *BigCacheBucket) Put(key MemCacheKey, data any, keyAppend ...interface{}) error {
@@ -34,7 +45,7 @@ func (b *BigCacheBucket) Put(key MemCacheKey, data any, keyAppend ...interface{}
 	if err != nil {
 		return err
 	}
-	err = b.cache.Set(originKeyString(key.KeyFormat, keyAppend...), bs)
+	err = b.cache.Set(key.RawKeyString(keyAppend...), bs)
 	if err != nil {
 		return err
 	}
@@ -42,5 +53,5 @@ func (b *BigCacheBucket) Put(key MemCacheKey, data any, keyAppend ...interface{}
 }
 
 func (b *BigCacheBucket) Evict(key MemCacheKey, keyAppend ...interface{}) error {
-	return b.cache.Delete(originKeyString(key.KeyFormat, keyAppend...))
+	return b.cache.Delete(key.RawKeyString(keyAppend...))
 }
