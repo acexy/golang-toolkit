@@ -46,6 +46,47 @@ func TestGetNonZeroFieldValue(t *testing.T) {
 	fmt.Println(value)
 }
 
+func TestAllField(t *testing.T) {
+	i := 1
+	testStruct := struct {
+		A string
+		B *int
+		C bool
+		D int
+		E []int
+		F [1]int
+		G map[string]int
+	}{
+		A: "a",
+		B: &i,
+		C: true,
+	}
+	fields, err := AllField(testStruct)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(fields)
+}
+
+func TestAllFieldValue(t *testing.T) {
+	i := 1
+	testStruct := struct {
+		A string
+		B *int
+		C bool
+		D int
+	}{
+		A: "a",
+		B: &i,
+		C: true,
+	}
+	value, err := AllFieldValue(testStruct)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(value)
+}
+
 type TestStruct struct {
 	IntField    int
 	StringField string
@@ -71,16 +112,4 @@ func BenchmarkDeepCopy(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		DeepCopy(testStruct)
 	}
-}
-
-type StructA struct {
-	IntField    int
-	StringField string
-	BoolField   bool
-}
-
-type StructB struct {
-	IntField     int
-	StringField  string
-	AnotherField float64
 }
