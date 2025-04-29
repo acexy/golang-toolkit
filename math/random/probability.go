@@ -80,5 +80,5 @@ func ProbabilityResult(percentage map[any]float64) (any, error) {
 			return key, nil
 		}
 	}
-	return nil, errors.New("")
+	return nil, errors.New("something error")
 }

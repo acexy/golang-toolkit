@@ -22,7 +22,7 @@ func TestProbabilityResult(t *testing.T) {
 		"C": 0,
 		"D": 0,
 	}
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 100000; i++ {
 		r, _ := ProbabilityResult(map[any]float64{
 			"A": 10.15,
 			"B": 20.85,
