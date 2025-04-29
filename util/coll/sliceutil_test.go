@@ -3,7 +3,6 @@ package coll
 import (
 	"fmt"
 	"github.com/acexy/golang-toolkit/math/conversion"
-	"github.com/acexy/golang-toolkit/util/json"
 	"github.com/acexy/golang-toolkit/util/str"
 	"testing"
 )
@@ -220,22 +219,22 @@ func TestSliceCollect(t *testing.T) {
 
 	// 调用 SliceCollect
 	output := SliceCollect(input, collect)
-	fmt.Println(json.ToJsonFormat(output))
+	fmt.Println(output)
 
-	//input = nil
-	//// 调用 SliceCollect
-	//output = SliceCollect(input, collect)
-	//fmt.Println(json.ToJsonFormat(output))
 }
 
 func TestSliceDistinct(t *testing.T) {
 	input := []Person{
-		{Name: "Alice", Age: 25},
+		{Name: "Alice", Age: 35},
 		{Name: "Bob", Age: 30},
 		{Name: "Charlie", Age: 35},
 		{Name: "Charlie", Age: 35},
 	}
 	fmt.Println(SliceDistinct(input))
+
+	fmt.Println(SliceDistinctAny(input, func(t Person) int {
+		return t.Age
+	}))
 }
 func TestSliceGroupBy(t *testing.T) {
 	input := []Person{
@@ -247,7 +246,6 @@ func TestSliceGroupBy(t *testing.T) {
 	fmt.Println(SliceGroupBy(input, func(t Person) string {
 		return t.Name
 	}))
-
 	fmt.Println(SliceAnyGroupBy(input, func(t Person) (string, int) {
 		return t.Name, t.Age
 	}))

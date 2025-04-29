@@ -8,9 +8,8 @@ import (
 )
 
 const (
-	LimitDefault = 0
-	LimitHalf    = -1
-	LimitMax     = -2
+	LimitHalf = -1 // 使用一半核心数，最小1，向下取整
+	LimitMax  = -2 // 全部
 )
 
 type CPULimitType int
@@ -66,17 +65,16 @@ func DetectCPULimit() int {
 	return runtime.NumCPU()
 }
 
+// SetGoMaxProc 设置GOMAXPROCS
 func SetGoMaxProc(limit int) {
 	if limit > 0 {
 		runtime.GOMAXPROCS(limit)
 	}
 }
 
-// SetGoMaxProcType 自动设置GOMAXPROCS
+// SetGoMaxProcType 设置GOMAXPROCS
 func SetGoMaxProcType(limit CPULimitType) {
 	switch limit {
-	case LimitDefault:
-		SetGoMaxProc(0)
 	case LimitHalf:
 		result := DetectCPULimit() / 2
 		if result < 1 {
