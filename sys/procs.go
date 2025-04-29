@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	LimitHalf = -1 // 使用一半核心数，最小1，向下取整
-	LimitMax  = -2 // 全部
+	LimitHalf  = -1 // 使用一半核心数，最小1，向下取整
+	LimitMax   = -2 // 全部
+	Limit1Left = -3 // 保留一个核心 最小1
 )
 
 type CPULimitType int
@@ -76,12 +77,18 @@ func SetGoMaxProc(limit int) {
 func SetGoMaxProcType(limit CPULimitType) {
 	switch limit {
 	case LimitHalf:
-		result := DetectCPULimit() / 2
-		if result < 1 {
-			result = 1
+		num := DetectCPULimit() / 2
+		if num < 1 {
+			num = 1
 		}
-		SetGoMaxProc(result)
+		SetGoMaxProc(num)
 	case LimitMax:
 		SetGoMaxProc(DetectCPULimit())
+	case Limit1Left:
+		num := DetectCPULimit() - 1
+		if num < 1 {
+			num = 1
+		}
+		SetGoMaxProc(num)
 	}
 }
