@@ -2,7 +2,6 @@ package coll
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/util/json"
 	"testing"
 )
 
@@ -65,5 +64,5 @@ func TestMapToSlice(t *testing.T) {
 		}
 		return U{key, value}, true
 	})
-	fmt.Printf("取出的元素: %v\n", json.ToJson(result))
+	fmt.Printf("取出的元素: %v\n", result)
 }

@@ -224,12 +224,12 @@ func SliceForeachAll[T any](slice []T, fn func(T)) {
 }
 
 // SliceForeach 遍历切片并执行指定的函数，如果返回false则停止遍历
-func SliceForeach[T any](slice []T, fn func(T) bool) {
+func SliceForeach[T any](slice []T, foreach func(T) bool) {
 	if len(slice) == 0 {
 		return
 	}
 	for i := range slice {
-		if !fn(slice[i]) {
+		if !foreach(slice[i]) {
 			return
 		}
 	}
@@ -244,6 +244,17 @@ func SliceDistinct[T comparable](slice []T) []T {
 		return ele, struct{}{}, true
 	})
 	return MapKeyToSlice(mapValue)
+}
+
+// SliceDistinctAny 按照指定的切片去重值去重元素
+func SliceDistinctAny[T any, K comparable](slice []T, keyBuild func(ele T) K) []T {
+	if len(slice) == 0 {
+		return nil
+	}
+	mapValue := SliceFilterToMap(slice, func(ele T) (K, T, bool) {
+		return keyBuild(ele), ele, true
+	})
+	return MapValueToSlice(mapValue)
 }
 
 // SliceSort 对切片进行排序

@@ -5,57 +5,77 @@ import (
 	"reflect"
 )
 
-// NonZeroField 返回结构体的非零字段
-func NonZeroField(value interface{}) ([]string, error) {
+// processStructFields 处理结构体字段的通用方法
+func processStructFields(value interface{}, filter func(field reflect.Value) bool, process func(fieldName string, field reflect.Value)) error {
 	val := reflect.ValueOf(value)
 	if val.Kind() == reflect.Ptr {
 		val = val.Elem()
 	}
 	if val.Kind() != reflect.Struct {
-		return nil, errors.New("inputStruct must be a struct or a pointer to a struct")
+		return errors.New("inputStruct must be a struct or a pointer to a struct")
 	}
-	var nonZeroFields []string
+	
 	typ := val.Type()
-
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
 		// 跳过未导出的字段
 		if !field.CanInterface() {
 			continue
 		}
-		if !isZeroValue(field) {
+		if filter == nil || filter(field) {
 			fieldName := typ.Field(i).Name
-			nonZeroFields = append(nonZeroFields, fieldName)
+			process(fieldName, field)
 		}
 	}
-	return nonZeroFields, nil
+	return nil
+}
+
+// AllField 返回结构体的所有字段
+func AllField(value interface{}) ([]string, error) {
+	var allFields []string
+	err := processStructFields(value, 
+		nil, // 不需要过滤
+		func(fieldName string, field reflect.Value) {
+			allFields = append(allFields, fieldName)
+		})
+	return allFields, err
+}
+
+// AllFieldValue 返回结构体的所有字段的值
+func AllFieldValue(value interface{}) (map[string]interface{}, error) {
+	allValue := make(map[string]interface{})
+	err := processStructFields(value,
+		nil, // 不需要过滤
+		func(fieldName string, field reflect.Value) {
+			allValue[fieldName] = field.Interface()
+		})
+	return allValue, err
+}
+
+// NonZeroField 返回结构体的非零字段
+func NonZeroField(value interface{}) ([]string, error) {
+	var nonZeroFields []string
+	err := processStructFields(value,
+		func(field reflect.Value) bool {
+			return !isZeroValue(field)
+		},
+		func(fieldName string, field reflect.Value) {
+			nonZeroFields = append(nonZeroFields, fieldName)
+		})
+	return nonZeroFields, err
 }
 
 // NonZeroFieldValue 返回结构体的非零字段的值
 func NonZeroFieldValue(value interface{}) (map[string]interface{}, error) {
-	val := reflect.ValueOf(value)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-	if val.Kind() != reflect.Struct {
-		return nil, errors.New("inputStruct must be a struct or a pointer to a struct")
-	}
 	nonZeroValue := make(map[string]interface{})
-	typ := val.Type()
-
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Field(i)
-		// 跳过未导出的字段
-		if !field.CanInterface() {
-			continue
-		}
-		if !isZeroValue(field) {
-			fieldName := typ.Field(i).Name
+	err := processStructFields(value,
+		func(field reflect.Value) bool {
+			return !isZeroValue(field)
+		},
+		func(fieldName string, field reflect.Value) {
 			nonZeroValue[fieldName] = field.Interface()
-		}
-	}
-
-	return nonZeroValue, nil
+		})
+	return nonZeroValue, err
 }
 
 // DeepCopy 深拷贝 源和目标需要是同类型
