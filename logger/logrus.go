@@ -123,7 +123,7 @@ func Logrus() *logrus.Logger {
 	logrusOnce.Do(func() {
 		if consoleLogger == nil && fileLogger == nil {
 			// 如果未手动初始化，则执行默认初始化配置
-			activeLogger = enableConsole(InfoLevel, false)
+			activeLogger = enableConsole(DebugLevel, false)
 		}
 	})
 	return activeLogger
