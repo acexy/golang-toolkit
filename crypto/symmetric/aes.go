@@ -18,43 +18,136 @@ type AESModel int
 
 // AESEncrypt AES加密实现
 type AESEncrypt struct {
-	Key   []byte
-	Model AESModel
-
-	block cipher.Block
-	once  sync.Once
+	Key            []byte         // 加密密钥
+	Model          AESModel       //  加密模式
+	IVCreator      IVCreator      //  IV规则 不指定时使用默认方式
+	ResultCreator  ResultCreator  //  最终结果返回规则 不指定则使用默认方式
+	PaddingCreator PaddingCreator //  填充规则
+	block          cipher.Block
+	once           sync.Once
 }
 
+type AESOption struct {
+	IVCreator      IVCreator      //  IV规则 不指定时使用默认方式
+	Model          AESModel       //  加密模式
+	ResultCreator  ResultCreator  //  最终结果返回规则 不指定则使用默认方式
+	PaddingCreator PaddingCreator //  填充规则
+}
+
+// NewAES 创建AES加密实现
 func NewAES(key []byte) *AESEncrypt {
 	return &AESEncrypt{
-		Key: key,
+		Key:            key,
+		Model:          AESModelCBC,
+		IVCreator:      randomIvCreator{},
+		ResultCreator:  appendResultCreator{},
+		PaddingCreator: pkcs7PaddingCreator{},
 	}
 }
 
-func encIV() []byte {
+// NewAESWithOption 创建AES加密实现
+func NewAESWithOption(key []byte, option AESOption) *AESEncrypt {
+	return &AESEncrypt{
+		Key: key,
+		Model: func() AESModel {
+			if option.Model == AESModelCBC {
+				return AESModelCBC
+			}
+			return option.Model
+		}(),
+		IVCreator: func() IVCreator {
+			if option.IVCreator == nil {
+				return randomIvCreator{}
+			} else {
+				return option.IVCreator
+			}
+		}(),
+		ResultCreator: func() ResultCreator {
+			if option.ResultCreator == nil {
+				return appendResultCreator{}
+			} else {
+				return option.ResultCreator
+			}
+		}(),
+		PaddingCreator: func() PaddingCreator {
+			if option.PaddingCreator == nil {
+				return pkcs7PaddingCreator{}
+			} else {
+				return option.PaddingCreator
+			}
+		}(),
+	}
+}
+
+// IVCreator IV自定义创建接口
+type IVCreator interface {
+	// Encrypt 加密时创建IV
+	Encrypt(key, paddedRawData []byte) []byte
+	// Decrypt 解密时创建IV
+	Decrypt(key, cipherText []byte) []byte
+}
+
+type randomIvCreator struct {
+}
+
+func (d randomIvCreator) Encrypt(key, paddedRawData []byte) []byte {
 	iv := make([]byte, aes.BlockSize)
 	_, _ = rand.Read(iv) // 安全随机生成
 	return iv
 }
-
-func decIV(plaintext []byte) []byte {
-	return plaintext[:aes.BlockSize]
+func (d randomIvCreator) Decrypt(key, cipherText []byte) []byte {
+	return cipherText[:aes.BlockSize]
 }
 
-func pkcs7Pad(data []byte, blockSize int) []byte {
-	padding := blockSize - len(data)%blockSize
+type ResultCreator interface {
+	// Encrypt 加密时创建最终返回内容
+	Encrypt(iv, rawCipherData []byte) []byte
+	// Decrypt 解密时通过原始的密文创建解密的实际密文
+	Decrypt(iv, cipherData []byte) []byte
+}
+
+type appendResultCreator struct {
+}
+
+func (a appendResultCreator) Encrypt(iv, rawCipherData []byte) []byte {
+	return append(iv, rawCipherData...)
+}
+
+func (a appendResultCreator) Decrypt(iv, cipherText []byte) []byte {
+	return cipherText[len(iv):]
+}
+
+// PaddingCreator 填充接口
+type PaddingCreator interface {
+	// Pad 填充
+	Pad(rawData []byte, blockSize int) []byte
+	// UnPad 去除填充
+	UnPad(rawData []byte) ([]byte, error)
+}
+
+type pkcs7PaddingCreator struct {
+}
+
+func (p pkcs7PaddingCreator) Pad(rawData []byte, blockSize int) []byte {
+	padding := blockSize - len(rawData)%blockSize
 	padText := bytes.Repeat([]byte{byte(padding)}, padding)
-	return append(data, padText...)
+	return append(rawData, padText...)
 }
-func pkcs7Unpad(data []byte) ([]byte, error) {
-	if len(data) == 0 {
+
+func (p pkcs7PaddingCreator) UnPad(rawData []byte) ([]byte, error) {
+	if len(rawData) == 0 {
 		return nil, errors.New("empty data")
 	}
-	padding := int(data[len(data)-1])
-	if padding > len(data) {
-		return nil, errors.New("invalid padding")
+	padding := int(rawData[len(rawData)-1])
+	if padding == 0 || padding > len(rawData) {
+		return nil, errors.New("invalid padding size")
 	}
-	return data[:len(data)-padding], nil
+	for i := 0; i < padding; i++ {
+		if rawData[len(rawData)-1-i] != byte(padding) {
+			return nil, errors.New("invalid padding content")
+		}
+	}
+	return rawData[:len(rawData)-padding], nil
 }
 
 func (a *AESEncrypt) cipherBlock() (cipher.Block, error) {
@@ -65,54 +158,57 @@ func (a *AESEncrypt) cipherBlock() (cipher.Block, error) {
 	return a.block, err
 }
 
-func (a *AESEncrypt) Encrypt(raw []byte) ([]byte, error) {
+func (a *AESEncrypt) Encrypt(rawData []byte) ([]byte, error) {
 	block, err := a.cipherBlock()
 	if err != nil {
 		return nil, err
 	}
-	var ciphertext []byte
+	var rawCipherData []byte
 	if a.Model == AESModelCBC {
-		raw = pkcs7Pad(raw, aes.BlockSize)
-		if len(raw)%aes.BlockSize != 0 {
+		paddedRawData := a.PaddingCreator.Pad(rawData, aes.BlockSize)
+		if len(paddedRawData)%aes.BlockSize != 0 {
 			return nil, errors.New("plaintext is not a multiple of the block size")
 		}
-		ciphertext = make([]byte, len(raw))
-		iv := encIV()
+		rawCipherData = make([]byte, len(paddedRawData))
+		iv := a.IVCreator.Encrypt(a.Key, paddedRawData)
 		mode := cipher.NewCBCEncrypter(block, iv)
-		mode.CryptBlocks(ciphertext, raw)
-		ciphertext = append(iv, ciphertext...)
+		mode.CryptBlocks(rawCipherData, paddedRawData)
+		rawCipherData = a.ResultCreator.Encrypt(iv, rawCipherData)
 	} else {
 		// TODO: 其他模式支持
 		return nil, errors.New("not supported aes model")
 	}
-	return ciphertext, nil
+	return rawCipherData, nil
 }
 
-func (a *AESEncrypt) EncryptBase64(base64Raw string) (string, error) {
-	data, err := base64.StdEncoding.DecodeString(base64Raw)
+func (a *AESEncrypt) EncryptBase64(base64RawData string) (string, error) {
+	data, err := base64.StdEncoding.DecodeString(base64RawData)
 	if err != nil {
 		return "", err
 	}
-	ciphertext, err := a.Encrypt(data)
+	cipherData, err := a.Encrypt(data)
 	if err != nil {
 		return "", err
 	}
-	return base64.StdEncoding.EncodeToString(ciphertext), nil
+	return base64.StdEncoding.EncodeToString(cipherData), nil
 }
 
-func (a *AESEncrypt) Decrypt(cipherText []byte) ([]byte, error) {
+func (a *AESEncrypt) Decrypt(cipherData []byte) ([]byte, error) {
 	block, err := a.cipherBlock()
 	if err != nil {
 		return nil, err
 	}
-	if len(cipherText)%aes.BlockSize != 0 {
+	if len(cipherData)%aes.BlockSize != 0 {
 		return nil, errors.New("ciphertext is not a multiple of the block size")
 	}
-	plaintext := make([]byte, len(cipherText)-aes.BlockSize)
+	var rawData []byte
 	if a.Model == AESModelCBC {
-		mode := cipher.NewCBCDecrypter(block, decIV(cipherText))
-		mode.CryptBlocks(plaintext, cipherText[aes.BlockSize:])
-		plaintext, err = pkcs7Unpad(plaintext)
+		iv := a.IVCreator.Decrypt(a.Key, cipherData)
+		mode := cipher.NewCBCDecrypter(block, iv)
+		rawCipherData := a.ResultCreator.Decrypt(iv, cipherData)
+		rawData = make([]byte, len(rawCipherData))
+		mode.CryptBlocks(rawData, rawCipherData)
+		rawData, err = a.PaddingCreator.UnPad(rawData)
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +216,7 @@ func (a *AESEncrypt) Decrypt(cipherText []byte) ([]byte, error) {
 		// TODO: 其他模式支持
 		return nil, errors.New("not supported aes model")
 	}
-	return plaintext, nil
+	return rawData, nil
 }
 
 func (a *AESEncrypt) DecryptBase64(base64Cipher string) (string, error) {
