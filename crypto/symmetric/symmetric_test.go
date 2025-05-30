@@ -17,9 +17,22 @@ func (A AESIVCreator) Decrypt(key, cipherText []byte) [aes.BlockSize]byte {
 	return [16]byte(key[:aes.BlockSize])
 }
 
+type AESResultCreator struct {
+}
+
+func (A AESResultCreator) Encrypt(iv [16]byte, rawCipherData []byte) []byte {
+	return rawCipherData
+}
+
+func (A AESResultCreator) Decrypt(iv [16]byte, cipherData []byte) []byte {
+	return cipherData
+}
+
 func TestAESEncrypt(t *testing.T) {
-	key := []byte("1234567890abcdef")     // 16字节key
+	key := []byte("1234567890abcdef")       // 16字节key
 	raw := []byte("hello aes12345678 明文") // 16字节明文
+
+	// 默认AES工作模式
 	encrypt := NewAES(key)
 	enc, err := encrypt.Encrypt(raw)
 	if err != nil {
@@ -31,9 +44,10 @@ func TestAESEncrypt(t *testing.T) {
 	}
 	fmt.Println(string(dec))
 
-	// 自定义IV
+	// 自定义AES工作模式
 	encrypt = NewAESWithOption(key, AESOption{
-		IVCreator: &AESIVCreator{},
+		IVCreator:     &AESIVCreator{},
+		ResultCreator: AESResultCreator{},
 	})
 	enc, err = encrypt.Encrypt(raw)
 	if err != nil {
