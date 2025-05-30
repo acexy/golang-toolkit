@@ -82,38 +82,38 @@ func NewAESWithOption(key []byte, option AESOption) *AESEncrypt {
 // IVCreator IV自定义创建接口
 type IVCreator interface {
 	// Encrypt 加密时创建IV
-	Encrypt(key, paddedRawData []byte) []byte
+	Encrypt(key, paddedRawData []byte) [aes.BlockSize]byte
 	// Decrypt 解密时创建IV
-	Decrypt(key, cipherText []byte) []byte
+	Decrypt(key, cipherText []byte) [aes.BlockSize]byte
 }
 
 type randomIvCreator struct {
 }
 
-func (d randomIvCreator) Encrypt(key, paddedRawData []byte) []byte {
+func (d randomIvCreator) Encrypt(key, paddedRawData []byte) [aes.BlockSize]byte {
 	iv := make([]byte, aes.BlockSize)
 	_, _ = rand.Read(iv) // 安全随机生成
-	return iv
+	return [aes.BlockSize]byte(iv)
 }
-func (d randomIvCreator) Decrypt(key, cipherText []byte) []byte {
-	return cipherText[:aes.BlockSize]
+func (d randomIvCreator) Decrypt(key, cipherText []byte) [aes.BlockSize]byte {
+	return [aes.BlockSize]byte(cipherText[:aes.BlockSize])
 }
 
 type ResultCreator interface {
 	// Encrypt 加密时创建最终返回内容
-	Encrypt(iv, rawCipherData []byte) []byte
+	Encrypt(iv [aes.BlockSize]byte, rawCipherData []byte) []byte
 	// Decrypt 解密时通过原始的密文创建解密的实际密文
-	Decrypt(iv, cipherData []byte) []byte
+	Decrypt(iv [aes.BlockSize]byte, cipherData []byte) []byte
 }
 
 type appendResultCreator struct {
 }
 
-func (a appendResultCreator) Encrypt(iv, rawCipherData []byte) []byte {
-	return append(iv, rawCipherData...)
+func (a appendResultCreator) Encrypt(iv [aes.BlockSize]byte, rawCipherData []byte) []byte {
+	return append(iv[:], rawCipherData...)
 }
 
-func (a appendResultCreator) Decrypt(iv, cipherText []byte) []byte {
+func (a appendResultCreator) Decrypt(iv [aes.BlockSize]byte, cipherText []byte) []byte {
 	return cipherText[len(iv):]
 }
 
@@ -171,7 +171,7 @@ func (a *AESEncrypt) Encrypt(rawData []byte) ([]byte, error) {
 		}
 		rawCipherData = make([]byte, len(paddedRawData))
 		iv := a.IVCreator.Encrypt(a.Key, paddedRawData)
-		mode := cipher.NewCBCEncrypter(block, iv)
+		mode := cipher.NewCBCEncrypter(block, iv[:])
 		mode.CryptBlocks(rawCipherData, paddedRawData)
 		rawCipherData = a.ResultCreator.Encrypt(iv, rawCipherData)
 	} else {
@@ -198,14 +198,15 @@ func (a *AESEncrypt) Decrypt(cipherData []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(cipherData)%aes.BlockSize != 0 {
-		return nil, errors.New("ciphertext is not a multiple of the block size")
-	}
+
 	var rawData []byte
 	if a.Model == AESModelCBC {
 		iv := a.IVCreator.Decrypt(a.Key, cipherData)
-		mode := cipher.NewCBCDecrypter(block, iv)
+		mode := cipher.NewCBCDecrypter(block, iv[:])
 		rawCipherData := a.ResultCreator.Decrypt(iv, cipherData)
+		if len(rawCipherData)%aes.BlockSize != 0 {
+			return nil, errors.New("ciphertext is not a multiple of the block size")
+		}
 		rawData = make([]byte, len(rawCipherData))
 		mode.CryptBlocks(rawData, rawCipherData)
 		rawData, err = a.PaddingCreator.UnPad(rawData)
@@ -219,11 +220,14 @@ func (a *AESEncrypt) Decrypt(cipherData []byte) ([]byte, error) {
 	return rawData, nil
 }
 
-func (a *AESEncrypt) DecryptBase64(base64Cipher string) (string, error) {
-	data, err := base64.StdEncoding.DecodeString(base64Cipher)
+func (a *AESEncrypt) DecryptBase64(base64CipherData string) (string, error) {
+	data, err := base64.StdEncoding.DecodeString(base64CipherData)
 	if err != nil {
 		return "", err
 	}
-	decryptBase64, err := a.Decrypt(data)
-	return base64.StdEncoding.EncodeToString(decryptBase64), nil
+	plain, err := a.Decrypt(data)
+	if err != nil {
+		return "", err
+	}
+	return string(plain), nil
 }

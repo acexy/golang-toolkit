@@ -9,12 +9,12 @@ import (
 type AESIVCreator struct {
 }
 
-func (A AESIVCreator) Encrypt(key, raw []byte) []byte {
-	return key[:aes.BlockSize]
+func (A AESIVCreator) Encrypt(key, raw []byte) [aes.BlockSize]byte {
+	return [16]byte(key[:aes.BlockSize])
 }
 
-func (A AESIVCreator) Decrypt(key, cipherText []byte) []byte {
-	return key[:aes.BlockSize]
+func (A AESIVCreator) Decrypt(key, cipherText []byte) [aes.BlockSize]byte {
+	return [16]byte(key[:aes.BlockSize])
 }
 
 func TestAESEncrypt(t *testing.T) {
