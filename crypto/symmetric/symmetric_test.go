@@ -29,7 +29,7 @@ func (A AESResultCreator) Decrypt(iv [16]byte, cipherData []byte) []byte {
 }
 
 func TestAESEncrypt(t *testing.T) {
-	key := []byte("1234567890abcdef")       // 16字节key
+	key := []byte("1234567890abcdef")     // 16字节key
 	raw := []byte("hello aes12345678 明文") // 16字节明文
 
 	// 默认AES工作模式
