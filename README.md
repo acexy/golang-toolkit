@@ -25,3 +25,4 @@ Golang Toolkit
 | github.com/jinzhu/copier     | struct copy             |
 | github.com/timandy/routine   | goroutine local storage |
 | github.com/tidwall/gjson     | json parse              |
+| github.com/google/uuid  | uuid |

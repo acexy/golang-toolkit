@@ -8,8 +8,8 @@ import (
 	"github.com/acexy/golang-toolkit/math/random"
 	"github.com/acexy/golang-toolkit/util/str"
 	"github.com/go-resty/resty/v2"
-	"github.com/google/go-querystring/query"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -197,9 +197,8 @@ func (m *RestyMethod) SetRequestBody(body interface{}, contentType string) *Rest
 	return m
 }
 
-func (m *RestyMethod) SetQueryValues(any interface{}) *RestyMethod {
-	queryParam, _ := query.Values(any)
-	m.request.request.QueryParam = queryParam
+func (m *RestyMethod) SetQueryValues(query url.Values) *RestyMethod {
+	m.request.request.QueryParam = query
 	return m
 }
 
