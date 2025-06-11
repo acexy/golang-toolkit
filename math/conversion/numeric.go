@@ -346,5 +346,5 @@ func ParseFloat64Error(value string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return float64(v), nil
+	return v, nil
 }

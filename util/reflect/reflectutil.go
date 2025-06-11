@@ -14,7 +14,7 @@ func processStructFields(value interface{}, filter func(field reflect.Value) boo
 	if val.Kind() != reflect.Struct {
 		return errors.New("inputStruct must be a struct or a pointer to a struct")
 	}
-	
+
 	typ := val.Type()
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
@@ -30,10 +30,10 @@ func processStructFields(value interface{}, filter func(field reflect.Value) boo
 	return nil
 }
 
-// AllField 返回结构体的所有字段
-func AllField(value interface{}) ([]string, error) {
+// AllFieldName 返回结构体的所有字段
+func AllFieldName(value interface{}) ([]string, error) {
 	var allFields []string
-	err := processStructFields(value, 
+	err := processStructFields(value,
 		nil, // 不需要过滤
 		func(fieldName string, field reflect.Value) {
 			allFields = append(allFields, fieldName)
@@ -52,8 +52,8 @@ func AllFieldValue(value interface{}) (map[string]interface{}, error) {
 	return allValue, err
 }
 
-// NonZeroField 返回结构体的非零字段
-func NonZeroField(value interface{}) ([]string, error) {
+// NonZeroFieldName 返回结构体的非零字段
+func NonZeroFieldName(value interface{}) ([]string, error) {
 	var nonZeroFields []string
 	err := processStructFields(value,
 		func(field reflect.Value) bool {

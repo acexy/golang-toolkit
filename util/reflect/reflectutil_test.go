@@ -20,7 +20,7 @@ func TestNonZeroField(t *testing.T) {
 		B: &i,
 		C: true,
 	}
-	fields, err := NonZeroField(testStruct)
+	fields, err := NonZeroFieldName(testStruct)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +61,7 @@ func TestAllField(t *testing.T) {
 		B: &i,
 		C: true,
 	}
-	fields, err := AllField(testStruct)
+	fields, err := AllFieldName(testStruct)
 	if err != nil {
 		panic(err)
 	}
