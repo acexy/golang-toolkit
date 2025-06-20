@@ -23,6 +23,27 @@ func TestPoxyClient(t *testing.T) {
 	fmt.Println(response.RawResponse)
 }
 
+func TestStructResult(t *testing.T) {
+
+	type R[T any] struct {
+		Message string `json:"message"`
+		Data    struct {
+			Forecast T `json:"forecast"`
+		} `json:"data"`
+	}
+	type T struct {
+		Date string `json:"date"`
+	}
+
+	var result R[[]*T]
+	response, err := client.R().SetReturnStruct(&result).Get("http://t.weather.sojson.com/api/weather/city/101030100")
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+	}
+	fmt.Println(json.ToJson(result))
+	fmt.Println(response.String())
+}
+
 func TestGet(t *testing.T) {
 	resp, err := client.SetTimeout(time.Second * 3).R().Get("https://github.com")
 	if err != nil {
