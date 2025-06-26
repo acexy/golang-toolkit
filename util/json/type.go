@@ -69,7 +69,7 @@ func (t Timestamp) MarshalJSON() ([]byte, error) {
 	return Time2Timestamp(t.Time)
 }
 
-func (t Timestamp) UnmarshalJSON(data []byte) error {
+func (t *Timestamp) UnmarshalJSON(data []byte) error {
 	formatTime, err := Timestamp2Time(data)
 	if err != nil {
 		return err
