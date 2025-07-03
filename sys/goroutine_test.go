@@ -23,6 +23,8 @@ func TestEnableTraceIdLocal(t *testing.T) {
 	EnableLocalTraceId(nil)
 	fmt.Println(GetLocalTraceId())
 	f2()
+	SetLocalTraceId("123")
+	f2()
 }
 
 func f2() {

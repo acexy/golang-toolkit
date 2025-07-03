@@ -171,6 +171,21 @@ func SliceComplement[T comparable](slicePart1, slicePart2 []T, compare ...func(p
 	return result
 }
 
+// SliceIsSubset 判断切片A是否是切片B的子集
+func SliceIsSubset[T comparable](slicePart, sliceAll []T) bool {
+	setMap := make(map[T]struct{}, len(sliceAll))
+	for _, v := range sliceAll {
+		setMap[v] = struct{}{}
+	}
+
+	for _, item := range slicePart {
+		if _, ok := setMap[item]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 // SliceFilterToMap 将切片按照指定的过滤处理形成map
 func SliceFilterToMap[T any, K comparable, V any](slice []T, filter func(T) (K, V, bool)) map[K]V {
 	if len(slice) == 0 {

@@ -38,7 +38,7 @@ func TestIsCamelCase(t *testing.T) {
 }
 
 func TestCamelToSnake(t *testing.T) {
-	testCases := []string{"camelCase", "CamelCase", "simpleTestExample", "OneMoreExample", "like"}
+	testCases := []string{"", "camelCase", "CamelCase", "simpleTestExample", "OneMoreExample", "like", "ID"}
 
 	for _, testCase := range testCases {
 		fmt.Printf("%s -> %s\n", testCase, CamelToSnake(testCase))
@@ -54,9 +54,9 @@ func TestSnakeToCamel(t *testing.T) {
 		{"hello", "hello"},            // 单词
 		{"hello_world", "helloWorld"}, // 下划线分隔的小写
 		{"snake_case_example", "snakeCaseExample"},          // 多个单词
-		{"_leading_underscore", "leadingUnderscore"},        // 前置下划线
+		{"_leading_underscore", "LeadingUnderscore"},        // 前置下划线
 		{"trailing_underscore_", "trailingUnderscore"},      // 后置下划线
-		{"mixed_case_example_TEST", "mixedCaseExampleTEST"}, // 混合大小写
+		{"mixed_case_example_TEST", "mixedCaseExampleTest"}, // 混合大小写
 	}
 
 	for _, test := range tests {

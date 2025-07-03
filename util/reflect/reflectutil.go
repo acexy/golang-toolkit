@@ -2,6 +2,7 @@ package reflect
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -14,7 +15,7 @@ func processStructFields(value interface{}, filter func(field reflect.Value) boo
 	if val.Kind() != reflect.Struct {
 		return errors.New("inputStruct must be a struct or a pointer to a struct")
 	}
-	
+
 	typ := val.Type()
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
@@ -30,10 +31,10 @@ func processStructFields(value interface{}, filter func(field reflect.Value) boo
 	return nil
 }
 
-// AllField 返回结构体的所有字段
-func AllField(value interface{}) ([]string, error) {
+// AllFieldName 返回结构体的所有字段
+func AllFieldName(value interface{}) ([]string, error) {
 	var allFields []string
-	err := processStructFields(value, 
+	err := processStructFields(value,
 		nil, // 不需要过滤
 		func(fieldName string, field reflect.Value) {
 			allFields = append(allFields, fieldName)
@@ -52,8 +53,8 @@ func AllFieldValue(value interface{}) (map[string]interface{}, error) {
 	return allValue, err
 }
 
-// NonZeroField 返回结构体的非零字段
-func NonZeroField(value interface{}) ([]string, error) {
+// NonZeroFieldName 返回结构体的非零字段
+func NonZeroFieldName(value interface{}) ([]string, error) {
 	var nonZeroFields []string
 	err := processStructFields(value,
 		func(field reflect.Value) bool {
@@ -150,4 +151,104 @@ func isZeroValue(v reflect.Value) bool {
 		// 对于其他类型，使用通用比较
 		return reflect.DeepEqual(v.Interface(), zero.Interface())
 	}
+}
+
+// SetFieldValue 将 map[string]any 中的值赋给 structPtr 指向的结构体中对应字段
+func SetFieldValue(structPtr any, values map[string]any, checkMissingField ...bool) error {
+	v := reflect.ValueOf(structPtr)
+	if v.Kind() != reflect.Ptr || v.IsNil() {
+		return fmt.Errorf("input must be a non-nil pointer to a struct")
+	}
+	v = v.Elem()
+	if v.Kind() != reflect.Struct {
+		return fmt.Errorf("input must be a pointer to a struct")
+	}
+
+	for fieldName, val := range values {
+		field := v.FieldByName(fieldName)
+		if !field.IsValid() {
+			if len(checkMissingField) > 0 && checkMissingField[0] {
+				return fmt.Errorf("field %s does not exist in struct", fieldName)
+			}
+			continue // 忽略不存在的字段
+		}
+		if !field.CanSet() {
+			return fmt.Errorf("field %s cannot be set (may be unexported)", fieldName)
+		}
+		value := reflect.ValueOf(val)
+		fieldType := field.Type()
+
+		// 自动兼容基本类型转换
+		if value.Type().ConvertibleTo(fieldType) {
+			field.Set(value.Convert(fieldType))
+			continue
+		}
+
+		// 尝试处理不同数值类型间的兼容
+		if converted, ok := tryConvertNumber(value, fieldType); ok {
+			field.Set(converted)
+			continue
+		}
+
+		return fmt.Errorf("cannot assign value of type %s to field %s (type %s)", value.Type(), fieldName, fieldType)
+	}
+
+	return nil
+}
+
+// tryConvertNumber 尝试在不同的数字类型之间转换（int/uint/float）
+func tryConvertNumber(val reflect.Value, targetType reflect.Type) (reflect.Value, bool) {
+	if !val.IsValid() {
+		return reflect.Value{}, false
+	}
+	kind := val.Kind()
+	tKind := targetType.Kind()
+	if isNumericKind(kind) && isNumericKind(tKind) {
+		// 转换为 float64 作为中介
+		var floatVal float64
+		switch kind {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			floatVal = float64(val.Int())
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			floatVal = float64(val.Uint())
+		case reflect.Float32, reflect.Float64:
+			floatVal = val.Float()
+		default:
+			return reflect.Value{}, false
+		}
+		// 转换为目标类型
+		switch tKind {
+		case reflect.Int:
+			return reflect.ValueOf(int(floatVal)).Convert(targetType), true
+		case reflect.Int8:
+			return reflect.ValueOf(int8(floatVal)).Convert(targetType), true
+		case reflect.Int16:
+			return reflect.ValueOf(int16(floatVal)).Convert(targetType), true
+		case reflect.Int32:
+			return reflect.ValueOf(int32(floatVal)).Convert(targetType), true
+		case reflect.Int64:
+			return reflect.ValueOf(int64(floatVal)).Convert(targetType), true
+		case reflect.Uint:
+			return reflect.ValueOf(uint(floatVal)).Convert(targetType), true
+		case reflect.Uint8:
+			return reflect.ValueOf(uint8(floatVal)).Convert(targetType), true
+		case reflect.Uint16:
+			return reflect.ValueOf(uint16(floatVal)).Convert(targetType), true
+		case reflect.Uint32:
+			return reflect.ValueOf(uint32(floatVal)).Convert(targetType), true
+		case reflect.Uint64:
+			return reflect.ValueOf(uint64(floatVal)).Convert(targetType), true
+		case reflect.Float32:
+			return reflect.ValueOf(float32(floatVal)).Convert(targetType), true
+		case reflect.Float64:
+			return reflect.ValueOf(floatVal).Convert(targetType), true
+		default:
+			return reflect.Value{}, false
+		}
+	}
+	return reflect.Value{}, false
+}
+
+func isNumericKind(kind reflect.Kind) bool {
+	return kind >= reflect.Int && kind <= reflect.Float64
 }

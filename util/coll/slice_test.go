@@ -250,3 +250,12 @@ func TestSliceGroupBy(t *testing.T) {
 		return t.Name, t.Age
 	}))
 }
+
+func TestSliceIsSubset(t *testing.T) {
+	set := []string{"a", "b", "c", "d"}
+	subset1 := []string{"a", "c"}
+	subset2 := []string{"a", "e"}
+
+	fmt.Println(SliceIsSubset(subset1, set)) // true
+	fmt.Println(SliceIsSubset(subset2, set)) // false
+}

@@ -75,8 +75,16 @@ func IsEnabledLocalTraceId() bool {
 
 // GetLocalTraceId 获取当前线程的TraceId
 func GetLocalTraceId() string {
-	if traceIdLocal == nil {
+	if !IsEnabledLocalTraceId() {
 		return ""
 	}
 	return traceIdLocal.Get()
+}
+
+// SetLocalTraceId 设置当前线程的TraceId
+func SetLocalTraceId(traceId string) {
+	if !IsEnabledLocalTraceId() {
+		return
+	}
+	traceIdLocal.Set(traceId)
 }

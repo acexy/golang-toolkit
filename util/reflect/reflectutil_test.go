@@ -2,6 +2,7 @@ package reflect
 
 import (
 	"fmt"
+	"github.com/acexy/golang-toolkit/util/json"
 	"testing"
 )
 
@@ -20,7 +21,7 @@ func TestNonZeroField(t *testing.T) {
 		B: &i,
 		C: true,
 	}
-	fields, err := NonZeroField(testStruct)
+	fields, err := NonZeroFieldName(testStruct)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +62,7 @@ func TestAllField(t *testing.T) {
 		B: &i,
 		C: true,
 	}
-	fields, err := AllField(testStruct)
+	fields, err := AllFieldName(testStruct)
 	if err != nil {
 		panic(err)
 	}
@@ -112,4 +113,23 @@ func BenchmarkDeepCopy(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		DeepCopy(testStruct)
 	}
+}
+
+func TestSetFieldValue(t *testing.T) {
+	var s = new(TestStruct)
+	ptrVal := 10
+
+	err := SetFieldValue(s, map[string]any{
+		"IntField":    10,
+		"StringField": "Hello",
+		"BoolField":   true,
+		"FloatField":  3.14,
+		"PtrField":    &ptrVal,
+		"SliceField":  []string{"a", "b", "c"},
+		"MapField1":   map[string]int{"one": 1, "two": 2},
+	}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(json.ToJson(s))
 }
