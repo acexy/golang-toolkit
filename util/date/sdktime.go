@@ -27,19 +27,9 @@ func FormatUnixNano(ts int64, layout string) string {
 	return Format(FromUnixNano(ts), layout)
 }
 
-// UnixTimestamp 获取当前 Unix 时间戳（秒）
-func UnixTimestamp() int64 {
-	return time.Now().Unix()
-}
-
 // FromUnixTimestamp 将 Unix (秒级)时间戳转为 time.Time
 func FromUnixTimestamp(ts int64) time.Time {
 	return time.Unix(ts, 0)
-}
-
-// UnixNano 获取当前 Unix 纳秒时间戳
-func UnixNano() int64 {
-	return time.Now().UnixNano()
 }
 
 // FromUnixNano 从 Unix (纳秒级)时间戳转为 time.Time
@@ -49,16 +39,26 @@ func FromUnixNano(ts int64) time.Time {
 	return time.Unix(sec, nsec)
 }
 
-// UnixMilli 获取当前 Unix 毫秒时间戳
-func UnixMilli() int64 {
-	return time.Now().Unix() * 1000
-}
-
 // FromUnixMilli 从 Unix (毫秒级)时间戳转为 time.Time
 func FromUnixMilli(ts int64) time.Time {
 	sec := ts / 1000
 	nsec := (ts % 1000) * 1000000
 	return time.Unix(sec, nsec)
+}
+
+// UnixTimestamp 获取当前 Unix 时间戳（秒）
+func UnixTimestamp(t time.Time) int64 {
+	return t.Unix()
+}
+
+// UnixNano 获取当前 Unix 纳秒时间戳
+func UnixNano(t time.Time) int64 {
+	return t.UnixNano()
+}
+
+// UnixMilli 获取当前 Unix 毫秒时间戳
+func UnixMilli(t time.Time) int64 {
+	return t.Unix() * 1000
 }
 
 // CurrentYear 获取当前时间的年份
