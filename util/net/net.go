@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"strings"
 )
 
 // Telnet 尝试在指定的时间内连接指定主机的指定端口 用于探活网络端口 address: ip:port
@@ -27,7 +28,7 @@ func GetLocalIPV4() (string, error) {
 		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
 			continue
 		}
-		if name := iface.Name; name == "docker0" || name == "lo" || name == "veth" || name == "br-" {
+		if name := iface.Name; strings.HasPrefix(name, "docker0") || name == "lo" || strings.HasPrefix(name, "veth") || strings.HasPrefix(name, "br-") {
 			continue
 		}
 		addrs, err := iface.Addrs()
