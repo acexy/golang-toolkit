@@ -2,7 +2,6 @@ package sys
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -45,7 +44,6 @@ func ShutdownSignal(sig ...os.Signal) <-chan struct{} {
 	chn := make(chan struct{})
 	go func() {
 		holding(sig...)
-		fmt.Println("shutdown")
 		chn <- struct{}{}
 	}()
 	return chn
