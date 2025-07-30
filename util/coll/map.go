@@ -98,3 +98,13 @@ func MapForeachAll[K comparable, V any](m map[K]V, fn func(k K, v V)) {
 		fn(k, v)
 	}
 }
+
+// MapAppend 将map追加到当前map中
+func MapAppend[K comparable, V any](current map[K]V, append map[K]V) {
+	if len(current) == 0 || len(append) == 0 {
+		return
+	}
+	for k, v := range append {
+		current[k] = v
+	}
+}
