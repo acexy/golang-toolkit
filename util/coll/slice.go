@@ -302,12 +302,32 @@ func SliceGroupBy[T any, K comparable](slice []T, groupFn func(T) K) map[K][]T {
 	return result
 }
 
+// SliceGroupBySingle 将切片按照指定的分组函数进行分组 适用于分组的值为单个元素
+func SliceGroupBySingle[T any, K comparable](slice []T, groupFn func(T) K) map[K]T {
+	result := make(map[K]T)
+	for i := range slice {
+		k := groupFn(slice[i])
+		result[k] = slice[i]
+	}
+	return result
+}
+
 // SliceAnyGroupBy 将切片按照指定的分组函数进行分组
 func SliceAnyGroupBy[T, V any, K comparable](slice []T, groupFn func(T) (K, V)) map[K][]V {
 	result := make(map[K][]V)
 	for i := range slice {
 		k, v := groupFn(slice[i])
 		result[k] = append(result[k], v)
+	}
+	return result
+}
+
+// SliceAnyGroupBySingle 将切片按照指定的分组函数进行分组 适用于分组的值为单个元素
+func SliceAnyGroupBySingle[T, V any, K comparable](slice []T, groupFn func(T) (K, V)) map[K]V {
+	result := make(map[K]V)
+	for i := range slice {
+		k, v := groupFn(slice[i])
+		result[k] = v
 	}
 	return result
 }

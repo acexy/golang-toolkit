@@ -4,11 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/acexy/golang-toolkit/logger"
-	"sync"
 )
-
-var once sync.Once
-var cachingManager *CacheManager
 
 var (
 	CacheMiss = errors.New("cache miss")
@@ -53,20 +49,15 @@ type CacheBucket interface {
 }
 
 func NewCacheBucketManager(bucketName string, bucket CacheBucket) *CacheManager {
-	if cachingManager == nil {
-		NewEmptyCacheBucketManager()
-	}
-	cachingManager.caches[bucketName] = bucket
-	return cachingManager
+	manager := NewEmptyCacheBucketManager()
+	manager.caches[bucketName] = bucket
+	return manager
 }
 
 func NewEmptyCacheBucketManager() *CacheManager {
-	once.Do(func() {
-		cachingManager = &CacheManager{
-			caches: make(map[string]CacheBucket),
-		}
-	})
-	return cachingManager
+	return &CacheManager{
+		caches: make(map[string]CacheBucket),
+	}
 }
 
 func (c *CacheManager) AddBucket(bucketName string, bucket CacheBucket) {

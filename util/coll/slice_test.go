@@ -251,6 +251,21 @@ func TestSliceGroupBy(t *testing.T) {
 	}))
 }
 
+func TestSliceGroupBySingle(t *testing.T) {
+	input := []Person{
+		{Name: "Alice", Age: 25},
+		{Name: "Bob", Age: 30},
+		{Name: "Charlie1", Age: 35},
+		{Name: "Charlie", Age: 36},
+	}
+	fmt.Println(SliceGroupBySingle(input, func(t Person) string {
+		return t.Name
+	}))
+	fmt.Println(SliceAnyGroupBySingle(input, func(t Person) (string, int) {
+		return t.Name, t.Age
+	}))
+}
+
 func TestSliceIsSubset(t *testing.T) {
 	set := []string{"a", "b", "c", "d"}
 	subset1 := []string{"a", "c"}

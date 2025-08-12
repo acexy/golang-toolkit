@@ -53,8 +53,9 @@ func TestTimestamp(t *testing.T) {
 	//	options.TimestampType = TimestampTypeSecond
 	//})
 	fmt.Println(ToJson(user))
-	ParseJson("{\"name\":\"acexy\",\"time\":1729136314000}", &user)
-	fmt.Println(user)
+	var u *User
+	ParseJson("{\"name\":\"acexy\",\"time\":1729136314000}", &u)
+	fmt.Println(u)
 
 	model := Model[User]{
 		T:    user,
