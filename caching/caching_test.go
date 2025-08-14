@@ -2,10 +2,11 @@ package caching
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/logger"
-	"github.com/acexy/golang-toolkit/sys"
 	"testing"
 	"time"
+
+	"github.com/acexy/golang-toolkit/logger"
+	"github.com/acexy/golang-toolkit/sys"
 )
 
 var manager *CacheManager

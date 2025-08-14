@@ -2,8 +2,9 @@ package logger
 
 import (
 	"errors"
-	"gopkg.in/natefinch/lumberjack.v2"
 	"testing"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 /**

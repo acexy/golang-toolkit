@@ -1,8 +1,9 @@
 package conversion
 
 import (
-	"github.com/acexy/golang-toolkit/logger"
 	"strconv"
+
+	"github.com/acexy/golang-toolkit/logger"
 )
 
 func parseInt(value string, bit int) (int64, error) {
