@@ -3,13 +3,14 @@ package random
 import (
 	"errors"
 	"fmt"
-	"github.com/acexy/golang-toolkit/util/coll"
-	"github.com/shopspring/decimal"
 	"math"
 	"math/rand"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/acexy/golang-toolkit/util/coll"
+	"github.com/shopspring/decimal"
 )
 
 var (
