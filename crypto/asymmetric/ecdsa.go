@@ -8,10 +8,11 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"errors"
-	"github.com/acexy/golang-toolkit/math/conversion"
 	"hash"
 	"math/big"
 	"sync"
+
+	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
 type CreateEcdsaSetting struct {
