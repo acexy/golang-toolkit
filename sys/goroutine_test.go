@@ -2,8 +2,9 @@ package sys
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/math/random"
 	"testing"
+
+	"github.com/acexy/golang-toolkit/math/random"
 )
 
 func TestLocal(t *testing.T) {

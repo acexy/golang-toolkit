@@ -171,6 +171,88 @@ func SliceComplement[T comparable](slicePart1, slicePart2 []T, compare ...func(p
 	return result
 }
 
+// SliceDiff 返回两个集合的差异：新增的和减少的
+// added: b中有但a中没有的元素
+// removed: a中有但b中没有的元素
+func SliceDiff[T comparable](a, b []T, compare ...func(T, T) bool) (added, removed []T) {
+	if len(compare) > 0 {
+		eq := compare[0]
+		for _, va := range a {
+			found := false
+			for _, vb := range b {
+				if eq(va, vb) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				removed = append(removed, va)
+			}
+		}
+		for _, vb := range b {
+			found := false
+			for _, va := range a {
+				if eq(vb, va) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				added = append(added, vb)
+			}
+		}
+		return
+	}
+	amap := make(map[T]struct{}, len(a))
+	bmap := make(map[T]struct{}, len(b))
+	for _, v := range a {
+		amap[v] = struct{}{}
+	}
+	for _, v := range b {
+		bmap[v] = struct{}{}
+	}
+	for _, v := range a {
+		if _, ok := bmap[v]; !ok {
+			removed = append(removed, v)
+		}
+	}
+	// 找新增的（b 中有，a 中没有）
+	for _, v := range b {
+		if _, ok := amap[v]; !ok {
+			added = append(added, v)
+		}
+	}
+	return
+}
+
+// SliceDiffWithCompare 针对不可比较类型的专门版本（性能更好）
+// added: b中有但a中没有的元素
+// removed: a中有但b中没有的元素
+func SliceDiffWithCompare[T any](a, b []T, compare func(T, T) bool) (added, removed []T) {
+	usedA := make([]bool, len(a))
+	usedB := make([]bool, len(b))
+	for i, va := range a {
+		for j, vb := range b {
+			if !usedB[j] && compare(va, vb) {
+				usedA[i] = true
+				usedB[j] = true
+				break
+			}
+		}
+	}
+	for i, va := range a {
+		if !usedA[i] {
+			removed = append(removed, va)
+		}
+	}
+	for j, vb := range b {
+		if !usedB[j] {
+			added = append(added, vb)
+		}
+	}
+	return
+}
+
 // SliceIsSubset 判断切片A是否是切片B的子集
 func SliceIsSubset[T comparable](slicePart, sliceAll []T) bool {
 	setMap := make(map[T]struct{}, len(sliceAll))

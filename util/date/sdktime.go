@@ -58,7 +58,7 @@ func UnixNano(t time.Time) int64 {
 
 // UnixMilli 获取当前 Unix 毫秒时间戳
 func UnixMilli(t time.Time) int64 {
-	return t.Unix() * 1000
+	return t.UnixMilli()
 }
 
 // CurrentYear 获取当前时间的年份

@@ -3,8 +3,8 @@ package net
 import (
 	"fmt"
 	"net"
-	"time"
 	"strings"
+	"time"
 )
 
 // Telnet 尝试在指定的时间内连接指定主机的指定端口 用于探活网络端口 address: ip:port

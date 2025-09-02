@@ -2,11 +2,12 @@ package httpclient
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/math/conversion"
-	"github.com/acexy/golang-toolkit/util/json"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/acexy/golang-toolkit/math/conversion"
+	"github.com/acexy/golang-toolkit/util/json"
 )
 
 var client *RestyClient

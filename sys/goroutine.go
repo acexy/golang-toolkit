@@ -1,10 +1,11 @@
 package sys
 
 import (
-	"github.com/google/uuid"
-	"github.com/timandy/routine"
 	"strings"
 	"sync"
+
+	"github.com/google/uuid"
+	"github.com/timandy/routine"
 )
 
 // 一个traceId的默认共享策略

@@ -2,9 +2,10 @@ package coll
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/acexy/golang-toolkit/math/conversion"
 	"github.com/acexy/golang-toolkit/util/str"
-	"testing"
 )
 
 type people struct {
@@ -273,4 +274,29 @@ func TestSliceIsSubset(t *testing.T) {
 
 	fmt.Println(SliceIsSubset(subset1, set)) // true
 	fmt.Println(SliceIsSubset(subset2, set)) // false
+}
+
+func TestSliceDiff(t *testing.T) {
+	old := []int{1, 2, 3, 4}
+	new := []int{2, 3, 5, 6}
+	added, removed := SliceDiff(old, new)
+	fmt.Printf("Added: %v, Removed: %v\n", added, removed)
+	// 输出: Added: [5 6], Removed: [1 4]
+
+	// 示例2：结构体类型（假设CronConfig实现了comparable）
+	type Person struct {
+		ID   int
+		Name string
+	}
+
+	oldPeople := []Person{{1, "Alice"}, {2, "Bob"}}
+	newPeople := []Person{{2, "Bob"}, {3, "Charlie"}}
+	addedPeople, removedPeople := SliceDiff(oldPeople, newPeople)
+	fmt.Printf("Added: %v, Removed: %v\n", addedPeople, removedPeople)
+
+	// 示例3：使用自定义比较函数（比较ID）
+	addedByID, removedByID := SliceDiff(oldPeople, newPeople, func(a, b Person) bool {
+		return a.ID == b.ID
+	})
+	fmt.Printf("Added by ID: %v, Removed by ID: %v\n", addedByID, removedByID)
 }

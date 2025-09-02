@@ -2,13 +2,14 @@ package logger
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/sys"
-	"github.com/sirupsen/logrus"
-	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 	"path"
 	"runtime"
 	"sync"
+
+	"github.com/acexy/golang-toolkit/sys"
+	"github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (

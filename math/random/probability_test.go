@@ -1,8 +1,9 @@
 package random
 
 import (
-	"github.com/acexy/golang-toolkit/util/coll"
 	"testing"
+
+	"github.com/acexy/golang-toolkit/util/coll"
 )
 
 func TestProbabilityTrue(t *testing.T) {

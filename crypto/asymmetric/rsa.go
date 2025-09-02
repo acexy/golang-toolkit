@@ -11,9 +11,10 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/acexy/golang-toolkit/math/conversion"
 	"hash"
 	"sync"
+
+	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
 type PaddingType uint8
