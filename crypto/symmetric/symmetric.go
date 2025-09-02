@@ -6,7 +6,7 @@ type CryptEncrypt interface {
 	// Encrypt 加密
 	Encrypt(rawData []byte) ([]byte, error)
 	// EncryptBase64 加密
-	EncryptBase64(base64RawData string) (string, error)
+	EncryptBase64(rawData []byte) (string, error)
 	// Decrypt 解密
 	Decrypt(cipherData []byte) ([]byte, error)
 	// DecryptBase64 解密

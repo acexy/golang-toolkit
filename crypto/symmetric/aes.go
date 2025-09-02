@@ -39,8 +39,8 @@ func NewAES(key []byte) *AESEncrypt {
 	return &AESEncrypt{
 		Key:            key,
 		Model:          AESModelCBC,
-		IVCreator:      randomIvCreator{},
-		ResultCreator:  appendResultCreator{},
+		IVCreator:      RandomIvCreator{},
+		ResultCreator:  PureResultCreator{},
 		PaddingCreator: pkcs7PaddingCreator{},
 	}
 }
@@ -57,14 +57,14 @@ func NewAESWithOption(key []byte, option AESOption) *AESEncrypt {
 		}(),
 		IVCreator: func() IVCreator {
 			if option.IVCreator == nil {
-				return randomIvCreator{}
+				return RandomIvCreator{}
 			} else {
 				return option.IVCreator
 			}
 		}(),
 		ResultCreator: func() ResultCreator {
 			if option.ResultCreator == nil {
-				return appendResultCreator{}
+				return PureResultCreator{}
 			} else {
 				return option.ResultCreator
 			}
@@ -87,15 +87,15 @@ type IVCreator interface {
 	Decrypt(key, cipherText []byte) [aes.BlockSize]byte
 }
 
-type randomIvCreator struct {
+type RandomIvCreator struct {
 }
 
-func (d randomIvCreator) Encrypt(key, paddedRawData []byte) [aes.BlockSize]byte {
+func (d RandomIvCreator) Encrypt(key, paddedRawData []byte) [aes.BlockSize]byte {
 	iv := make([]byte, aes.BlockSize)
 	_, _ = rand.Read(iv) // 安全随机生成
 	return [aes.BlockSize]byte(iv)
 }
-func (d randomIvCreator) Decrypt(key, cipherText []byte) [aes.BlockSize]byte {
+func (d RandomIvCreator) Decrypt(key, cipherText []byte) [aes.BlockSize]byte {
 	return [aes.BlockSize]byte(cipherText[:aes.BlockSize])
 }
 
@@ -106,15 +106,29 @@ type ResultCreator interface {
 	Decrypt(iv [aes.BlockSize]byte, cipherData []byte) []byte
 }
 
-type appendResultCreator struct {
+// AppendResultCreator 结果返回规则 Append方式
+type AppendResultCreator struct {
 }
 
-func (a appendResultCreator) Encrypt(iv [aes.BlockSize]byte, rawCipherData []byte) []byte {
+func (a AppendResultCreator) Encrypt(iv [aes.BlockSize]byte, rawCipherData []byte) []byte {
 	return append(iv[:], rawCipherData...)
 }
 
-func (a appendResultCreator) Decrypt(iv [aes.BlockSize]byte, cipherText []byte) []byte {
+func (a AppendResultCreator) Decrypt(iv [aes.BlockSize]byte, cipherText []byte) []byte {
 	return cipherText[len(iv):]
+}
+
+// PureResultCreator 结果返回规则 纯密文方式
+type PureResultCreator struct{}
+
+func (p PureResultCreator) Encrypt(iv [aes.BlockSize]byte, rawCipherData []byte) []byte {
+	// 只返回密文，不拼接IV
+	return rawCipherData
+}
+
+func (p PureResultCreator) Decrypt(iv [aes.BlockSize]byte, cipherData []byte) []byte {
+	// 直接返回密文，因为没有拼接IV
+	return cipherData
 }
 
 // PaddingCreator 填充接口
@@ -181,12 +195,8 @@ func (a *AESEncrypt) Encrypt(rawData []byte) ([]byte, error) {
 	return rawCipherData, nil
 }
 
-func (a *AESEncrypt) EncryptBase64(base64RawData string) (string, error) {
-	data, err := base64.StdEncoding.DecodeString(base64RawData)
-	if err != nil {
-		return "", err
-	}
-	cipherData, err := a.Encrypt(data)
+func (a *AESEncrypt) EncryptBase64(rawData []byte) (string, error) {
+	cipherData, err := a.Encrypt(rawData)
 	if err != nil {
 		return "", err
 	}
