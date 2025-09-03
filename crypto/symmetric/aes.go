@@ -40,8 +40,8 @@ func NewAES(key []byte) *AESEncrypt {
 		Key:            key,
 		Model:          AESModelCBC,
 		IVCreator:      RandomIvCreator{},
-		ResultCreator:  PureResultCreator{},
-		PaddingCreator: pkcs7PaddingCreator{},
+		ResultCreator:  AppendResultCreator{},
+		PaddingCreator: Pkcs7PaddingCreator{},
 	}
 }
 
@@ -64,14 +64,14 @@ func NewAESWithOption(key []byte, option AESOption) *AESEncrypt {
 		}(),
 		ResultCreator: func() ResultCreator {
 			if option.ResultCreator == nil {
-				return PureResultCreator{}
+				return AppendResultCreator{}
 			} else {
 				return option.ResultCreator
 			}
 		}(),
 		PaddingCreator: func() PaddingCreator {
 			if option.PaddingCreator == nil {
-				return pkcs7PaddingCreator{}
+				return Pkcs7PaddingCreator{}
 			} else {
 				return option.PaddingCreator
 			}
@@ -87,6 +87,24 @@ type IVCreator interface {
 	Decrypt(key, cipherText []byte) [aes.BlockSize]byte
 }
 
+// ResultCreator 加密块的结果处理
+type ResultCreator interface {
+	// Encrypt 加密时创建最终返回内容
+	Encrypt(iv [aes.BlockSize]byte, rawCipherData []byte) []byte
+	// Decrypt 解密时通过原始的密文创建解密的实际密文
+	Decrypt(iv [aes.BlockSize]byte, cipherData []byte) []byte
+}
+
+// PaddingCreator 填充接口
+type PaddingCreator interface {
+	// Pad 填充
+	Pad(rawData []byte, blockSize int) []byte
+	// UnPad 去除填充
+	UnPad(rawData []byte) ([]byte, error)
+}
+
+// RandomIvCreator 随机生成IV
+// 加密时使用的随机IV 解秘时从密文中截取 需要配合 AppendResultCreator 才能完成解密的IV提取
 type RandomIvCreator struct {
 }
 
@@ -97,13 +115,6 @@ func (d RandomIvCreator) Encrypt(key, paddedRawData []byte) [aes.BlockSize]byte 
 }
 func (d RandomIvCreator) Decrypt(key, cipherText []byte) [aes.BlockSize]byte {
 	return [aes.BlockSize]byte(cipherText[:aes.BlockSize])
-}
-
-type ResultCreator interface {
-	// Encrypt 加密时创建最终返回内容
-	Encrypt(iv [aes.BlockSize]byte, rawCipherData []byte) []byte
-	// Decrypt 解密时通过原始的密文创建解密的实际密文
-	Decrypt(iv [aes.BlockSize]byte, cipherData []byte) []byte
 }
 
 // AppendResultCreator 结果返回规则 Append方式
@@ -131,24 +142,16 @@ func (p PureResultCreator) Decrypt(iv [aes.BlockSize]byte, cipherData []byte) []
 	return cipherData
 }
 
-// PaddingCreator 填充接口
-type PaddingCreator interface {
-	// Pad 填充
-	Pad(rawData []byte, blockSize int) []byte
-	// UnPad 去除填充
-	UnPad(rawData []byte) ([]byte, error)
+type Pkcs7PaddingCreator struct {
 }
 
-type pkcs7PaddingCreator struct {
-}
-
-func (p pkcs7PaddingCreator) Pad(rawData []byte, blockSize int) []byte {
+func (p Pkcs7PaddingCreator) Pad(rawData []byte, blockSize int) []byte {
 	padding := blockSize - len(rawData)%blockSize
 	padText := bytes.Repeat([]byte{byte(padding)}, padding)
 	return append(rawData, padText...)
 }
 
-func (p pkcs7PaddingCreator) UnPad(rawData []byte) ([]byte, error) {
+func (p Pkcs7PaddingCreator) UnPad(rawData []byte) ([]byte, error) {
 	if len(rawData) == 0 {
 		return nil, errors.New("empty data")
 	}

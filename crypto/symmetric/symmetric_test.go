@@ -29,31 +29,31 @@ func (A AESResultCreator) Decrypt(iv [16]byte, cipherData []byte) []byte {
 }
 
 func TestAESEncrypt(t *testing.T) {
-	key := []byte("1234567890abcdef")     // 16字节key
+	key := []byte("1234567890abcdef")       // 16字节key
 	raw := []byte("hello aes12345678 明文") // 16字节明文
 
 	// 默认AES工作模式
-	encrypt := NewAES(key)
-	enc, err := encrypt.Encrypt(raw)
+	aesEncrypt := NewAES(key)
+	enc, err := aesEncrypt.Encrypt(raw)
 	if err != nil {
 		t.Fatalf("AES Encrypt error: %v", err)
 	}
-	dec, err := encrypt.Decrypt(enc)
+	dec, err := aesEncrypt.Decrypt(enc)
 	if err != nil {
 		t.Fatalf("AES Decrypt error: %v", err)
 	}
 	fmt.Println(string(dec))
 
 	// 自定义AES工作模式
-	encrypt = NewAESWithOption(key, AESOption{
+	aesEncrypt = NewAESWithOption(key, AESOption{
 		IVCreator:     &AESIVCreator{},
 		ResultCreator: AESResultCreator{},
 	})
-	enc, err = encrypt.Encrypt(raw)
+	enc, err = aesEncrypt.Encrypt(raw)
 	if err != nil {
 		t.Fatalf("AES Encrypt error: %v", err)
 	}
-	dec, err = encrypt.Decrypt(enc)
+	dec, err = aesEncrypt.Decrypt(enc)
 	if err != nil {
 		t.Fatalf("AES Decrypt error: %v", err)
 	}
