@@ -1,10 +1,11 @@
 package str
 
 import (
-	"github.com/iancoleman/strcase"
 	"regexp"
 	"strings"
 	"unicode"
+
+	"github.com/iancoleman/strcase"
 )
 
 // CharLength 返回字符串的字符长度
