@@ -45,16 +45,13 @@ func TestShutdownCallbackDeadline(t *testing.T) {
 }
 
 func TestShutdownSignal(t *testing.T) {
-	sig := ShutdownSignal()
 	for {
 		select {
-		case <-sig:
+		case <-ShutdownSignal():
 			fmt.Println("get kill sig")
 			return
 		case <-time.After(time.Second):
 			fmt.Println(1)
-		default:
-			fmt.Println(2)
 		}
 	}
 }
