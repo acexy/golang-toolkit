@@ -2,8 +2,9 @@ package reflect
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/util/json"
 	"testing"
+
+	"github.com/acexy/golang-toolkit/util/json"
 )
 
 func TestNonZeroField(t *testing.T) {

@@ -5,229 +5,395 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"sync"
 )
 
 const (
-	AESModelCBC AESModel = iota
+	AESModeCBC AESMode = iota
+	AESModeGCM
 )
 
-type AESModel int
+type AESMode int
 
 // AESEncrypt AES加密实现
 type AESEncrypt struct {
-	Key            []byte         // 加密密钥
-	Model          AESModel       //  加密模式
-	IVCreator      IVCreator      //  IV规则 不指定时使用默认方式
-	ResultCreator  ResultCreator  //  最终结果返回规则 不指定则使用默认方式
-	PaddingCreator PaddingCreator //  填充规则
+	key            []byte         // 私有化密钥
+	mode           AESMode        // 加密模式
+	ivCreator      IVCreator      // IV规则
+	resultCreator  ResultCreator  // 结果返回规则
+	paddingCreator PaddingCreator // 填充规则
 	block          cipher.Block
 	once           sync.Once
 }
 
 type AESOption struct {
-	IVCreator      IVCreator      //  IV规则 不指定时使用默认方式
-	Model          AESModel       //  加密模式
-	ResultCreator  ResultCreator  //  最终结果返回规则 不指定则使用默认方式
-	PaddingCreator PaddingCreator //  填充规则
+	Mode           AESMode        // 加密模式
+	IVCreator      IVCreator      // IV规则
+	ResultCreator  ResultCreator  // 结果返回规则
+	PaddingCreator PaddingCreator // 填充规则
 }
 
 // NewAES 创建AES加密实现
-func NewAES(key []byte) *AESEncrypt {
-	return &AESEncrypt{
-		Key:            key,
-		Model:          AESModelCBC,
-		IVCreator:      randomIvCreator{},
-		ResultCreator:  appendResultCreator{},
-		PaddingCreator: pkcs7PaddingCreator{},
+func NewAES(key []byte) (*AESEncrypt, error) {
+	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
+		return nil, errors.New("invalid key size: must be 16, 24, or 32 bytes")
 	}
+	// 复制密钥以避免外部修改
+	keyCopy := make([]byte, len(key))
+	copy(keyCopy, key)
+
+	return &AESEncrypt{
+		key:            keyCopy,
+		mode:           AESModeCBC,
+		ivCreator:      &RandomIvCreator{},
+		resultCreator:  &AppendResultCreator{},
+		paddingCreator: &Pkcs7PaddingCreator{},
+	}, nil
 }
 
 // NewAESWithOption 创建AES加密实现
-func NewAESWithOption(key []byte, option AESOption) *AESEncrypt {
-	return &AESEncrypt{
-		Key: key,
-		Model: func() AESModel {
-			if option.Model == AESModelCBC {
-				return AESModelCBC
-			}
-			return option.Model
-		}(),
-		IVCreator: func() IVCreator {
-			if option.IVCreator == nil {
-				return randomIvCreator{}
-			} else {
-				return option.IVCreator
-			}
-		}(),
-		ResultCreator: func() ResultCreator {
-			if option.ResultCreator == nil {
-				return appendResultCreator{}
-			} else {
-				return option.ResultCreator
-			}
-		}(),
-		PaddingCreator: func() PaddingCreator {
-			if option.PaddingCreator == nil {
-				return pkcs7PaddingCreator{}
-			} else {
-				return option.PaddingCreator
-			}
-		}(),
+func NewAESWithOption(key []byte, option AESOption) (*AESEncrypt, error) {
+	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
+		return nil, errors.New("invalid key size: must be 16, 24, or 32 bytes")
 	}
+
+	keyCopy := make([]byte, len(key))
+	copy(keyCopy, key)
+
+	aesInstance := &AESEncrypt{
+		key:  keyCopy,
+		mode: AESModeCBC,
+	}
+
+	// 设置模式
+	if option.Mode == AESModeGCM {
+		aesInstance.mode = AESModeGCM
+	}
+
+	// 设置IV创建器 - GCM模式使用专门的nonce创建器
+	if option.IVCreator != nil {
+		aesInstance.ivCreator = option.IVCreator
+	} else {
+		if aesInstance.mode == AESModeGCM {
+			aesInstance.ivCreator = &RandomGCMNonceCreator{}
+		} else {
+			aesInstance.ivCreator = &RandomIvCreator{}
+		}
+	}
+
+	// 设置结果创建器
+	if option.ResultCreator != nil {
+		aesInstance.resultCreator = option.ResultCreator
+	} else {
+		aesInstance.resultCreator = &AppendResultCreator{}
+	}
+
+	// 设置填充创建器（仅CBC模式需要）
+	if aesInstance.mode == AESModeCBC {
+		if option.PaddingCreator != nil {
+			aesInstance.paddingCreator = option.PaddingCreator
+		} else {
+			aesInstance.paddingCreator = &Pkcs7PaddingCreator{}
+		}
+	}
+
+	return aesInstance, nil
 }
 
 // IVCreator IV自定义创建接口
 type IVCreator interface {
-	// Encrypt 加密时创建IV
-	Encrypt(key, paddedRawData []byte) [aes.BlockSize]byte
-	// Decrypt 解密时创建IV
-	Decrypt(key, cipherText []byte) [aes.BlockSize]byte
+	// CreateForEncrypt 加密时创建IV
+	CreateForEncrypt(key, rawData []byte) ([]byte, error)
+	// ExtractForDecrypt 解密时提取IV
+	ExtractForDecrypt(key, cipherData []byte) ([]byte, error)
 }
 
-type randomIvCreator struct {
-}
-
-func (d randomIvCreator) Encrypt(key, paddedRawData []byte) [aes.BlockSize]byte {
-	iv := make([]byte, aes.BlockSize)
-	_, _ = rand.Read(iv) // 安全随机生成
-	return [aes.BlockSize]byte(iv)
-}
-func (d randomIvCreator) Decrypt(key, cipherText []byte) [aes.BlockSize]byte {
-	return [aes.BlockSize]byte(cipherText[:aes.BlockSize])
-}
-
+// ResultCreator 加密块的结果处理
 type ResultCreator interface {
-	// Encrypt 加密时创建最终返回内容
-	Encrypt(iv [aes.BlockSize]byte, rawCipherData []byte) []byte
-	// Decrypt 解密时通过原始的密文创建解密的实际密文
-	Decrypt(iv [aes.BlockSize]byte, cipherData []byte) []byte
-}
-
-type appendResultCreator struct {
-}
-
-func (a appendResultCreator) Encrypt(iv [aes.BlockSize]byte, rawCipherData []byte) []byte {
-	return append(iv[:], rawCipherData...)
-}
-
-func (a appendResultCreator) Decrypt(iv [aes.BlockSize]byte, cipherText []byte) []byte {
-	return cipherText[len(iv):]
+	// CombineResult 加密时组合IV和密文
+	CombineResult(iv, cipherData []byte) []byte
+	// SeparateResult 解密时分离IV和密文
+	SeparateResult(combinedData []byte, ivSize int) (iv, cipherData []byte, err error)
 }
 
 // PaddingCreator 填充接口
 type PaddingCreator interface {
 	// Pad 填充
-	Pad(rawData []byte, blockSize int) []byte
+	Pad(rawData []byte, blockSize int) ([]byte, error)
 	// UnPad 去除填充
-	UnPad(rawData []byte) ([]byte, error)
+	UnPad(paddedData []byte) ([]byte, error)
 }
 
-type pkcs7PaddingCreator struct {
+// RandomIvCreator 随机生成IV (CBC模式使用)
+type RandomIvCreator struct{}
+
+func (r *RandomIvCreator) CreateForEncrypt(key, rawData []byte) ([]byte, error) {
+	iv := make([]byte, aes.BlockSize)
+	if _, err := rand.Read(iv); err != nil {
+		return nil, fmt.Errorf("failed to generate random IV: %w", err)
+	}
+	return iv, nil
 }
 
-func (p pkcs7PaddingCreator) Pad(rawData []byte, blockSize int) []byte {
+func (r *RandomIvCreator) ExtractForDecrypt(key, cipherData []byte) ([]byte, error) {
+	if len(cipherData) < aes.BlockSize {
+		return nil, errors.New("ciphertext too short to contain IV")
+	}
+	return cipherData[:aes.BlockSize], nil
+}
+
+// RandomGCMNonceCreator 随机生成GCM nonce (GCM模式使用)
+type RandomGCMNonceCreator struct{}
+
+func (r *RandomGCMNonceCreator) CreateForEncrypt(key, rawData []byte) ([]byte, error) {
+	// GCM标准推荐使用12字节的nonce
+	nonce := make([]byte, 12)
+	if _, err := rand.Read(nonce); err != nil {
+		return nil, fmt.Errorf("failed to generate random nonce: %w", err)
+	}
+	return nonce, nil
+}
+
+func (r *RandomGCMNonceCreator) ExtractForDecrypt(key, cipherData []byte) ([]byte, error) {
+	if len(cipherData) < 12 {
+		return nil, errors.New("ciphertext too short to contain nonce")
+	}
+	return cipherData[:12], nil
+}
+
+// AppendResultCreator IV+密文的拼接方式
+type AppendResultCreator struct{}
+
+func (a *AppendResultCreator) CombineResult(iv, cipherData []byte) []byte {
+	result := make([]byte, len(iv)+len(cipherData))
+	copy(result, iv)
+	copy(result[len(iv):], cipherData)
+	return result
+}
+
+func (a *AppendResultCreator) SeparateResult(combinedData []byte, ivSize int) ([]byte, []byte, error) {
+	if len(combinedData) < ivSize {
+		return nil, nil, errors.New("combined data too short to contain IV")
+	}
+	return combinedData[:ivSize], combinedData[ivSize:], nil
+}
+
+// PureResultCreator 纯密文方式（需要外部管理IV）
+type PureResultCreator struct{}
+
+func (p *PureResultCreator) CombineResult(iv, cipherData []byte) []byte {
+	return cipherData
+}
+
+func (p *PureResultCreator) SeparateResult(combinedData []byte, ivSize int) ([]byte, []byte, error) {
+	// 纯密文模式下无法从数据中提取IV，需要外部提供
+	return nil, combinedData, errors.New("pure mode cannot extract IV from data")
+}
+
+// Pkcs7PaddingCreator PKCS7填充
+type Pkcs7PaddingCreator struct{}
+
+func (p *Pkcs7PaddingCreator) Pad(rawData []byte, blockSize int) ([]byte, error) {
+	if blockSize <= 0 || blockSize > 255 {
+		return nil, errors.New("invalid block size")
+	}
+
 	padding := blockSize - len(rawData)%blockSize
 	padText := bytes.Repeat([]byte{byte(padding)}, padding)
-	return append(rawData, padText...)
+
+	result := make([]byte, len(rawData)+len(padText))
+	copy(result, rawData)
+	copy(result[len(rawData):], padText)
+
+	return result, nil
 }
 
-func (p pkcs7PaddingCreator) UnPad(rawData []byte) ([]byte, error) {
-	if len(rawData) == 0 {
-		return nil, errors.New("empty data")
+func (p *Pkcs7PaddingCreator) UnPad(paddedData []byte) ([]byte, error) {
+	if len(paddedData) == 0 {
+		return nil, errors.New("empty padded data")
 	}
-	padding := int(rawData[len(rawData)-1])
-	if padding == 0 || padding > len(rawData) {
+
+	padding := int(paddedData[len(paddedData)-1])
+	if padding == 0 || padding > len(paddedData) {
 		return nil, errors.New("invalid padding size")
 	}
+
+	// 使用常量时间比较防止padding oracle攻击
 	for i := 0; i < padding; i++ {
-		if rawData[len(rawData)-1-i] != byte(padding) {
+		if subtle.ConstantTimeByteEq(paddedData[len(paddedData)-1-i], byte(padding)) != 1 {
 			return nil, errors.New("invalid padding content")
 		}
 	}
-	return rawData[:len(rawData)-padding], nil
+
+	return paddedData[:len(paddedData)-padding], nil
 }
 
+// cipherBlock 获取cipher.Block实例
 func (a *AESEncrypt) cipherBlock() (cipher.Block, error) {
 	var err error
 	a.once.Do(func() {
-		a.block, err = aes.NewCipher(a.Key)
+		a.block, err = aes.NewCipher(a.key)
 	})
 	return a.block, err
 }
 
+// Encrypt 加密数据
 func (a *AESEncrypt) Encrypt(rawData []byte) ([]byte, error) {
+	if len(rawData) == 0 {
+		return nil, errors.New("empty data to encrypt")
+	}
+
 	block, err := a.cipherBlock()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create cipher block: %w", err)
 	}
-	var rawCipherData []byte
-	if a.Model == AESModelCBC {
-		paddedRawData := a.PaddingCreator.Pad(rawData, aes.BlockSize)
-		if len(paddedRawData)%aes.BlockSize != 0 {
-			return nil, errors.New("plaintext is not a multiple of the block size")
-		}
-		rawCipherData = make([]byte, len(paddedRawData))
-		iv := a.IVCreator.Encrypt(a.Key, paddedRawData)
-		mode := cipher.NewCBCEncrypter(block, iv[:])
-		mode.CryptBlocks(rawCipherData, paddedRawData)
-		rawCipherData = a.ResultCreator.Encrypt(iv, rawCipherData)
-	} else {
-		// TODO: 其他模式支持
-		return nil, errors.New("not supported aes model")
+
+	switch a.mode {
+	case AESModeCBC:
+		return a.encryptCBC(block, rawData)
+	case AESModeGCM:
+		return a.encryptGCM(block, rawData)
+	default:
+		return nil, errors.New("unsupported AES mode")
 	}
-	return rawCipherData, nil
 }
 
-func (a *AESEncrypt) EncryptBase64(base64RawData string) (string, error) {
-	data, err := base64.StdEncoding.DecodeString(base64RawData)
+// encryptCBC CBC模式加密
+func (a *AESEncrypt) encryptCBC(block cipher.Block, rawData []byte) ([]byte, error) {
+	// 填充数据
+	paddedData, err := a.paddingCreator.Pad(rawData, aes.BlockSize)
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("padding failed: %w", err)
 	}
-	cipherData, err := a.Encrypt(data)
+
+	// 生成IV
+	iv, err := a.ivCreator.CreateForEncrypt(a.key, paddedData)
+	if err != nil {
+		return nil, fmt.Errorf("IV creation failed: %w", err)
+	}
+
+	// 加密
+	cipherData := make([]byte, len(paddedData))
+	mode := cipher.NewCBCEncrypter(block, iv)
+	mode.CryptBlocks(cipherData, paddedData)
+
+	// 组合结果
+	return a.resultCreator.CombineResult(iv, cipherData), nil
+}
+
+// encryptGCM GCM模式加密
+func (a *AESEncrypt) encryptGCM(block cipher.Block, rawData []byte) ([]byte, error) {
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GCM: %w", err)
+	}
+
+	// 生成nonce
+	nonce, err := a.ivCreator.CreateForEncrypt(a.key, rawData)
+	if err != nil {
+		return nil, fmt.Errorf("nonce creation failed: %w", err)
+	}
+
+	// 确保nonce长度正确
+	if len(nonce) != gcm.NonceSize() {
+		return nil, fmt.Errorf("invalid nonce size: expected %d, got %d", gcm.NonceSize(), len(nonce))
+	}
+
+	// GCM加密（包含认证标签）
+	cipherData := gcm.Seal(nil, nonce, rawData, nil)
+
+	// 组合结果
+	return a.resultCreator.CombineResult(nonce, cipherData), nil
+}
+
+// EncryptBase64 加密并返回Base64字符串
+func (a *AESEncrypt) EncryptBase64(rawData []byte) (string, error) {
+	cipherData, err := a.Encrypt(rawData)
 	if err != nil {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(cipherData), nil
 }
 
+// Decrypt 解密数据
 func (a *AESEncrypt) Decrypt(cipherData []byte) ([]byte, error) {
+	if len(cipherData) == 0 {
+		return nil, errors.New("empty cipher data")
+	}
+
 	block, err := a.cipherBlock()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create cipher block: %w", err)
 	}
 
-	var rawData []byte
-	if a.Model == AESModelCBC {
-		iv := a.IVCreator.Decrypt(a.Key, cipherData)
-		mode := cipher.NewCBCDecrypter(block, iv[:])
-		rawCipherData := a.ResultCreator.Decrypt(iv, cipherData)
-		if len(rawCipherData)%aes.BlockSize != 0 {
-			return nil, errors.New("ciphertext is not a multiple of the block size")
-		}
-		rawData = make([]byte, len(rawCipherData))
-		mode.CryptBlocks(rawData, rawCipherData)
-		rawData, err = a.PaddingCreator.UnPad(rawData)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		// TODO: 其他模式支持
-		return nil, errors.New("not supported aes model")
+	switch a.mode {
+	case AESModeCBC:
+		return a.decryptCBC(block, cipherData)
+	case AESModeGCM:
+		return a.decryptGCM(block, cipherData)
+	default:
+		return nil, errors.New("unsupported AES mode")
 	}
-	return rawData, nil
 }
 
+// decryptCBC CBC模式解密
+func (a *AESEncrypt) decryptCBC(block cipher.Block, cipherData []byte) ([]byte, error) {
+	// 提取IV和实际密文
+	iv, actualCipherData, err := a.resultCreator.SeparateResult(cipherData, aes.BlockSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to separate IV and cipher data: %w", err)
+	}
+
+	if len(actualCipherData)%aes.BlockSize != 0 {
+		return nil, errors.New("ciphertext length is not a multiple of block size")
+	}
+
+	// 解密
+	rawData := make([]byte, len(actualCipherData))
+	mode := cipher.NewCBCDecrypter(block, iv)
+	mode.CryptBlocks(rawData, actualCipherData)
+
+	// 去除填充
+	return a.paddingCreator.UnPad(rawData)
+}
+
+// decryptGCM GCM模式解密
+func (a *AESEncrypt) decryptGCM(block cipher.Block, cipherData []byte) ([]byte, error) {
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GCM: %w", err)
+	}
+
+	// 提取nonce和实际密文
+	nonce, actualCipherData, err := a.resultCreator.SeparateResult(cipherData, gcm.NonceSize())
+	if err != nil {
+		return nil, fmt.Errorf("failed to separate nonce and cipher data: %w", err)
+	}
+
+	// 验证nonce长度
+	if len(nonce) != gcm.NonceSize() {
+		return nil, fmt.Errorf("invalid nonce size: expected %d, got %d", gcm.NonceSize(), len(nonce))
+	}
+
+	// GCM解密（包含认证验证）
+	return gcm.Open(nil, nonce, actualCipherData, nil)
+}
+
+// DecryptBase64 解密Base64字符串
 func (a *AESEncrypt) DecryptBase64(base64CipherData string) (string, error) {
 	data, err := base64.StdEncoding.DecodeString(base64CipherData)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("invalid base64 data: %w", err)
 	}
+
 	plain, err := a.Decrypt(data)
 	if err != nil {
 		return "", err
 	}
+
 	return string(plain), nil
 }
