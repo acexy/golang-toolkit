@@ -3,6 +3,8 @@ package json
 import (
 	"fmt"
 	"testing"
+
+	"github.com/tidwall/gjson"
 )
 
 var jsonString = `
@@ -48,4 +50,41 @@ func TestNewGJson(t *testing.T) {
 	for _, v := range value {
 		fmt.Println(v.RawJsonString())
 	}
+}
+
+func TestForeach(t *testing.T) {
+	str := `[
+      [
+        1499040000000,
+        "0.01634790",
+        "0.80000000",
+        "0.01575800",
+        "0.01577100",
+        "148976.11427815",
+        1499644799999,
+        "2434.19055334",
+        308,
+        "1756.87402397",
+        "28.46694368",
+        "17928899.62484339"
+      ]
+    ]`
+	gjson.Parse(str).ForEach(func(key, value gjson.Result) bool {
+		fmt.Println("key:", key.String())
+		//openTime := value.Get("0").Int()
+		openPrice := value.Get("1").String()
+		//high := value.Get("2").String()
+		//low := value.Get("3").String()
+		closePrice := value.Get("4").String()
+		volume := value.Get("5").String()
+
+		fmt.Println("Open:", openPrice, "Close:", closePrice, "Volume:", volume)
+		return true // continue
+	})
+
+	NewGJson(str).Foreach(func(key, value string) bool {
+		fmt.Println("key:", key)
+		return true
+	})
+
 }
