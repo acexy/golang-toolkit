@@ -188,9 +188,9 @@ func (g *GJsonValue) Get(path string) *GJsonValue {
 	}
 }
 
-func (g *GJsonValue) Foreach(fn func(key, value string) bool) {
+func (g *GJsonValue) Foreach(fn func(key, value gjson.Result) bool) {
 	g.gr.ForEach(func(key, value gjson.Result) bool {
-		return fn(key.String(), value.String())
+		return fn(key, value)
 	})
 }
 
