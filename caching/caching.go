@@ -3,8 +3,12 @@ package caching
 import (
 	"errors"
 	"fmt"
+
 	"github.com/acexy/golang-toolkit/logger"
-	"sync"
+)
+
+var (
+	CacheMiss = errors.New("cache miss")
 )
 
 type MemCacheKey struct {
@@ -17,11 +21,12 @@ func NewNemCacheKey(keyFormat string) MemCacheKey {
 	return MemCacheKey{KeyFormat: keyFormat}
 }
 
-func originKeyString(keyFormat string, keyAppend ...interface{}) string {
+// RawKeyString 获取原始的key字符串
+func (m MemCacheKey) RawKeyString(keyAppend ...interface{}) string {
 	if len(keyAppend) > 0 {
-		return fmt.Sprintf(keyFormat, keyAppend...)
+		return fmt.Sprintf(m.KeyFormat, keyAppend...)
 	}
-	return keyFormat
+	return m.KeyFormat
 }
 
 type CacheManager struct {
@@ -31,8 +36,11 @@ type CacheManager struct {
 type CacheBucket interface {
 
 	// Get 获取指定key对应的值
-	// result 值类型指针
+	// result 值类型指针 如果未能查到内容应当返还
 	Get(key MemCacheKey, result any, keyAppend ...interface{}) error
+
+	// GetBytes 获取指定key对应的值
+	GetBytes(key MemCacheKey, keyAppend ...interface{}) ([]byte, error)
 
 	// Put 设置key对应值
 	Put(key MemCacheKey, data any, keyAppend ...interface{}) error
@@ -41,24 +49,16 @@ type CacheBucket interface {
 	Evict(key MemCacheKey, keyAppend ...interface{}) error
 }
 
-var once sync.Once
-var cachingManager *CacheManager
-
 func NewCacheBucketManager(bucketName string, bucket CacheBucket) *CacheManager {
-	if cachingManager == nil {
-		NewEmptyCacheBucketManager()
-	}
-	cachingManager.caches[bucketName] = bucket
-	return cachingManager
+	manager := NewEmptyCacheBucketManager()
+	manager.caches[bucketName] = bucket
+	return manager
 }
 
 func NewEmptyCacheBucketManager() *CacheManager {
-	once.Do(func() {
-		cachingManager = &CacheManager{
-			caches: make(map[string]CacheBucket),
-		}
-	})
-	return cachingManager
+	return &CacheManager{
+		caches: make(map[string]CacheBucket),
+	}
 }
 
 func (c *CacheManager) AddBucket(bucketName string, bucket CacheBucket) {

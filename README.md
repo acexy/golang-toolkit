@@ -16,11 +16,14 @@ Golang Toolkit
 
 - 第三方库清单
 
-| 库                            | 类型                      |
-|------------------------------|-------------------------|
-| github.com/go-resty/resty/v2 | http client             |
-| github.com/sirupsen/logrus   | logger                  |
-| github.com/allegro/bigcache  | cache                   |
-| gopkg.in/gomail.v2           | email                   |
-| github.com/jinzhu/copier     | struct copy             |
-| github.com/timandy/routine   | goroutine local storage |
+| 库                             | 类型                      |
+|-------------------------------|-------------------------|
+| github.com/go-resty/resty/v2  | http client             |
+| github.com/sirupsen/logrus    | logger                  |
+| github.com/allegro/bigcache   | cache                   |
+| gopkg.in/gomail.v2            | email                   |
+| github.com/jinzhu/copier      | struct copy             |
+| github.com/timandy/routine    | goroutine local storage |
+| github.com/tidwall/gjson      | json parse              |
+| github.com/google/uuid        | uuid                    |
+| github.com/iancoleman/strcase | string type convert     |

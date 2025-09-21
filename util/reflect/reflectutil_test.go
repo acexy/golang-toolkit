@@ -3,6 +3,8 @@ package reflect
 import (
 	"fmt"
 	"testing"
+
+	"github.com/acexy/golang-toolkit/util/json"
 )
 
 func TestNonZeroField(t *testing.T) {
@@ -20,7 +22,7 @@ func TestNonZeroField(t *testing.T) {
 		B: &i,
 		C: true,
 	}
-	fields, err := NonZeroField(testStruct)
+	fields, err := NonZeroFieldName(testStruct)
 	if err != nil {
 		panic(err)
 	}
@@ -40,6 +42,47 @@ func TestGetNonZeroFieldValue(t *testing.T) {
 		C: true,
 	}
 	value, err := NonZeroFieldValue(testStruct)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(value)
+}
+
+func TestAllField(t *testing.T) {
+	i := 1
+	testStruct := struct {
+		A string
+		B *int
+		C bool
+		D int
+		E []int
+		F [1]int
+		G map[string]int
+	}{
+		A: "a",
+		B: &i,
+		C: true,
+	}
+	fields, err := AllFieldName(testStruct)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(fields)
+}
+
+func TestAllFieldValue(t *testing.T) {
+	i := 1
+	testStruct := struct {
+		A string
+		B *int
+		C bool
+		D int
+	}{
+		A: "a",
+		B: &i,
+		C: true,
+	}
+	value, err := AllFieldValue(testStruct)
 	if err != nil {
 		panic(err)
 	}
@@ -73,14 +116,21 @@ func BenchmarkDeepCopy(b *testing.B) {
 	}
 }
 
-type StructA struct {
-	IntField    int
-	StringField string
-	BoolField   bool
-}
+func TestSetFieldValue(t *testing.T) {
+	var s = new(TestStruct)
+	ptrVal := 10
 
-type StructB struct {
-	IntField     int
-	StringField  string
-	AnotherField float64
+	err := SetFieldValue(s, map[string]any{
+		"IntField":    10,
+		"StringField": "Hello",
+		"BoolField":   true,
+		"FloatField":  3.14,
+		"PtrField":    &ptrVal,
+		"SliceField":  []string{"a", "b", "c"},
+		"MapField1":   map[string]int{"one": 1, "two": 2},
+	}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(json.ToJson(s))
 }

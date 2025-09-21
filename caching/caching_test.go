@@ -2,10 +2,11 @@ package caching
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/logger"
-	"github.com/acexy/golang-toolkit/sys"
 	"testing"
 	"time"
+
+	"github.com/acexy/golang-toolkit/logger"
+	"github.com/acexy/golang-toolkit/sys"
 )
 
 var manager *CacheManager
@@ -17,11 +18,10 @@ type User struct {
 
 func init() {
 	manager = NewCacheBucketManager("b1", NewSimpleBigCache(time.Second*10))
-	manager.AddBucket("b2", NewSimpleBigCache(time.Second*3))
+	manager.AddBucket("b2", NewSimpleBigCache(time.Second*4))
 }
 
 func TestBigCache(t *testing.T) {
-
 	err := manager.Put("b1", NewNemCacheKey("key1"), "123")
 	if err != nil {
 		logger.Logrus().Errorln(err)
@@ -63,9 +63,7 @@ func TestBigCache(t *testing.T) {
 func TestKeyFormat(t *testing.T) {
 	key := NewNemCacheKey("key:%s")
 	_ = manager.Put("b1", key, 3, "1")
-
 	var result int
 	_ = manager.Get("b1", key, &result, "1")
-
 	fmt.Println(result)
 }

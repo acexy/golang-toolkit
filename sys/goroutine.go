@@ -1,9 +1,11 @@
 package sys
 
 import (
-	"github.com/acexy/golang-toolkit/math/random"
-	"github.com/timandy/routine"
+	"strings"
 	"sync"
+
+	"github.com/google/uuid"
+	"github.com/timandy/routine"
 )
 
 // 一个traceId的默认共享策略
@@ -34,7 +36,7 @@ func (l *Local[T]) Delete() {
 }
 
 // GetGoroutineId 获取当前协程id
-func GetGoroutineId() int64 {
+func GetGoroutineId() uint64 {
 	return routine.Goid()
 }
 
@@ -60,7 +62,7 @@ func EnableLocalTraceId(supplier Supplier[string]) {
 	traceIdLocalOnce.Do(func() {
 		if supplier == nil {
 			supplier = func() string {
-				return random.UUID()
+				return strings.ReplaceAll(uuid.NewString(), "-", "")
 			}
 		}
 		traceIdLocal = NewThreadLocal(supplier)
@@ -74,7 +76,16 @@ func IsEnabledLocalTraceId() bool {
 
 // GetLocalTraceId 获取当前线程的TraceId
 func GetLocalTraceId() string {
-	if traceIdLocal == nil {
+	if !IsEnabledLocalTraceId() {
+		return ""
 	}
 	return traceIdLocal.Get()
+}
+
+// SetLocalTraceId 设置当前线程的TraceId
+func SetLocalTraceId(traceId string) {
+	if !IsEnabledLocalTraceId() {
+		return
+	}
+	traceIdLocal.Set(traceId)
 }

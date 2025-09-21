@@ -2,8 +2,9 @@ package logger
 
 import (
 	"errors"
-	"gopkg.in/natefinch/lumberjack.v2"
 	"testing"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 /**
@@ -11,7 +12,7 @@ logrus在普通Test模式中由于Format环境变量的原因Console模式的out
 */
 
 func TestConsole(t *testing.T) {
-	EnableConsole(DebugLevel, true) // 非tty模式即使未禁用color也不会生效，自动替换为json模式
+	EnableConsole(DebugLevel, false) // 非tty模式即使未禁用color也不会生效，自动替换为json模式
 	Logrus().Debugf("%d %s\n", 1, "s")
 	Logrus().Infoln("Logger Console")
 	Logrus().WithError(errors.New("ERROR")).WithField("field", "value").Error("error")

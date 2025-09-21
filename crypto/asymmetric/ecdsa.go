@@ -8,10 +8,11 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"errors"
-	"github.com/acexy/golang-toolkit/math/conversion"
 	"hash"
 	"math/big"
 	"sync"
+
+	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
 type CreateEcdsaSetting struct {
@@ -78,6 +79,9 @@ func (e *ecdsaKey) PublicKey() interface{} {
 }
 
 func (e *ecdsaKey) ToPublicPKCS1Pem() string {
+	if e.publicKey == nil {
+		return ""
+	}
 	publicKey := e.PublicKey().(*ecdsa.PublicKey)
 	der, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
@@ -90,6 +94,9 @@ func (e *ecdsaKey) ToPublicPKCS1Pem() string {
 }
 
 func (e *ecdsaKey) ToPrivatePKCS1Pem() string {
+	if e.privateKey == nil {
+		return ""
+	}
 	privateKey := e.PrivateKey().(*ecdsa.PrivateKey)
 	der, err := x509.MarshalECPrivateKey(privateKey)
 	if err != nil {
@@ -97,6 +104,36 @@ func (e *ecdsaKey) ToPrivatePKCS1Pem() string {
 	}
 	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
 		Type:  "EC PRIVATE KEY",
+		Bytes: der,
+	}))
+}
+
+func (e *ecdsaKey) ToPublicPKCS8Pem() (string, error) {
+	if e.publicKey == nil {
+		return "", errors.New("nil publicKey")
+	}
+	publicKey := e.PublicKey().(*ecdsa.PublicKey)
+	der, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		return "", err
+	}
+	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: der,
+	})), nil
+}
+
+func (e *ecdsaKey) ToPrivatePKCS8Pem() string {
+	if e.privateKey == nil {
+		return ""
+	}
+	privateKey := e.PrivateKey().(*ecdsa.PrivateKey)
+	der, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
+		return ""
+	}
+	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
+		Type:  "PRIVATE KEY",
 		Bytes: der,
 	}))
 }

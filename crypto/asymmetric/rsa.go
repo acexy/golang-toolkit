@@ -10,9 +10,11 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"errors"
-	"github.com/acexy/golang-toolkit/math/conversion"
+	"fmt"
 	"hash"
 	"sync"
+
+	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
 type PaddingType uint8
@@ -42,6 +44,9 @@ func (r *rsaKey) PublicKey() interface{} {
 }
 
 func (r *rsaKey) ToPublicPKCS1Pem() string {
+	if r.publicKey == nil {
+		return ""
+	}
 	publicKey := r.PublicKey().(*rsa.PublicKey)
 	der := x509.MarshalPKCS1PublicKey(publicKey)
 	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
@@ -51,10 +56,40 @@ func (r *rsaKey) ToPublicPKCS1Pem() string {
 }
 
 func (r *rsaKey) ToPrivatePKCS1Pem() string {
+	if r.privateKey == nil {
+		return ""
+	}
 	privateKey := r.PrivateKey().(*rsa.PrivateKey)
 	der := x509.MarshalPKCS1PrivateKey(privateKey)
 	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
 		Type:  "RSA PRIVATE KEY",
+		Bytes: der,
+	}))
+}
+
+func (r *rsaKey) ToPublicPKCS8Pem() (string, error) {
+	if r.publicKey == nil {
+		return "", errors.New("nil public key")
+	}
+	publicKey := r.PublicKey().(*rsa.PublicKey)
+	der, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		return "", err
+	}
+	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: der,
+	})), nil
+}
+
+func (r *rsaKey) ToPrivatePKCS8Pem() string {
+	if r.privateKey == nil {
+		return ""
+	}
+	privateKey := r.PrivateKey().(*rsa.PrivateKey)
+	der := x509.MarshalPKCS1PrivateKey(privateKey)
+	return conversion.FromBytes(pem.EncodeToMemory(&pem.Block{
+		Type:  "PRIVATE KEY",
 		Bytes: der,
 	}))
 }
@@ -82,22 +117,76 @@ func (r *RsaKeyManager) Create() (KeyPair, error) {
 }
 
 func (r *RsaKeyManager) Load(pubPem, priPem string) (KeyPair, error) {
-	block, _ := pem.Decode(conversion.ParseBytes(pubPem))
-	if block == nil {
-		return nil, errors.New("bak public key")
+	if pubPem == "" && priPem == "" {
+		return nil, errors.New("bad key")
 	}
-	pub, err := x509.ParsePKCS1PublicKey(block.Bytes)
-	if err != nil {
-		return nil, err
+
+	var pub *rsa.PublicKey
+	var pri *rsa.PrivateKey
+	var err error
+
+	// 解析公钥
+	if pubPem != "" {
+		block, _ := pem.Decode(conversion.ParseBytes(pubPem))
+		if block == nil {
+			return nil, errors.New("bad public key")
+		}
+
+		switch block.Type {
+		case "RSA PUBLIC KEY":
+			// PKCS#1 公钥
+			pub, err = x509.ParsePKCS1PublicKey(block.Bytes)
+			if err != nil {
+				return nil, err
+			}
+		case "PUBLIC KEY":
+			// PKIX (PKCS#8) 公钥
+			var iface any
+			iface, err = x509.ParsePKIXPublicKey(block.Bytes)
+			if err != nil {
+				return nil, err
+			}
+			var ok bool
+			pub, ok = iface.(*rsa.PublicKey)
+			if !ok {
+				return nil, errors.New("not an RSA public key")
+			}
+		default:
+			return nil, fmt.Errorf("unsupported public key type: %s", block.Type)
+		}
 	}
-	block, _ = pem.Decode(conversion.ParseBytes(priPem))
-	if block == nil {
-		return nil, errors.New("bak private key")
+
+	// 解析私钥
+	if priPem != "" {
+		block, _ := pem.Decode(conversion.ParseBytes(priPem))
+		if block == nil {
+			return nil, errors.New("bad private key")
+		}
+
+		switch block.Type {
+		case "RSA PRIVATE KEY":
+			// PKCS#1 私钥
+			pri, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+			if err != nil {
+				return nil, err
+			}
+		case "PRIVATE KEY":
+			// PKCS#8 私钥
+			var iface any
+			iface, err = x509.ParsePKCS8PrivateKey(block.Bytes)
+			if err != nil {
+				return nil, err
+			}
+			var ok bool
+			pri, ok = iface.(*rsa.PrivateKey)
+			if !ok {
+				return nil, errors.New("not an RSA private key")
+			}
+		default:
+			return nil, fmt.Errorf("unsupported private key type: %s", block.Type)
+		}
 	}
-	pri, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
+
 	return &rsaKey{
 		publicKey:  pub,
 		privateKey: pri,

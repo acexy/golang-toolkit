@@ -13,13 +13,12 @@ var goMail *GoMail
 type GoMail struct {
 	dialer      *gomail.Dialer
 	fromAddress string
+	fromName    string
 }
 
 type ToAddress struct {
-
 	// 收件人地址 *
 	Address string
-
 	// 收件人称呼
 	Name string
 }
@@ -27,13 +26,10 @@ type ToAddress struct {
 type Content struct {
 	// 接收地址
 	toAddresses []*ToAddress
-
 	// 邮件标题
-	subject string
-
+	subject     string
 	contentType string
 	body        string
-
 	// 附件文件路径
 	attachments []string
 }
@@ -62,9 +58,12 @@ func (c *Content) toMessage() (*gomail.Message, error) {
 	if len(c.toAddresses) == 0 {
 		return nil, errors.New("empty to addresses")
 	}
-
 	message := gomail.NewMessage()
-	message.SetHeader("From", goMail.fromAddress)
+	if goMail.fromName != "" {
+		message.SetHeader("From", goMail.fromName+"<"+goMail.fromAddress+">")
+	} else {
+		message.SetHeader("From", goMail.fromAddress)
+	}
 	if c.subject != "" {
 		message.SetHeader("subject", c.subject)
 	}
@@ -77,11 +76,9 @@ func (c *Content) toMessage() (*gomail.Message, error) {
 			addressWithMemo = append(addressWithMemo, toAddress.Name+":"+toAddress.Address)
 		}
 	}
-
 	if len(addressWithoutMemo) > 0 {
 		message.SetHeader("To", addressWithoutMemo...)
 	}
-
 	if len(addressWithMemo) > 0 {
 		var setTo bool
 		for _, addr := range addressWithMemo {
@@ -92,25 +89,40 @@ func (c *Content) toMessage() (*gomail.Message, error) {
 			}
 			message.SetAddressHeader(split[0], split[1], split[0])
 		}
-
 	}
-
 	message.SetBody(c.contentType, c.body)
-
 	if len(c.attachments) > 0 {
 		for _, attachment := range c.attachments {
 			message.Attach(attachment)
 		}
 	}
-
 	return message, nil
 }
 
-func NewGoMail(host string, port int, username, password string, fromAddress string) *GoMail {
+func NewGoMail(host string, port int, username, password, fromAddress string, isSSL ...bool) *GoMail {
 	goMailOnce.Do(func() {
+		dialer := gomail.NewDialer(host, port, username, password)
+		if len(isSSL) > 0 && isSSL[0] {
+			dialer.SSL = true
+		}
 		goMail = &GoMail{
-			dialer:      gomail.NewDialer(host, port, username, password),
+			dialer:      dialer,
 			fromAddress: fromAddress,
+		}
+	})
+	return goMail
+}
+
+func NewGoMailWithName(host string, port int, username, password, fromAddress, fromName string, isSSL ...bool) *GoMail {
+	goMailOnce.Do(func() {
+		dialer := gomail.NewDialer(host, port, username, password)
+		if len(isSSL) > 0 && isSSL[0] {
+			dialer.SSL = true
+		}
+		goMail = &GoMail{
+			dialer:      dialer,
+			fromAddress: fromAddress,
+			fromName:    fromName,
 		}
 	})
 	return goMail

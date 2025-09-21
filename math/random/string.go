@@ -1,8 +1,9 @@
 package random
 
 import (
-	"github.com/google/uuid"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

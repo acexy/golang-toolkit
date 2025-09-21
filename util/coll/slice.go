@@ -1,5 +1,7 @@
 package coll
 
+import "sort"
+
 // SliceContains 检查指定的元素是否存在切片中
 func SliceContains[T comparable](slice []T, target T, compare ...func(T, T) bool) bool {
 	for i := range slice {
@@ -115,7 +117,6 @@ func SliceIntersection[T comparable](slicePart1, slicePart2 []T, compare ...func
 			}
 		}
 	}
-
 	return result
 }
 
@@ -168,6 +169,103 @@ func SliceComplement[T comparable](slicePart1, slicePart2 []T, compare ...func(p
 		}
 	}
 	return result
+}
+
+// SliceDiff 返回两个集合的差异：新增的和减少的
+// added: b中有但a中没有的元素
+// removed: a中有但b中没有的元素
+func SliceDiff[T comparable](a, b []T, compare ...func(T, T) bool) (added, removed []T) {
+	if len(compare) > 0 {
+		eq := compare[0]
+		for _, va := range a {
+			found := false
+			for _, vb := range b {
+				if eq(va, vb) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				removed = append(removed, va)
+			}
+		}
+		for _, vb := range b {
+			found := false
+			for _, va := range a {
+				if eq(vb, va) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				added = append(added, vb)
+			}
+		}
+		return
+	}
+	amap := make(map[T]struct{}, len(a))
+	bmap := make(map[T]struct{}, len(b))
+	for _, v := range a {
+		amap[v] = struct{}{}
+	}
+	for _, v := range b {
+		bmap[v] = struct{}{}
+	}
+	for _, v := range a {
+		if _, ok := bmap[v]; !ok {
+			removed = append(removed, v)
+		}
+	}
+	// 找新增的（b 中有，a 中没有）
+	for _, v := range b {
+		if _, ok := amap[v]; !ok {
+			added = append(added, v)
+		}
+	}
+	return
+}
+
+// SliceDiffWithCompare 针对不可比较类型的专门版本（性能更好）
+// added: b中有但a中没有的元素
+// removed: a中有但b中没有的元素
+func SliceDiffWithCompare[T any](a, b []T, compare func(T, T) bool) (added, removed []T) {
+	usedA := make([]bool, len(a))
+	usedB := make([]bool, len(b))
+	for i, va := range a {
+		for j, vb := range b {
+			if !usedB[j] && compare(va, vb) {
+				usedA[i] = true
+				usedB[j] = true
+				break
+			}
+		}
+	}
+	for i, va := range a {
+		if !usedA[i] {
+			removed = append(removed, va)
+		}
+	}
+	for j, vb := range b {
+		if !usedB[j] {
+			added = append(added, vb)
+		}
+	}
+	return
+}
+
+// SliceIsSubset 判断切片A是否是切片B的子集
+func SliceIsSubset[T comparable](slicePart, sliceAll []T) bool {
+	setMap := make(map[T]struct{}, len(sliceAll))
+	for _, v := range sliceAll {
+		setMap[v] = struct{}{}
+	}
+
+	for _, item := range slicePart {
+		if _, ok := setMap[item]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // SliceFilterToMap 将切片按照指定的过滤处理形成map
@@ -223,12 +321,12 @@ func SliceForeachAll[T any](slice []T, fn func(T)) {
 }
 
 // SliceForeach 遍历切片并执行指定的函数，如果返回false则停止遍历
-func SliceForeach[T any](slice []T, fn func(T) bool) {
+func SliceForeach[T any](slice []T, foreach func(T) bool) {
 	if len(slice) == 0 {
 		return
 	}
 	for i := range slice {
-		if !fn(slice[i]) {
+		if !foreach(slice[i]) {
 			return
 		}
 	}
@@ -243,4 +341,75 @@ func SliceDistinct[T comparable](slice []T) []T {
 		return ele, struct{}{}, true
 	})
 	return MapKeyToSlice(mapValue)
+}
+
+// SliceDistinctAny 按照指定的切片去重值去重元素
+func SliceDistinctAny[T any, K comparable](slice []T, keyBuild func(ele T) K) []T {
+	if len(slice) == 0 {
+		return nil
+	}
+	mapValue := SliceFilterToMap(slice, func(ele T) (K, T, bool) {
+		return keyBuild(ele), ele, true
+	})
+	return MapValueToSlice(mapValue)
+}
+
+// SliceSort 对切片进行排序
+// less: 元素排序的权重值
+// desc: 是否降序 默认为升序
+func SliceSort[T any](slice []T, less func(e T) int, desc ...bool) {
+	if len(slice) == 0 {
+		return
+	}
+	sort.Slice(slice, func(i, j int) bool {
+		asc := true
+		if len(desc) > 0 {
+			asc = !desc[0]
+		}
+		if asc {
+			return less(slice[i]) < less(slice[j])
+		} else {
+			return less(slice[i]) > less(slice[j])
+		}
+	})
+}
+
+// SliceGroupBy 将切片按照指定的分组函数进行分组
+func SliceGroupBy[T any, K comparable](slice []T, groupFn func(T) K) map[K][]T {
+	result := make(map[K][]T)
+	for i := range slice {
+		k := groupFn(slice[i])
+		result[k] = append(result[k], slice[i])
+	}
+	return result
+}
+
+// SliceGroupBySingle 将切片按照指定的分组函数进行分组 适用于分组的值为单个元素
+func SliceGroupBySingle[T any, K comparable](slice []T, groupFn func(T) K) map[K]T {
+	result := make(map[K]T)
+	for i := range slice {
+		k := groupFn(slice[i])
+		result[k] = slice[i]
+	}
+	return result
+}
+
+// SliceAnyGroupBy 将切片按照指定的分组函数进行分组
+func SliceAnyGroupBy[T, V any, K comparable](slice []T, groupFn func(T) (K, V)) map[K][]V {
+	result := make(map[K][]V)
+	for i := range slice {
+		k, v := groupFn(slice[i])
+		result[k] = append(result[k], v)
+	}
+	return result
+}
+
+// SliceAnyGroupBySingle 将切片按照指定的分组函数进行分组 适用于分组的值为单个元素
+func SliceAnyGroupBySingle[T, V any, K comparable](slice []T, groupFn func(T) (K, V)) map[K]V {
+	result := make(map[K]V)
+	for i := range slice {
+		k, v := groupFn(slice[i])
+		result[k] = v
+	}
+	return result
 }

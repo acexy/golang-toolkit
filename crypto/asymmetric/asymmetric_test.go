@@ -14,14 +14,13 @@ import (
 
 func TestRsaKey(t *testing.T) {
 	var manager = RsaKeyManager{
-		CreateSetting: CreateRsaSetting{Length: 512},
+		CreateSetting: CreateRsaSetting{Length: 2048},
 	}
 	key, err := manager.Create()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-
 	// 打印PEM编码的公共密钥
 	fmt.Printf("PEM格式的公钥:\n%s\n", key.ToPublicPKCS1Pem())
 	fmt.Printf("PEM格式的私钥:\n%s\n", key.ToPrivatePKCS1Pem())
@@ -206,4 +205,41 @@ func TestEcdsaSign(t *testing.T) {
 	result, _ = sign.Sign(keyPair, raw)
 	fmt.Println(result)
 	fmt.Println(sign.Verify(keyPair, raw, result))
+}
+
+func TestLoadPem(t *testing.T) {
+	var manager = RsaKeyManager{}
+	load, err := manager.Load("", `-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCt7ki7Zpu1sYxs
+87Q2eZK2kJk7PPQANEQm9+km2FRUxi16pZvRjlR7AFhaY24JlwAKrubrOvEhSn4A
+NCdeTpyB9CLAj18ug8KoR3dBO5kJWYXGfSENGQB1GlGh1pFQqtdzByut3cN+KaH0
+Q2jKmzdVfRuasf7Y0/3vvQpJ5owz3Nu0ynrCXT7lRd5LIxRcVNPTyci9/t6gkigk
+ysrtuMDX+JUdtsGpxEEO+DhwG0BUdLQ55ZV6yCkJHTPKo2Iksy5IX/EDV97h2Oen
+mdj0zsP9GX5pSEe53vOpkH5P/ucJm2LZ1VtEPk2qrxyHxzBzmcO11YC5XcxUsz60
+eZ785ojNAgMBAAECggEAft0BG/+Zr4tTe9y+I8XFJ3iM69JnvwZgd3P4EadUy4jJ
+f13wK4d/Q0BbMYK4rjH/i8tLD2SsoLWu9gMUfAsmyPsDpiRtLoZYo1mNOH16AIHV
+u5NlWiJUXRXXWQ4ibA5Qm8wtJeJNR2aihIHum2lfkPFyAwG1ev4ViJoAOSr6NJC9
+pKEUEPuz/3iJucsL3irEeb0BX/uzYL3lW6AVP+GKTv3XqAvw9Mzwvteg2x0nv/W2
+5MwI+7exqBHGRkwFZ8nCMjnVdH7qHHRVzLJIfHAA4IP4OyrYNgxOYu9NqtCgX7M1
+4TPxdIWtLVV1MJ7zlrDKLAnm/W4GjcwuKE4463zQGQKBgQDXWjUFhh9gfsCCDVqI
+9ModYFPgcE53Mt9bO5QmiTHv2DS6zO+xpOBBUEUxJbsEIEiamb23JCj2jigIh/dp
+HWN6U3nf1aVO2yFPbN79paKAq3okSzTli+cKHA+85BouyDcyRGhJ5iGlTQCIkeG/
+eT7i4klXbvgZ3mhAxC8QdHmvGwKBgQDOwpfPhEi5a5sQlr5Zgb91zu8a/hzHoYg5
+ahmfLTulitV6uMg2xxbueDAUSh5pkajQChICQ42Mj0+0uRxaQz42VESXkNXMTLBS
+FBssSkaCGmHQbyPvYvk/tERljcqs4Pa85MMi/sTEHMKVQZFRM2Yhdj6x5n3h3obo
+nxcbIsJeNwKBgQCQEDacJWdkJCcgWVKRgECdek1iPX8gWpX08FxhkzIm4xoTRPms
+e0HSL6K6CCWd0wL++Y5ir/v/RIYffuXSGejscl97j+7wW8Ni4NAkGuQk85HYKb+P
+OBItPyyADpA9b48NP5oMpbkoXeTXd8/vSWr6WKr7pK6wj4pqmVNqzKCCtQKBgDFR
+GQTWeMJBeGssiZqv6AshoMa/df3n+aY4OIRPNbr2spTjHl5yfnXDFTTBuR9VLv7w
+Z/tCQbEVPd3NiYW+JEixMOs2EMj6QdRSF2kpDkhaIpqk591hrjITvXy7pWw2/KNx
+rVnbivN8KK2RRigoKmQw4CNu5vfJLESwLcK7N8FhAoGBAMbq1Zr/d8B8hEoJcWzf
+922krJNd9uZJQJWMc4HBHrgcm2GlODCjcpmyL2oM9udy1adsrojySM7dyCD8my+B
+bUhXNlXx4OW3sWEi9ebaNlV+Qz5IyFnC4J3DvGGtm6BBTisU5rMDY+Uv7iW8VBDH
+4TlS4PKZixp/cFv2jW1F+tSX
+-----END PRIVATE KEY-----`)
+	if err != nil {
+		println(err)
+		return
+	}
+	fmt.Println(load.ToPrivatePKCS1Pem())
 }

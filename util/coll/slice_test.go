@@ -2,10 +2,10 @@ package coll
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/math/conversion"
-	"github.com/acexy/golang-toolkit/util/json"
-	"github.com/acexy/golang-toolkit/util/str"
 	"testing"
+
+	"github.com/acexy/golang-toolkit/math/conversion"
+	"github.com/acexy/golang-toolkit/util/str"
 )
 
 type people struct {
@@ -120,6 +120,22 @@ func TestSliceUnion(t *testing.T) {
 	}))
 }
 
+func TestSliceSort(t *testing.T) {
+	peoples1 := []people{
+		{name: "张三", age: 28},
+		{name: "李四", age: 20},
+		{name: "王五", age: 22},
+		{name: "赵六", age: 20},
+		{name: "赵六", age: 21},
+	}
+	fmt.Println(peoples1)
+	SliceSort(peoples1, func(e people) int {
+		return e.age
+	}, true)
+	fmt.Println(peoples1)
+
+}
+
 func TestSliceComplement(t *testing.T) {
 	intSlice1 := []int{1, 2, 3, 4, 3, 5}
 	intSlice2 := []int{3, 4, 4, 5}
@@ -204,20 +220,83 @@ func TestSliceCollect(t *testing.T) {
 
 	// 调用 SliceCollect
 	output := SliceCollect(input, collect)
-	fmt.Println(json.ToJsonFormat(output))
+	fmt.Println(output)
 
-	//input = nil
-	//// 调用 SliceCollect
-	//output = SliceCollect(input, collect)
-	//fmt.Println(json.ToJsonFormat(output))
 }
 
 func TestSliceDistinct(t *testing.T) {
 	input := []Person{
-		{Name: "Alice", Age: 25},
+		{Name: "Alice", Age: 35},
 		{Name: "Bob", Age: 30},
 		{Name: "Charlie", Age: 35},
 		{Name: "Charlie", Age: 35},
 	}
 	fmt.Println(SliceDistinct(input))
+
+	fmt.Println(SliceDistinctAny(input, func(t Person) int {
+		return t.Age
+	}))
+}
+func TestSliceGroupBy(t *testing.T) {
+	input := []Person{
+		{Name: "Alice", Age: 25},
+		{Name: "Bob", Age: 30},
+		{Name: "Charlie", Age: 35},
+		{Name: "Charlie", Age: 36},
+	}
+	fmt.Println(SliceGroupBy(input, func(t Person) string {
+		return t.Name
+	}))
+	fmt.Println(SliceAnyGroupBy(input, func(t Person) (string, int) {
+		return t.Name, t.Age
+	}))
+}
+
+func TestSliceGroupBySingle(t *testing.T) {
+	input := []Person{
+		{Name: "Alice", Age: 25},
+		{Name: "Bob", Age: 30},
+		{Name: "Charlie1", Age: 35},
+		{Name: "Charlie", Age: 36},
+	}
+	fmt.Println(SliceGroupBySingle(input, func(t Person) string {
+		return t.Name
+	}))
+	fmt.Println(SliceAnyGroupBySingle(input, func(t Person) (string, int) {
+		return t.Name, t.Age
+	}))
+}
+
+func TestSliceIsSubset(t *testing.T) {
+	set := []string{"a", "b", "c", "d"}
+	subset1 := []string{"a", "c"}
+	subset2 := []string{"a", "e"}
+
+	fmt.Println(SliceIsSubset(subset1, set)) // true
+	fmt.Println(SliceIsSubset(subset2, set)) // false
+}
+
+func TestSliceDiff(t *testing.T) {
+	old := []int{1, 2, 3, 4}
+	new := []int{2, 3, 5, 6}
+	added, removed := SliceDiff(old, new)
+	fmt.Printf("Added: %v, Removed: %v\n", added, removed)
+	// 输出: Added: [5 6], Removed: [1 4]
+
+	// 示例2：结构体类型（假设CronConfig实现了comparable）
+	type Person struct {
+		ID   int
+		Name string
+	}
+
+	oldPeople := []Person{{1, "Alice"}, {2, "Bob"}}
+	newPeople := []Person{{2, "Bob"}, {3, "Charlie"}}
+	addedPeople, removedPeople := SliceDiff(oldPeople, newPeople)
+	fmt.Printf("Added: %v, Removed: %v\n", addedPeople, removedPeople)
+
+	// 示例3：使用自定义比较函数（比较ID）
+	addedByID, removedByID := SliceDiff(oldPeople, newPeople, func(a, b Person) bool {
+		return a.ID == b.ID
+	})
+	fmt.Printf("Added by ID: %v, Removed by ID: %v\n", addedByID, removedByID)
 }

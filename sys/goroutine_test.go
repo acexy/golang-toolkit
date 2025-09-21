@@ -2,8 +2,9 @@ package sys
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/math/random"
 	"testing"
+
+	"github.com/acexy/golang-toolkit/math/random"
 )
 
 func TestLocal(t *testing.T) {
@@ -22,6 +23,8 @@ func f1(local *Local[string]) {
 func TestEnableTraceIdLocal(t *testing.T) {
 	EnableLocalTraceId(nil)
 	fmt.Println(GetLocalTraceId())
+	f2()
+	SetLocalTraceId("123")
 	f2()
 }
 
