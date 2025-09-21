@@ -2,8 +2,11 @@ package str
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
 // CharLength 返回字符串的字符长度
@@ -43,6 +46,41 @@ func NewBuilder(str ...string) *Builder {
 
 func (b *Builder) WriteString(str string) *Builder {
 	b.b.WriteString(str)
+	return b
+}
+
+func (b *Builder) WriteBool(bool bool) *Builder {
+	b.b.WriteString(strconv.FormatBool(bool))
+	return b
+}
+
+func (b *Builder) WriteInt8(i8 int8) *Builder {
+	b.b.WriteString(conversion.FromInt8(i8))
+	return b
+}
+
+func (b *Builder) WriteInt32(i32 int32) *Builder {
+	b.b.WriteString(conversion.FromInt32(i32))
+	return b
+}
+
+func (b *Builder) WriteInt(i int) *Builder {
+	b.b.WriteString(conversion.FromInt(i))
+	return b
+}
+
+func (b *Builder) WriteInt64(i64 int64) *Builder {
+	b.b.WriteString(conversion.FromInt64(i64))
+	return b
+}
+
+func (b *Builder) WriteFlot32(f32 float32) *Builder {
+	b.b.WriteString(conversion.FromFloat32(f32))
+	return b
+}
+
+func (b *Builder) WriteFlot64(f64 float64) *Builder {
+	b.b.WriteString(conversion.FromFloat64(f64))
 	return b
 }
 
