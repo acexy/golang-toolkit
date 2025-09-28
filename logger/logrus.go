@@ -78,11 +78,10 @@ func EnableConsole(level Level, disableColor ...bool) {
 
 // SetTraceIdSupplier 设置TraceIdSupplier
 func SetTraceIdSupplier(supplier TraceIdSupplier) {
-	if traceIdSupplier != nil {
-		panic("repeated initialization")
-	}
-	if supplier != nil {
-		traceIdSupplier = supplier
+	if traceIdSupplier == nil {
+		if supplier != nil {
+			traceIdSupplier = supplier
+		}
 	}
 }
 
