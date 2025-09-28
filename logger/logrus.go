@@ -7,17 +7,18 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/acexy/golang-toolkit/sys"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
+
+var traceIdSupplier TraceIdSupplier
 
 var (
 	callerPrettifier = func(frame *runtime.Frame) (function string, file string) {
 		fileName := path.Base(frame.File)
 		funcName := path.Base(frame.Function)
-		if sys.IsEnabledLocalTraceId() {
-			return funcName, fmt.Sprintf("[%s] %s:%v", sys.GetLocalTraceId(), fileName, frame.Line)
+		if traceIdSupplier != nil {
+			return funcName, fmt.Sprintf("[%s] %s:%v", traceIdSupplier.GetTraceId(), fileName, frame.Line)
 		}
 		return funcName, fmt.Sprintf("%s:%v", fileName, frame.Line)
 	}
@@ -27,6 +28,10 @@ var (
 	fileSet       bool
 	logrusOnce    sync.Once
 )
+
+type TraceIdSupplier interface {
+	GetTraceId() string
+}
 
 type Level uint32
 
@@ -60,10 +65,24 @@ func enableConsole(level Level, disableColor bool) *logrus.Logger {
 }
 
 // EnableConsole 启用该设置后，日志内容将向标准控台输出
-func EnableConsole(level Level, disableColor bool) {
-	consoleLogger = enableConsole(level, disableColor)
+func EnableConsole(level Level, disableColor ...bool) {
+	var disColor bool
+	if len(disableColor) > 0 {
+		disColor = disableColor[0]
+	}
+	consoleLogger = enableConsole(level, disColor)
 	if activeLogger == nil {
 		activeLogger = consoleLogger
+	}
+}
+
+// SetTraceIdSupplier 设置TraceIdSupplier
+func SetTraceIdSupplier(supplier TraceIdSupplier) {
+	if traceIdSupplier != nil {
+		panic("repeated initialization")
+	}
+	if supplier != nil {
+		traceIdSupplier = supplier
 	}
 }
 

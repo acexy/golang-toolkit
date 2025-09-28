@@ -2,18 +2,13 @@ package sys
 
 import (
 	"strings"
-	"sync"
 
 	"github.com/google/uuid"
 	"github.com/timandy/routine"
 )
 
-// 一个traceId的默认共享策略
-var traceIdLocal *Local[string]
-var traceIdLocalOnce sync.Once
-
-// Local ThreadLocalStorage 线程本地存储
-type Local[T any] struct {
+// ThreadLocal ThreadLocalStorage 线程本地存储
+type ThreadLocal[T any] struct {
 	thread routine.ThreadLocal[T]
 }
 
@@ -21,17 +16,17 @@ type Local[T any] struct {
 type Supplier[T any] func() T
 
 // Set 设置值
-func (l *Local[T]) Set(value T) {
+func (l *ThreadLocal[T]) Set(value T) {
 	l.thread.Set(value)
 }
 
 // Get 获取值
-func (l *Local[T]) Get() T {
+func (l *ThreadLocal[T]) Get() T {
 	return l.thread.Get()
 }
 
 // Delete 删除值
-func (l *Local[T]) Delete() {
+func (l *ThreadLocal[T]) Delete() {
 	l.thread.Remove()
 }
 
@@ -41,51 +36,28 @@ func GetGoroutineId() uint64 {
 }
 
 // NewThreadLocal 创建线程本地存储
-func NewThreadLocal[T any](supplier ...Supplier[T]) *Local[T] {
+func NewThreadLocal[T any](supplier ...Supplier[T]) *ThreadLocal[T] {
 	if len(supplier) > 0 {
 		var f routine.Supplier[T] = func() T {
 			return supplier[0]()
 		}
-		return &Local[T]{
+		return &ThreadLocal[T]{
 			thread: routine.NewThreadLocalWithInitial[T](f),
 		}
 	}
-	return &Local[T]{
+	return &ThreadLocal[T]{
 		thread: routine.NewThreadLocal[T](),
 	}
 }
 
 // ======= 默认Local 场景处理器
 
-// EnableLocalTraceId 激活TraceIdLocal处理器 如果不指定supplier则使用默认策略 uuid
-func EnableLocalTraceId(supplier Supplier[string]) {
-	traceIdLocalOnce.Do(func() {
-		if supplier == nil {
-			supplier = func() string {
-				return strings.ReplaceAll(uuid.NewString(), "-", "")
-			}
+// NewTraceIdThreadLocal 基于GoRoutine的TraceId处理器 如果不指定supplier则使用默认策略 uuid
+func NewTraceIdThreadLocal(supplier Supplier[string]) *ThreadLocal[string] {
+	if supplier == nil {
+		supplier = func() string {
+			return strings.ReplaceAll(uuid.NewString(), "-", "")
 		}
-		traceIdLocal = NewThreadLocal(supplier)
-	})
-}
-
-// IsEnabledLocalTraceId 判断是否启用了TraceIdLocal处理器
-func IsEnabledLocalTraceId() bool {
-	return traceIdLocal != nil
-}
-
-// GetLocalTraceId 获取当前线程的TraceId
-func GetLocalTraceId() string {
-	if !IsEnabledLocalTraceId() {
-		return ""
 	}
-	return traceIdLocal.Get()
-}
-
-// SetLocalTraceId 设置当前线程的TraceId
-func SetLocalTraceId(traceId string) {
-	if !IsEnabledLocalTraceId() {
-		return
-	}
-	traceIdLocal.Set(traceId)
+	return NewThreadLocal(supplier)
 }

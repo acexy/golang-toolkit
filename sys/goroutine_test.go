@@ -12,22 +12,15 @@ func TestLocal(t *testing.T) {
 		return random.UUID()
 	})
 	// 如果在获取线程本地变量之前，没有设置过，则返回默认值
-	//l.Set("123")
+	fmt.Println(l.Get())
+	l.Set("123")
 	fmt.Println(l.Get())
 	f1(l)
 }
-func f1(local *Local[string]) {
+func f1(local *ThreadLocal[string]) {
 	fmt.Println(local.Get())
 }
 
-func TestEnableTraceIdLocal(t *testing.T) {
-	EnableLocalTraceId(nil)
-	fmt.Println(GetLocalTraceId())
-	f2()
-	SetLocalTraceId("123")
-	f2()
-}
-
-func f2() {
-	fmt.Println(GetLocalTraceId())
+func f2(local *ThreadLocal[string]) {
+	fmt.Println(local.Get())
 }
