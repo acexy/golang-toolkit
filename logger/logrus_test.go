@@ -66,6 +66,9 @@ func (t *traceId) GetTraceId() string {
 	return "traceId"
 }
 
+func (t *traceId) SetTraceId(traceId string) {
+}
+
 func TestTriceId(t *testing.T) {
 	SetTraceIdSupplier(&traceId{})
 	Logrus().Infoln("info")

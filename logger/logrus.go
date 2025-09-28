@@ -31,6 +31,7 @@ var (
 
 type TraceIdSupplier interface {
 	GetTraceId() string
+	SetTraceId(string)
 }
 
 type Level uint32
