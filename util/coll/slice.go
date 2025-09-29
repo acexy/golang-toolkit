@@ -413,3 +413,19 @@ func SliceAnyGroupBySingle[T, V any, K comparable](slice []T, groupFn func(T) (K
 	}
 	return result
 }
+
+// SliceSplitChunk 将 slice 拆分为多个子 slice，每个子 slice 的大小不超过 size
+func SliceSplitChunk[T any](slice []T, size int) [][]T {
+	if size <= 0 {
+		return nil
+	}
+	var chunks [][]T
+	for i := 0; i < len(slice); i += size {
+		end := i + size
+		if end > len(slice) {
+			end = len(slice)
+		}
+		chunks = append(chunks, slice[i:end])
+	}
+	return chunks
+}
