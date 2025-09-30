@@ -2,29 +2,47 @@ package date
 
 import "time"
 
+const defaultTimeLayout = "2006-01-02 15:04:05"
+
 // Parse 解析时间字符串为 time.Time
 func Parse(layout, value string) (time.Time, error) {
 	return time.Parse(layout, value)
 }
 
 // Format 格式化时间为指定格式字符串
-func Format(t time.Time, layout string) string {
-	return t.Format(layout)
+func Format(t time.Time, layout ...string) string {
+	l := defaultTimeLayout
+	if len(layout) > 0 {
+		l = layout[0]
+	}
+	return t.Format(l)
 }
 
 // FormatUnixTimestamp 将 Unix(秒) 时间戳转为指定格式字符串
-func FormatUnixTimestamp(ts int64, layout string) string {
-	return Format(FromUnixTimestamp(ts), layout)
+func FormatUnixTimestamp(ts int64, layout ...string) string {
+	l := defaultTimeLayout
+	if len(layout) > 0 {
+		l = layout[0]
+	}
+	return Format(FromUnixTimestamp(ts), l)
 }
 
 // FormatUnixMilli 将 Unix 毫秒时间戳转为指定格式字符串
-func FormatUnixMilli(ts int64, layout string) string {
-	return Format(FromUnixMilli(ts), layout)
+func FormatUnixMilli(ts int64, layout ...string) string {
+	l := defaultTimeLayout
+	if len(layout) > 0 {
+		l = layout[0]
+	}
+	return Format(FromUnixMilli(ts), l)
 }
 
 // FormatUnixNano 将 Unix 纳秒时间戳转为指定格式字符串
-func FormatUnixNano(ts int64, layout string) string {
-	return Format(FromUnixNano(ts), layout)
+func FormatUnixNano(ts int64, layout ...string) string {
+	l := defaultTimeLayout
+	if len(layout) > 0 {
+		l = layout[0]
+	}
+	return Format(FromUnixNano(ts), l)
 }
 
 // FromUnixTimestamp 将 Unix (秒级)时间戳转为 time.Time
