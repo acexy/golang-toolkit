@@ -300,3 +300,7 @@ func TestSliceDiff(t *testing.T) {
 	})
 	fmt.Printf("Added by ID: %v, Removed by ID: %v\n", addedByID, removedByID)
 }
+
+func TestSliceSplitChunk(t *testing.T) {
+	fmt.Println(SliceSplitChunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 11))
+}

@@ -2,8 +2,10 @@ package symmetric
 
 import (
 	"bytes"
+	"crypto/aes"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"testing"
 )
@@ -371,4 +373,356 @@ func SimpleExample() {
 // TestExample 运行示例
 func TestExample(t *testing.T) {
 	SimpleExample()
+}
+
+// 自定义IV创建器
+type FixedIVCreator struct {
+	iv []byte
+}
+
+func (f *FixedIVCreator) CreateForEncrypt(key, rawData []byte) ([]byte, error) {
+	return f.iv, nil
+}
+
+func (f *FixedIVCreator) ExtractForDecrypt(key, cipherData []byte) ([]byte, error) {
+	return f.iv, nil
+}
+
+// 自定义结果创建器
+type ReverseAppendResultCreator struct{}
+
+func (r *ReverseAppendResultCreator) CombineResult(iv, cipherData []byte) []byte {
+	result := make([]byte, len(iv)+len(cipherData))
+	copy(result, cipherData)
+	copy(result[len(cipherData):], iv)
+	return result
+}
+
+func (r *ReverseAppendResultCreator) SeparateResult(combinedData []byte, ivSize int) (cipherData []byte, err error) {
+	if len(combinedData) < ivSize {
+		return nil, errors.New("combined data too short to contain IV")
+	}
+	return combinedData[:len(combinedData)-ivSize], nil
+}
+
+// 自定义填充创建器
+type ZeroPaddingCreator struct{}
+
+func (z *ZeroPaddingCreator) Pad(rawData []byte, blockSize int) ([]byte, error) {
+	if blockSize <= 0 {
+		return nil, errors.New("invalid block size")
+	}
+
+	padding := blockSize - len(rawData)%blockSize
+	if padding == blockSize {
+		padding = 0
+	}
+
+	padText := bytes.Repeat([]byte{0}, padding)
+	result := make([]byte, len(rawData)+padding)
+	copy(result, rawData)
+	copy(result[len(rawData):], padText)
+
+	return result, nil
+}
+
+func (z *ZeroPaddingCreator) UnPad(paddedData []byte) ([]byte, error) {
+	if len(paddedData) == 0 {
+		return nil, errors.New("empty padded data")
+	}
+
+	// 从末尾开始查找非零字节
+	len := len(paddedData)
+	for i := len - 1; i >= 0; i-- {
+		if paddedData[i] != 0 {
+			return paddedData[:i+1], nil
+		}
+	}
+
+	// 全是零，返回空
+	return []byte{}, nil
+}
+
+// 固定nonce创建器
+type FixedNonceCreator struct {
+	nonce []byte
+}
+
+func (f *FixedNonceCreator) CreateForEncrypt(key, rawData []byte) ([]byte, error) {
+	return f.nonce, nil
+}
+
+func (f *FixedNonceCreator) ExtractForDecrypt(key, cipherData []byte) ([]byte, error) {
+	return f.nonce, nil
+}
+
+// TestCustomIVCreator 测试自定义IV创建器
+func TestCustomIVCreator(t *testing.T) {
+	t.Log("=== Testing Custom IV Creator ===")
+
+	// 使用32字节密钥 (AES-256)
+	key := generateTestKey(32)
+	// 创建固定IV
+	fixedIV := make([]byte, aes.BlockSize)
+	for i := range fixedIV {
+		fixedIV[i] = byte(i)
+	}
+
+	// 创建自定义IV的AES实例
+	option := AESOption{
+		IVCreator: &FixedIVCreator{iv: fixedIV},
+	}
+	aes, err := NewAESWithOption(key, option)
+	if err != nil {
+		t.Fatalf("Failed to create AES instance: %v", err)
+	}
+
+	// 测试数据
+	plaintext := []byte("Testing custom IV creator!")
+	t.Logf("Original text: %s", string(plaintext))
+
+	// 加密
+	ciphertext, err := aes.Encrypt(plaintext)
+	if err != nil {
+		t.Fatalf("Encryption failed: %v", err)
+	}
+
+	// 解密
+	decrypted, err := aes.Decrypt(ciphertext)
+	if err != nil {
+		t.Fatalf("Decryption failed: %v", err)
+	}
+
+	// 验证
+	if !bytes.Equal(plaintext, decrypted) {
+		t.Errorf("Decryption mismatch!\nOriginal:  %s\nDecrypted: %s",
+			string(plaintext), string(decrypted))
+	} else {
+		t.Log("✅ Custom IV Creator: Encryption/Decryption successful!")
+	}
+}
+
+// TestCustomResultCreator 测试自定义结果创建器
+func TestCustomResultCreator(t *testing.T) {
+	t.Log("=== Testing Custom Result Creator ===")
+
+	// 使用32字节密钥 (AES-256)
+	key := generateTestKey(32)
+
+	// 创建自定义结果创建器的AES实例
+	option := AESOption{
+		ResultCreator: &ReverseAppendResultCreator{},
+	}
+	aes, err := NewAESWithOption(key, option)
+	if err != nil {
+		t.Fatalf("Failed to create AES instance: %v", err)
+	}
+
+	// 测试数据
+	plaintext := []byte("Testing custom result creator!")
+	t.Logf("Original text: %s", string(plaintext))
+
+	// 加密
+	ciphertext, err := aes.Encrypt(plaintext)
+	if err != nil {
+		t.Fatalf("Encryption failed: %v", err)
+	}
+
+	// 解密
+	decrypted, err := aes.Decrypt(ciphertext)
+	if err != nil {
+		t.Fatalf("Decryption failed: %v", err)
+	}
+
+	// 验证
+	if !bytes.Equal(plaintext, decrypted) {
+		t.Errorf("Decryption mismatch!\nOriginal:  %s\nDecrypted: %s",
+			string(plaintext), string(decrypted))
+	} else {
+		t.Log("✅ Custom Result Creator: Encryption/Decryption successful!")
+	}
+}
+
+// TestCustomPaddingCreator 测试自定义填充创建器
+func TestCustomPaddingCreator(t *testing.T) {
+	t.Log("=== Testing Custom Padding Creator ===")
+
+	// 使用32字节密钥 (AES-256)
+	key := generateTestKey(32)
+
+	// 创建自定义填充创建器的AES实例
+	option := AESOption{
+		PaddingCreator: &ZeroPaddingCreator{},
+	}
+	aes, err := NewAESWithOption(key, option)
+	if err != nil {
+		t.Fatalf("Failed to create AES instance: %v", err)
+	}
+
+	// 测试数据
+	plaintext := []byte("Testing custom padding creator!")
+	t.Logf("Original text: %s", string(plaintext))
+
+	// 加密
+	ciphertext, err := aes.Encrypt(plaintext)
+	if err != nil {
+		t.Fatalf("Encryption failed: %v", err)
+	}
+
+	// 解密
+	decrypted, err := aes.Decrypt(ciphertext)
+	if err != nil {
+		t.Fatalf("Decryption failed: %v", err)
+	}
+
+	// 验证
+	if !bytes.Equal(plaintext, decrypted) {
+		t.Errorf("Decryption mismatch!\nOriginal:  %s\nDecrypted: %s",
+			string(plaintext), string(decrypted))
+	} else {
+		t.Log("✅ Custom Padding Creator: Encryption/Decryption successful!")
+	}
+}
+
+// TestCombinedCustomComponents 测试组合使用自定义组件
+func TestCombinedCustomComponents(t *testing.T) {
+	t.Log("=== Testing Combined Custom Components ===")
+
+	// 使用前面定义的自定义组件
+	key := generateTestKey(32)
+	fixedIV := make([]byte, aes.BlockSize)
+	for i := range fixedIV {
+		fixedIV[i] = byte(i)
+	}
+
+	// 创建组合自定义组件的AES实例
+	option := AESOption{
+		IVCreator:      &FixedIVCreator{iv: fixedIV},
+		ResultCreator:  &ReverseAppendResultCreator{},
+		PaddingCreator: &ZeroPaddingCreator{},
+	}
+	aes, err := NewAESWithOption(key, option)
+	if err != nil {
+		t.Fatalf("Failed to create AES instance: %v", err)
+	}
+
+	// 测试数据
+	plaintext := []byte("Testing combined custom components!")
+	t.Logf("Original text: %s", string(plaintext))
+
+	// 加密
+	ciphertext, err := aes.Encrypt(plaintext)
+	if err != nil {
+		t.Fatalf("Encryption failed: %v", err)
+	}
+
+	// 解密
+	decrypted, err := aes.Decrypt(ciphertext)
+	if err != nil {
+		t.Fatalf("Decryption failed: %v", err)
+	}
+
+	// 验证
+	if !bytes.Equal(plaintext, decrypted) {
+		t.Errorf("Decryption mismatch!\nOriginal:  %s\nDecrypted: %s",
+			string(plaintext), string(decrypted))
+	} else {
+		t.Log("✅ Combined Custom Components: Encryption/Decryption successful!")
+	}
+}
+
+// TestPureResultCreator 测试纯密文结果创建器
+func TestPureResultCreator(t *testing.T) {
+	t.Log("=== Testing Pure Result Creator ===")
+
+	// 使用32字节密钥 (AES-256)
+	key := generateTestKey(32)
+
+	// 创建固定IV
+	fixedIV := make([]byte, aes.BlockSize)
+	for i := range fixedIV {
+		fixedIV[i] = byte(i)
+	}
+
+	// 创建纯密文结果创建器的AES实例
+	option := AESOption{
+		IVCreator:     &FixedIVCreator{iv: fixedIV},
+		ResultCreator: &PureResultCreator{},
+	}
+	aes, err := NewAESWithOption(key, option)
+	if err != nil {
+		t.Fatalf("Failed to create AES instance: %v", err)
+	}
+
+	// 测试数据
+	plaintext := []byte("Testing pure result creator!")
+	t.Logf("Original text: %s", string(plaintext))
+
+	// 加密
+	ciphertext, err := aes.Encrypt(plaintext)
+	if err != nil {
+		t.Fatalf("Encryption failed: %v", err)
+	}
+
+	// 解密
+	decrypted, err := aes.Decrypt(ciphertext)
+	if err != nil {
+		t.Fatalf("Decryption failed: %v", err)
+	}
+
+	// 验证
+	if !bytes.Equal(plaintext, decrypted) {
+		t.Errorf("Decryption mismatch!\nOriginal:  %s\nDecrypted: %s",
+			string(plaintext), string(decrypted))
+	} else {
+		t.Log("✅ Pure Result Creator: Encryption/Decryption successful!")
+	}
+}
+
+// TestGCMWithCustomComponents 测试GCM模式下的自定义组件
+func TestGCMWithCustomComponents(t *testing.T) {
+	t.Log("=== Testing GCM Mode with Custom Components ===")
+
+	// 使用32字节密钥 (AES-256)
+	key := generateTestKey(32)
+	// 创建固定nonce (12字节)
+	fixedNonce := make([]byte, 12)
+	for i := range fixedNonce {
+		fixedNonce[i] = byte(i)
+	}
+
+	// 创建GCM模式的自定义组件AES实例
+	option := AESOption{
+		Mode:          AESModeGCM,
+		IVCreator:     &FixedNonceCreator{nonce: fixedNonce},
+		ResultCreator: &PureResultCreator{},
+	}
+	aes, err := NewAESWithOption(key, option)
+	if err != nil {
+		t.Fatalf("Failed to create AES instance: %v", err)
+	}
+
+	// 测试数据
+	plaintext := []byte("Testing GCM with custom components!")
+	t.Logf("Original text: %s", string(plaintext))
+
+	// 加密
+	ciphertext, err := aes.Encrypt(plaintext)
+	if err != nil {
+		t.Fatalf("Encryption failed: %v", err)
+	}
+
+	// 解密
+	decrypted, err := aes.Decrypt(ciphertext)
+	if err != nil {
+		t.Fatalf("Decryption failed: %v", err)
+	}
+
+	// 验证
+	if !bytes.Equal(plaintext, decrypted) {
+		t.Errorf("Decryption mismatch!\nOriginal:  %s\nDecrypted: %s",
+			string(plaintext), string(decrypted))
+	} else {
+		t.Log("✅ GCM with Custom Components: Encryption/Decryption successful!")
+	}
 }

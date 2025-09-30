@@ -188,6 +188,12 @@ func (g *GJsonValue) Get(path string) *GJsonValue {
 	}
 }
 
+func (g *GJsonValue) Foreach(fn func(key, value gjson.Result) bool) {
+	g.gr.ForEach(func(key, value gjson.Result) bool {
+		return fn(key, value)
+	})
+}
+
 // StringValue 获取指定json结构中的字符串值
 func (g *GJsonValue) StringValue() (string, bool) {
 	if !g.gr.Exists() {

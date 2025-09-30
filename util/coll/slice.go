@@ -225,10 +225,10 @@ func SliceDiff[T comparable](a, b []T, compare ...func(T, T) bool) (added, remov
 	return
 }
 
-// SliceDiffWithCompare 针对不可比较类型的专门版本（性能更好）
+// SliceAnyDiff 针对不可比较类型
 // added: b中有但a中没有的元素
 // removed: a中有但b中没有的元素
-func SliceDiffWithCompare[T any](a, b []T, compare func(T, T) bool) (added, removed []T) {
+func SliceAnyDiff[T any](a, b []T, compare func(T, T) bool) (added, removed []T) {
 	usedA := make([]bool, len(a))
 	usedB := make([]bool, len(b))
 	for i, va := range a {
@@ -253,7 +253,7 @@ func SliceDiffWithCompare[T any](a, b []T, compare func(T, T) bool) (added, remo
 	return
 }
 
-// SliceIsSubset 判断切片A是否是切片B的子集
+// SliceIsSubset 判断切片slicePart是否是切片sliceAll的子集
 func SliceIsSubset[T comparable](slicePart, sliceAll []T) bool {
 	setMap := make(map[T]struct{}, len(sliceAll))
 	for _, v := range sliceAll {
@@ -412,4 +412,20 @@ func SliceAnyGroupBySingle[T, V any, K comparable](slice []T, groupFn func(T) (K
 		result[k] = v
 	}
 	return result
+}
+
+// SliceSplitChunk 将 slice 拆分为多个子 slice，每个子 slice 的大小不超过 size
+func SliceSplitChunk[T any](slice []T, size int) [][]T {
+	if size <= 0 {
+		return nil
+	}
+	var chunks [][]T
+	for i := 0; i < len(slice); i += size {
+		end := i + size
+		if end > len(slice) {
+			end = len(slice)
+		}
+		chunks = append(chunks, slice[i:end])
+	}
+	return chunks
 }

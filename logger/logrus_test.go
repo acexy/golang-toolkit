@@ -58,3 +58,18 @@ func TestFileWrite(t *testing.T) {
 	EnableFileWithText(TraceLevel)
 	Logrus().Info("应用启动中")
 }
+
+type traceId struct {
+}
+
+func (t *traceId) GetTraceId() string {
+	return "traceId"
+}
+
+func (t *traceId) SetTraceId(traceId string) {
+}
+
+func TestTriceId(t *testing.T) {
+	SetTraceIdSupplier(&traceId{})
+	Logrus().Infoln("info")
+}

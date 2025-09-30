@@ -2,9 +2,11 @@ package str
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 
+	"github.com/acexy/golang-toolkit/math/conversion"
 	"github.com/iancoleman/strcase"
 )
 
@@ -45,6 +47,71 @@ func NewBuilder(str ...string) *Builder {
 
 func (b *Builder) WriteString(str string) *Builder {
 	b.b.WriteString(str)
+	return b
+}
+
+func (b *Builder) WriteBool(bool bool) *Builder {
+	b.b.WriteString(strconv.FormatBool(bool))
+	return b
+}
+
+func (b *Builder) WriteInt8(i8 int8) *Builder {
+	b.b.WriteString(conversion.FromInt8(i8))
+	return b
+}
+
+func (b *Builder) WriteUint8(u8 uint8) *Builder {
+	b.b.WriteString(conversion.FromUint8(u8))
+	return b
+}
+
+func (b *Builder) WriteInt16(i16 int16) *Builder {
+	b.b.WriteString(conversion.FromInt16(i16))
+	return b
+}
+
+func (b *Builder) WriteUint16(u16 uint16) *Builder {
+	b.b.WriteString(conversion.FromUint16(u16))
+	return b
+}
+
+func (b *Builder) WriteInt32(i32 int32) *Builder {
+	b.b.WriteString(conversion.FromInt32(i32))
+	return b
+}
+
+func (b *Builder) WriteUint32(u32 uint32) *Builder {
+	b.b.WriteString(conversion.FromUint32(u32))
+	return b
+}
+
+func (b *Builder) WriteInt(i int) *Builder {
+	b.b.WriteString(conversion.FromInt(i))
+	return b
+}
+
+func (b *Builder) WriteUint(u uint) *Builder {
+	b.b.WriteString(conversion.FromUint(u))
+	return b
+}
+
+func (b *Builder) WriteInt64(i64 int64) *Builder {
+	b.b.WriteString(conversion.FromInt64(i64))
+	return b
+}
+
+func (b *Builder) WriteUint64(u64 uint64) *Builder {
+	b.b.WriteString(conversion.FromUint64(u64))
+	return b
+}
+
+func (b *Builder) WriteFlot32(f32 float32) *Builder {
+	b.b.WriteString(conversion.FromFloat32(f32))
+	return b
+}
+
+func (b *Builder) WriteFlot64(f64 float64) *Builder {
+	b.b.WriteString(conversion.FromFloat64(f64))
 	return b
 }
 

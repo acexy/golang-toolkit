@@ -117,7 +117,7 @@ type ResultCreator interface {
 	// CombineResult 加密时组合IV和密文
 	CombineResult(iv, cipherData []byte) []byte
 	// SeparateResult 解密时分离IV和密文
-	SeparateResult(combinedData []byte, ivSize int) (iv, cipherData []byte, err error)
+	SeparateResult(combinedData []byte, ivSize int) (cipherData []byte, err error)
 }
 
 // PaddingCreator 填充接口
@@ -129,6 +129,7 @@ type PaddingCreator interface {
 }
 
 // RandomIvCreator 随机生成IV (CBC模式使用)
+// 改模式需要配合 AppendResultCreator 才能正常使用，解秘时需要解析出iv
 type RandomIvCreator struct{}
 
 func (r *RandomIvCreator) CreateForEncrypt(key, rawData []byte) ([]byte, error) {
@@ -175,11 +176,11 @@ func (a *AppendResultCreator) CombineResult(iv, cipherData []byte) []byte {
 	return result
 }
 
-func (a *AppendResultCreator) SeparateResult(combinedData []byte, ivSize int) ([]byte, []byte, error) {
+func (a *AppendResultCreator) SeparateResult(combinedData []byte, ivSize int) (cipherData []byte, err error) {
 	if len(combinedData) < ivSize {
-		return nil, nil, errors.New("combined data too short to contain IV")
+		return nil, errors.New("combined data too short to contain IV")
 	}
-	return combinedData[:ivSize], combinedData[ivSize:], nil
+	return combinedData[ivSize:], nil
 }
 
 // PureResultCreator 纯密文方式（需要外部管理IV）
@@ -189,9 +190,9 @@ func (p *PureResultCreator) CombineResult(iv, cipherData []byte) []byte {
 	return cipherData
 }
 
-func (p *PureResultCreator) SeparateResult(combinedData []byte, ivSize int) ([]byte, []byte, error) {
+func (p *PureResultCreator) SeparateResult(combinedData []byte, ivSize int) (cipherData []byte, err error) {
 	// 纯密文模式下无法从数据中提取IV，需要外部提供
-	return nil, combinedData, errors.New("pure mode cannot extract IV from data")
+	return combinedData, nil
 }
 
 // Pkcs7PaddingCreator PKCS7填充
@@ -342,10 +343,16 @@ func (a *AESEncrypt) Decrypt(cipherData []byte) ([]byte, error) {
 
 // decryptCBC CBC模式解密
 func (a *AESEncrypt) decryptCBC(block cipher.Block, cipherData []byte) ([]byte, error) {
-	// 提取IV和实际密文
-	iv, actualCipherData, err := a.resultCreator.SeparateResult(cipherData, aes.BlockSize)
+	// 使用IVCreator提取IV
+	iv, err := a.ivCreator.ExtractForDecrypt(a.key, cipherData)
 	if err != nil {
-		return nil, fmt.Errorf("failed to separate IV and cipher data: %w", err)
+		return nil, fmt.Errorf("failed to extract IV: %w", err)
+	}
+
+	// 分离实际密文
+	actualCipherData, err := a.resultCreator.SeparateResult(cipherData, len(iv))
+	if err != nil {
+		return nil, fmt.Errorf("failed to separate cipher data: %w", err)
 	}
 
 	if len(actualCipherData)%aes.BlockSize != 0 {
@@ -368,10 +375,16 @@ func (a *AESEncrypt) decryptGCM(block cipher.Block, cipherData []byte) ([]byte, 
 		return nil, fmt.Errorf("failed to create GCM: %w", err)
 	}
 
-	// 提取nonce和实际密文
-	nonce, actualCipherData, err := a.resultCreator.SeparateResult(cipherData, gcm.NonceSize())
+	// 使用IVCreator提取nonce
+	nonce, err := a.ivCreator.ExtractForDecrypt(a.key, cipherData)
 	if err != nil {
-		return nil, fmt.Errorf("failed to separate nonce and cipher data: %w", err)
+		return nil, fmt.Errorf("failed to extract nonce: %w", err)
+	}
+
+	// 分离实际密文
+	actualCipherData, err := a.resultCreator.SeparateResult(cipherData, len(nonce))
+	if err != nil {
+		return nil, fmt.Errorf("failed to separate cipher data: %w", err)
 	}
 
 	// 验证nonce长度
