@@ -113,6 +113,12 @@ func (g *GJsonObject) GetStringValue(jsonKey string) (string, bool) {
 	return value.StringValue()
 }
 
+// GetStringResult 获取指定json结构中的字符串值
+func (g *GJsonObject) GetStringResult(jsonKey string) string {
+	r, _ := g.GetStringValue(jsonKey)
+	return r
+}
+
 // GetIntValue 获取指定json结构中的int值
 func (g *GJsonObject) GetIntValue(jsonKey string) (int64, bool) {
 	value, ok := g.Get(jsonKey)
@@ -120,6 +126,12 @@ func (g *GJsonObject) GetIntValue(jsonKey string) (int64, bool) {
 		return 0, false
 	}
 	return value.IntValue()
+}
+
+// GetIntResult 获取指定json结构中的int值
+func (g *GJsonObject) GetIntResult(jsonKey string) int64 {
+	r, _ := g.GetIntValue(jsonKey)
+	return r
 }
 
 // GetUintValue 获取指定json结构中的uint值
@@ -131,6 +143,12 @@ func (g *GJsonObject) GetUintValue(jsonKey string) (uint64, bool) {
 	return value.UintValue()
 }
 
+// GetUintResult 获取指定json结构中的uint值
+func (g *GJsonObject) GetUintResult(jsonKey string) uint64 {
+	r, _ := g.GetUintValue(jsonKey)
+	return r
+}
+
 // GetFloatValue 获取指定json结构中的float值
 func (g *GJsonObject) GetFloatValue(jsonKey string) (float64, bool) {
 	value, ok := g.Get(jsonKey)
@@ -140,6 +158,12 @@ func (g *GJsonObject) GetFloatValue(jsonKey string) (float64, bool) {
 	return value.FloatValue()
 }
 
+// GetFloatResult 获取指定json结构中的float值
+func (g *GJsonObject) GetFloatResult(jsonKey string) float64 {
+	r, _ := g.GetFloatValue(jsonKey)
+	return r
+}
+
 // GetBoolValue 获取指定json结构中的bool值
 func (g *GJsonObject) GetBoolValue(jsonKey string) (bool, bool) {
 	value, ok := g.Get(jsonKey)
@@ -147,6 +171,12 @@ func (g *GJsonObject) GetBoolValue(jsonKey string) (bool, bool) {
 		return false, false
 	}
 	return value.BoolValue()
+}
+
+// GetBoolResult 获取指定json结构中的bool值
+func (g *GJsonObject) GetBoolResult(jsonKey string) bool {
+	r, _ := g.GetBoolValue(jsonKey)
+	return r
 }
 
 // GetArrayValue 获取指定json结构中的数组
