@@ -7,6 +7,9 @@ import (
 
 // SliceContains 检查指定的元素是否存在切片中
 func SliceContains[T comparable](slice []T, target T, compare ...func(T, T) bool) bool {
+	if len(slice) == 0 {
+		return false
+	}
 	for i := range slice {
 		if len(compare) > 0 && compare[0] != nil {
 			if compare[0](slice[i], target) {
@@ -23,6 +26,9 @@ func SliceContains[T comparable](slice []T, target T, compare ...func(T, T) bool
 
 // SliceIndexOf 获取指定元素在切片中的索引，如果元素不存在则返回-1
 func SliceIndexOf[T comparable](slice []T, target T, compare ...func(T, T) bool) int {
+	if len(slice) == 0 {
+		return -1
+	}
 	for i := range slice {
 		if len(compare) > 0 && compare[0] != nil {
 			if compare[0](slice[i], target) {
@@ -39,6 +45,9 @@ func SliceIndexOf[T comparable](slice []T, target T, compare ...func(T, T) bool)
 
 // SliceAnyContains 检查指定的元素是否存在切片中，元素可以是任意类型
 func SliceAnyContains[T comparable](slice []T, compare func(ele T) bool) bool {
+	if len(slice) == 0 {
+		return false
+	}
 	for i := range slice {
 		if compare(slice[i]) {
 			return true
@@ -49,6 +58,9 @@ func SliceAnyContains[T comparable](slice []T, compare func(ele T) bool) bool {
 
 // SliceAnyIndexOf 获取指定元素在切片中的索引，如果元素不存在则返回-1
 func SliceAnyIndexOf[T comparable](slice []T, compare func(ele T) bool) int {
+	if len(slice) == 0 {
+		return -1
+	}
 	for i := range slice {
 		if compare(slice[i]) {
 			return i
@@ -60,6 +72,9 @@ func SliceAnyIndexOf[T comparable](slice []T, compare func(ele T) bool) int {
 // SliceFilterFirstOne 筛选切片 通过函数筛选出符合要求的第一个元素
 func SliceFilterFirstOne[T any](slice []T, filter func(item T) bool) (T, bool) {
 	var t T
+	if len(slice) == 0 {
+		return t, false
+	}
 	var exist bool
 	for i := range slice {
 		flag := filter(slice[i])
@@ -72,8 +87,29 @@ func SliceFilterFirstOne[T any](slice []T, filter func(item T) bool) (T, bool) {
 	return t, exist
 }
 
+// SliceFilterFirstOneReverse 筛选切片 通过函数反向匹配筛选出符合要求的第一个元素
+func SliceFilterFirstOneReverse[T any](slice []T, filter func(item T) bool) (T, bool) {
+	var t T
+	if len(slice) == 0 {
+		return t, false
+	}
+	var exist bool
+	for i := len(slice) - 1; i >= 0; i-- {
+		flag := filter(slice[i])
+		if flag {
+			t = slice[i]
+			exist = true
+			break
+		}
+	}
+	return t, exist
+}
+
 // SliceFilter 筛选切片 通过函数筛选出符合要求的元素
 func SliceFilter[T any](slice []T, filter func(item T) bool) []T {
+	if len(slice) == 0 {
+		return nil
+	}
 	result := make([]T, 0)
 	for i := range slice {
 		flag := filter(slice[i])
