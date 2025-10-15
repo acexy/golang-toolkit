@@ -72,9 +72,7 @@ func EnableConsole(level Level, disableColor ...bool) {
 		disColor = disableColor[0]
 	}
 	consoleLogger = enableConsole(level, disColor)
-	if activeLogger == nil {
-		activeLogger = consoleLogger
-	}
+	activeLogger = consoleLogger
 }
 
 // SetTraceIdSupplier 设置TraceIdSupplier
