@@ -18,8 +18,8 @@ func Format(t time.Time, layout ...string) string {
 	return t.Format(l)
 }
 
-// FormatUnixTimestamp 将 Unix(秒) 时间戳转为指定格式字符串
-func FormatUnixTimestamp(ts int64, layout ...string) string {
+// FormatUnixSec 将 Unix(秒) 时间戳转为指定格式字符串
+func FormatUnixSec(ts int64, layout ...string) string {
 	l := defaultTimeLayout
 	if len(layout) > 0 {
 		l = layout[0]

@@ -47,8 +47,8 @@ func TestFormat(t *testing.T) {
 	}
 }
 
-// TestFormatUnixTimestamp 测试 FormatUnixTimestamp 函数。
-func TestFormatUnixTimestamp(t *testing.T) {
+// TestFormatUnixSec 测试 FormatUnixSec 函数。
+func TestFormatUnixSec(t *testing.T) {
 	tests := []struct {
 		ts     int64
 		layout string
@@ -59,9 +59,9 @@ func TestFormatUnixTimestamp(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := FormatUnixTimestamp(test.ts, test.layout)
+		got := FormatUnixSec(test.ts, test.layout)
 		if got != test.want {
-			t.Errorf("FormatUnixTimestamp(%d, %q) = %q, want %q", test.ts, test.layout, got, test.want)
+			t.Errorf("FormatUnixSec(%d, %q) = %q, want %q", test.ts, test.layout, got, test.want)
 		}
 	}
 }
