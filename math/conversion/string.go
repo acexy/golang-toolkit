@@ -2,6 +2,7 @@ package conversion
 
 import (
 	"fmt"
+	"strconv"
 	"unsafe"
 )
 
@@ -9,7 +10,7 @@ func fromNumber(value int64) string {
 	return fmt.Sprintf("%d", value)
 }
 func fromFloat(value float64) string {
-	return fmt.Sprintf("%f", value)
+	return strconv.FormatFloat(value, 'f', -1, 64)
 }
 
 // FromInt Int转字符串

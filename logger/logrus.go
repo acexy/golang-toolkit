@@ -12,6 +12,19 @@ import (
 )
 
 var traceIdSupplier TraceIdSupplier
+var autoConsoleHook = new(autoConsole)
+
+type Level uint32
+
+const (
+	PanicLevel Level = iota
+	FatalLevel
+	ErrorLevel
+	WarnLevel
+	InfoLevel
+	DebugLevel
+	TraceLevel
+)
 
 var (
 	callerPrettifier = func(frame *runtime.Frame) (function string, file string) {
@@ -34,17 +47,18 @@ type TraceIdSupplier interface {
 	SetTraceId(string)
 }
 
-type Level uint32
+type autoConsole struct {
+}
 
-const (
-	PanicLevel Level = iota
-	FatalLevel
-	ErrorLevel
-	WarnLevel
-	InfoLevel
-	DebugLevel
-	TraceLevel
-)
+func (h *autoConsole) Fire(entry *logrus.Entry) error {
+	fn, file := callerPrettifier(entry.Caller)
+	consoleLogger.WithFields(entry.Data).Logln(entry.Level, file, fn, entry.Message)
+	return nil
+}
+
+func (h *autoConsole) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
 
 func enableConsole(level Level, disableColor bool) *logrus.Logger {
 	logger := logrus.New()
@@ -72,9 +86,7 @@ func EnableConsole(level Level, disableColor ...bool) {
 		disColor = disableColor[0]
 	}
 	consoleLogger = enableConsole(level, disColor)
-	if activeLogger == nil {
-		activeLogger = consoleLogger
-	}
+	activeLogger = consoleLogger
 }
 
 // SetTraceIdSupplier 设置TraceIdSupplier
@@ -116,7 +128,7 @@ func EnableFileWithJson(level Level, fileConfig ...*lumberjack.Logger) {
 	}, fileConfig...)
 	if consoleLogger != nil {
 		consoleLogger.ReportCaller = false
-		fileLogger.AddHook(&autoConsole{})
+		fileLogger.AddHook(autoConsoleHook)
 	}
 	activeLogger = fileLogger
 }
@@ -134,7 +146,7 @@ func EnableFileWithText(level Level, fileConfig ...*lumberjack.Logger) {
 	}, fileConfig...)
 	if consoleLogger != nil {
 		consoleLogger.ReportCaller = false
-		fileLogger.AddHook(&autoConsole{})
+		fileLogger.AddHook(autoConsoleHook)
 	}
 	activeLogger = fileLogger
 }
@@ -147,17 +159,4 @@ func Logrus() *logrus.Logger {
 		}
 	})
 	return activeLogger
-}
-
-type autoConsole struct {
-}
-
-func (h *autoConsole) Fire(entry *logrus.Entry) error {
-	fn, file := callerPrettifier(entry.Caller)
-	consoleLogger.WithFields(entry.Data).Logln(entry.Level, file, fn, entry.Message)
-	return nil
-}
-
-func (h *autoConsole) Levels() []logrus.Level {
-	return logrus.AllLevels
 }

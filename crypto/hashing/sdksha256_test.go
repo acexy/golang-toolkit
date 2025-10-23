@@ -2,8 +2,9 @@ package hashing
 
 import (
 	"fmt"
-	"github.com/acexy/golang-toolkit/math/conversion"
 	"testing"
+
+	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
 func TestSha256(t *testing.T) {

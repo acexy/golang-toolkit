@@ -1,9 +1,15 @@
 package coll
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+)
 
 // SliceContains 检查指定的元素是否存在切片中
 func SliceContains[T comparable](slice []T, target T, compare ...func(T, T) bool) bool {
+	if len(slice) == 0 {
+		return false
+	}
 	for i := range slice {
 		if len(compare) > 0 && compare[0] != nil {
 			if compare[0](slice[i], target) {
@@ -20,6 +26,9 @@ func SliceContains[T comparable](slice []T, target T, compare ...func(T, T) bool
 
 // SliceIndexOf 获取指定元素在切片中的索引，如果元素不存在则返回-1
 func SliceIndexOf[T comparable](slice []T, target T, compare ...func(T, T) bool) int {
+	if len(slice) == 0 {
+		return -1
+	}
 	for i := range slice {
 		if len(compare) > 0 && compare[0] != nil {
 			if compare[0](slice[i], target) {
@@ -36,6 +45,9 @@ func SliceIndexOf[T comparable](slice []T, target T, compare ...func(T, T) bool)
 
 // SliceAnyContains 检查指定的元素是否存在切片中，元素可以是任意类型
 func SliceAnyContains[T comparable](slice []T, compare func(ele T) bool) bool {
+	if len(slice) == 0 {
+		return false
+	}
 	for i := range slice {
 		if compare(slice[i]) {
 			return true
@@ -46,6 +58,9 @@ func SliceAnyContains[T comparable](slice []T, compare func(ele T) bool) bool {
 
 // SliceAnyIndexOf 获取指定元素在切片中的索引，如果元素不存在则返回-1
 func SliceAnyIndexOf[T comparable](slice []T, compare func(ele T) bool) int {
+	if len(slice) == 0 {
+		return -1
+	}
 	for i := range slice {
 		if compare(slice[i]) {
 			return i
@@ -57,6 +72,9 @@ func SliceAnyIndexOf[T comparable](slice []T, compare func(ele T) bool) int {
 // SliceFilterFirstOne 筛选切片 通过函数筛选出符合要求的第一个元素
 func SliceFilterFirstOne[T any](slice []T, filter func(item T) bool) (T, bool) {
 	var t T
+	if len(slice) == 0 {
+		return t, false
+	}
 	var exist bool
 	for i := range slice {
 		flag := filter(slice[i])
@@ -69,8 +87,29 @@ func SliceFilterFirstOne[T any](slice []T, filter func(item T) bool) (T, bool) {
 	return t, exist
 }
 
+// SliceFilterFirstOneReverse 筛选切片 通过函数反向匹配筛选出符合要求的第一个元素
+func SliceFilterFirstOneReverse[T any](slice []T, filter func(item T) bool) (T, bool) {
+	var t T
+	if len(slice) == 0 {
+		return t, false
+	}
+	var exist bool
+	for i := len(slice) - 1; i >= 0; i-- {
+		flag := filter(slice[i])
+		if flag {
+			t = slice[i]
+			exist = true
+			break
+		}
+	}
+	return t, exist
+}
+
 // SliceFilter 筛选切片 通过函数筛选出符合要求的元素
 func SliceFilter[T any](slice []T, filter func(item T) bool) []T {
+	if len(slice) == 0 {
+		return nil
+	}
 	result := make([]T, 0)
 	for i := range slice {
 		flag := filter(slice[i])
@@ -428,4 +467,88 @@ func SliceSplitChunk[T any](slice []T, size int) [][]T {
 		chunks = append(chunks, slice[i:end])
 	}
 	return chunks
+}
+
+// SliceRemove 删除指定索引的元素 （会影响原始值）
+func SliceRemove[T any](index int, slice []T) ([]T, error) {
+	if index < 0 || index >= len(slice) {
+		return slice, fmt.Errorf("index out of range: %d", index)
+	}
+	// 将后面的元素向前移动一位
+	copy(slice[index:], slice[index+1:])
+	// 截断最后一个元素
+	return slice[:len(slice)-1], nil
+}
+
+// SliceRemoveSafe 删除指定索引的元素（不影响原始 slice）
+func SliceRemoveSafe[T any](index int, slice []T) ([]T, error) {
+	if index < 0 || index >= len(slice) {
+		return nil, fmt.Errorf("index out of range: %d", index)
+	}
+	// 创建一个新的 slice 并拷贝
+	newSlice := make([]T, len(slice))
+	copy(newSlice, slice)
+	return append(newSlice[:index], newSlice[index+1:]...), nil
+}
+
+// SliceInsert 插入元素 （可能影响原始值）
+func SliceInsert[T any](index int, new T, slice []T) ([]T, error) {
+	if index < 0 || index > len(slice) {
+		return slice, fmt.Errorf("index out of range: %d", index)
+	}
+	slice = append(slice, new) // 临时扩容，确保有空间
+	copy(slice[index+1:], slice[index:])
+	slice[index] = new
+	return slice, nil
+}
+
+// SliceInsertSafe 在指定索引插入单个元素（不影响原始 slice）
+func SliceInsertSafe[T any](index int, new T, slice []T) ([]T, error) {
+	if index < 0 || index > len(slice) {
+		return nil, fmt.Errorf("index out of range: %d", index)
+	}
+	// 创建一个新的 slice 并拷贝
+	newSlice := make([]T, len(slice))
+	copy(newSlice, slice)
+	newSlice = append(newSlice[:index], append([]T{new}, newSlice[index:]...)...)
+	return newSlice, nil
+}
+
+// SliceInserts 插入多个元素 （可能影响原始值）
+func SliceInserts[T any](index int, new []T, slice []T) ([]T, error) {
+	if index < 0 || index > len(slice) {
+		return slice, fmt.Errorf("index out of range: %d", index)
+	}
+	if len(new) == 0 {
+		return slice, nil
+	}
+	total := len(slice) + len(new)
+	if cap(slice) < total {
+		// 提前扩容，避免多次拷贝
+		newSlice := make([]T, len(slice), total)
+		copy(newSlice, slice)
+		slice = newSlice
+	}
+	// 扩容到目标长度
+	slice = slice[:total]
+	// 将原有元素的后半部分向后移动 len(newElems)
+	copy(slice[index+len(new):], slice[index:])
+	// 插入新元素
+	copy(slice[index:], new)
+	return slice, nil
+}
+
+// SliceInsertsSafe 在指定索引插入多个元素（不影响原始 slice）
+func SliceInsertsSafe[T any](index int, new []T, slice []T) ([]T, error) {
+	if index < 0 || index > len(slice) {
+		return nil, fmt.Errorf("index out of range: %d", index)
+	}
+	if len(new) == 0 {
+		return slice, nil
+	}
+	// 创建一个新的 slice 并拷贝
+	newSlice := make([]T, len(slice))
+	copy(newSlice, slice)
+	newSlice = append(newSlice[:index], append(new, newSlice[index:]...)...)
+	return newSlice, nil
 }

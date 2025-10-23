@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+
 	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
