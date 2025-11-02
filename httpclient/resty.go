@@ -11,26 +11,18 @@ import (
 
 	"github.com/acexy/golang-toolkit/logger"
 	"github.com/acexy/golang-toolkit/math/random"
-	"github.com/acexy/golang-toolkit/util/str"
+	"github.com/acexy/golang-toolkit/util/coll"
 	"github.com/go-resty/resty/v2"
 )
 
 // RestyClient resty客户端
 type RestyClient struct {
-	client *resty.Client
-
-	// 是否设置了初始化代理，如果设置了不允许后续变更
-	initProxy bool
-
-	// 多代理模式
-	multiProxy []string
-	// 多代理选择器
-	chooseProxy ChooseProxy
+	r *resty.Client
 }
 
 // RawRestyClient 获取原始restyClient实例
 func (r *RestyClient) RawRestyClient() *resty.Client {
-	return r.client
+	return r.r
 }
 
 // RestyRequest resty请求对象
@@ -47,56 +39,87 @@ type RestyMethod struct {
 }
 
 // NewRestyClient 创建一个httpClient对象
-// proxyHttpHost 可以指定代理 如 localhost:7890
+// proxyHttpHost 可以指定代理 如 http://localhost:7890
 func NewRestyClient(proxyHttpHost ...string) *RestyClient {
-	var client = &RestyClient{}
-	if len(proxyHttpHost) > 0 && str.HasText(proxyHttpHost[0]) {
-		client.initProxy = true
-		client.client = resty.New()
-		client.client.SetProxy(proxyHttpHost[0])
-	} else {
-		client.client = resty.New()
+	var client = &RestyClient{
+		r: resty.New(),
 	}
-	client.client.SetLogger(logger.Logrus())
+	client.r.SetLogger(logger.Logrus())
+	if len(proxyHttpHost) > 0 {
+		client.SetProxy(proxyHttpHost[0])
+	}
 	return client
 }
 
 // NewRestyClientWithMultiProxy 创建一个多代理实例，该实例下的请求将通过策略通过代理
+// chooseProxy 可以指定选择代理的策略 默认为随机
+// 受连接复用的影响，并不是每个请求都会触发chooseProxy
 func NewRestyClientWithMultiProxy(multiProxy []string, choose ...ChooseProxy) *RestyClient {
-	client := NewRestyClient()
-	if len(multiProxy) > 0 {
-		copied := make([]string, len(multiProxy))
-		copy(copied, multiProxy)
-		client.multiProxy = copied
-		client.initProxy = true
+	if len(multiProxy) < 2 {
+		logger.Logrus().Warningln("multiProxies must be greater than 2")
+		return nil
 	}
-	if len(choose) > 0 {
-		client.chooseProxy = choose[0]
-	} else {
-		client.chooseProxy = &randomChoose{}
+	client := &RestyClient{
+		r: resty.New(),
 	}
-	client.client.SetLogger(logger.Logrus())
+	client.SetProxies(multiProxy, choose...)
+	client.r.SetLogger(logger.Logrus())
 	return client
 }
 
 // ChooseProxy 多代理模式下的选择代理策略
 type ChooseProxy interface {
 	// Choose 选择代理
-	Choose(all []string) string
+	Choose(request *http.Request, all []string) string
 }
 
 type randomChoose struct {
 }
 
-func (r *randomChoose) Choose(all []string) string {
+func (r *randomChoose) Choose(_ *http.Request, all []string) string {
 	return all[random.RandInt(len(all)-1)]
 }
 
-// client 公共属性设置
+// r 公共属性设置
 
+// SetProxies 设置代理池
+func (r *RestyClient) SetProxies(proxyUrls []string, choose ...ChooseProxy) {
+	// 为原始client设置已设置代理的标识
+	transport, err := r.r.SetProxy(proxyUrls[0]).Transport()
+	if err != nil {
+		logger.Logrus().Warningln(err)
+		return
+	}
+	var proxyCache map[string]*url.URL // 转换代理地址
+	proxyCache = coll.SliceFilterToMap(proxyUrls, func(proxy string) (string, *url.URL, bool) {
+		pURL, err := url.Parse(proxy)
+		if err != nil {
+			logger.Logrus().Errorln("parse proxy url error", proxy, err)
+			return "", nil, false
+		}
+		return proxy, pURL, true
+	})
+	var chooseFn ChooseProxy
+	if len(choose) > 0 {
+		chooseFn = choose[0]
+	} else {
+		chooseFn = &randomChoose{}
+	}
+	transport.Proxy = func(request *http.Request) (*url.URL, error) {
+		proxyUrl := chooseFn.Choose(request, proxyUrls)
+		return proxyCache[proxyUrl], nil
+	}
+}
+
+// SetProxy 设置代理
+func (r *RestyClient) SetProxy(proxy string) *RestyClient {
+	r.r.SetProxy(proxy)
+	return r
+}
+
+// DisableTLSVerify 禁用TLS验证
 func (r *RestyClient) DisableTLSVerify() *RestyClient {
-	r.client.SetTransport(&http.Transport{
-		Proxy: http.ProxyFromEnvironment,
+	r.r.SetTransport(&http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true, // 不验证证书签名
 		},
@@ -104,43 +127,39 @@ func (r *RestyClient) DisableTLSVerify() *RestyClient {
 	return r
 }
 
+// DisableAllAutoRedirect 禁用所有自动重定向
+func (r *RestyClient) DisableAllAutoRedirect() *RestyClient {
+	r.r.SetRedirectPolicy(resty.NoRedirectPolicy())
+	return r
+}
+
 // SetBaseUrl 设置BaseUrl
 func (r *RestyClient) SetBaseUrl(baseUrl string) *RestyClient {
-	r.client.SetBaseURL(baseUrl)
+	r.r.SetBaseURL(baseUrl)
 	return r
 }
 
 // SetTimeout 设置超时时间
 func (r *RestyClient) SetTimeout(timeout time.Duration) *RestyClient {
-	r.client.SetTimeout(timeout)
+	r.r.SetTimeout(timeout)
 	return r
 }
 
 // SetHeader 设置请求头
 func (r *RestyClient) SetHeader(key, value string) *RestyClient {
-	r.client.SetHeader(key, value)
+	r.r.SetHeader(key, value)
 	return r
 }
 
 // SetHeaders 设置请求头
 func (r *RestyClient) SetHeaders(headers map[string]string) *RestyClient {
-	r.client.SetHeaders(headers)
-	return r
-}
-
-// SetProxy 设置代理
-func (r *RestyClient) SetProxy(proxy string) *RestyClient {
-	if r.initProxy {
-		logger.Logrus().Warning("A global proxy is already set, operation ignored.")
-		return r
-	}
-	r.client.SetProxy(proxy)
+	r.r.SetHeaders(headers)
 	return r
 }
 
 // R 获取Request实例
 func (r *RestyClient) R() *RestyRequest {
-	return &RestyRequest{request: r.client.R(), client: r}
+	return &RestyRequest{request: r.r.R(), client: r}
 }
 
 // 对 restyRequest进行设置
@@ -159,7 +178,12 @@ func (r *RestyRequest) SetDownloadFile(filepath string) *RestyRequest {
 	if err != nil {
 		logger.Logrus().WithError(err).Println("Failed to create output file", filepath)
 	}
-	defer outputFile.Close()
+	defer func() {
+		if outputFile == nil {
+			return
+		}
+		_ = outputFile.Close()
+	}()
 	r.request.SetOutput(filepath)
 	return r
 }
@@ -220,7 +244,6 @@ func (m *RestyMethod) SetBodyForm(formEncode map[string]string) *RestyMethod {
 
 // E Execution
 func (m *RestyMethod) E() (*resty.Response, error) {
-	setProxy(m.request)
 	switch m.method {
 	case http.MethodGet:
 		return m.request.request.Get(m.url)
@@ -240,26 +263,17 @@ func (m *RestyMethod) E() (*resty.Response, error) {
 	return nil, errors.New("Unknown Method " + m.method)
 }
 
-func setProxy(r *RestyRequest) {
-	if r.client.initProxy && len(r.client.multiProxy) > 0 {
-		r.client.client.SetProxy(r.client.chooseProxy.Choose(r.client.multiProxy))
-	}
-}
-
 // 常用的快捷请求方法，默认使用resty.R()
 
 func (r *RestyRequest) Get(url string) (*resty.Response, error) {
-	setProxy(r)
 	return r.request.Get(url)
 }
 
 func (r *RestyRequest) Post(url string) (*resty.Response, error) {
-	setProxy(r)
 	return r.request.Post(url)
 }
 
 func (r *RestyRequest) PostForm(url string, formEncode map[string]string) (*resty.Response, error) {
-	setProxy(r)
 	if len(formEncode) == 0 {
 		return r.request.Post(url)
 	}
@@ -267,7 +281,6 @@ func (r *RestyRequest) PostForm(url string, formEncode map[string]string) (*rest
 }
 
 func (r *RestyRequest) PostJson(url string, jsonString string, charset ...string) (*resty.Response, error) {
-	setProxy(r)
 	r.request.SetBody(jsonString)
 	r.request.SetHeader(HeadContentType, getContentType(ContentTypeJson, charset...))
 	return r.request.Post(url)

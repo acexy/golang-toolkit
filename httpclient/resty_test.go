@@ -6,26 +6,56 @@ import (
 	"testing"
 	"time"
 
+	"github.com/acexy/golang-toolkit/logger"
 	"github.com/acexy/golang-toolkit/math/conversion"
 	"github.com/acexy/golang-toolkit/util/json"
 )
 
-var client *RestyClient
-
 func init() {
-	client = NewRestyClient()
+	logger.EnableConsole(logger.TraceLevel)
 }
 
-func TestPoxyClient(t *testing.T) {
-	response, err := NewRestyClient("https://127.0.0.1:8080").DisableTLSVerify().R().Get("https://baidu.com")
+var client *RestyClient
+
+func TestPoxyClientInit(t *testing.T) {
+	c := NewRestyClient("http://127.0.0.1:7890")
+	response, err := c.R().Get("https://google.com")
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+	}
+	fmt.Println(response.RawResponse)
+	response, err = c.R().Get("https://google.com")
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 	}
 	fmt.Println(response.RawResponse)
 }
 
-func TestStructResult(t *testing.T) {
+func TestPoxyClientSet(t *testing.T) {
+	response, err := NewRestyClient().SetProxy("http://127.0.0.1:7891").R().Get("https://google.com")
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+	}
+	fmt.Println(response.RawResponse)
+}
 
+func TestMultiPoxyClientInit(t *testing.T) {
+	c := NewRestyClientWithMultiProxy([]string{"http://127.0.0.1:7891", "http://127.0.0.1:7890"})
+	c.SetHeader("user-agent", "curl/8.7.1")
+	c.DisableAllAutoRedirect()
+	response, err := c.R().Get("https://ifconfig.me")
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+	}
+	fmt.Println(response.String())
+	response, err = c.R().Get("https://google.com")
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+	}
+	fmt.Println(response.String())
+}
+
+func TestStructResult(t *testing.T) {
 	type R[T any] struct {
 		Message string `json:"message"`
 		Data    struct {
@@ -53,15 +83,12 @@ func TestGet(t *testing.T) {
 	}
 
 	println(resp.String())
-
 	resp, err = client.R().M(http.MethodGet, "https://github.com").E()
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
 	}
-
 	fmt.Println(resp.String())
-
 	s := struct {
 		Message  string `json:"message"`
 		CityInfo struct {
