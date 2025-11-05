@@ -281,7 +281,9 @@ func TestSliceDiff(t *testing.T) {
 	new := []int{2, 3, 5, 6}
 	added, removed := SliceDiff(old, new)
 	fmt.Printf("Added: %v, Removed: %v\n", added, removed)
+	added, removed = SliceDiff(new, old)
 	// 输出: Added: [5 6], Removed: [1 4]
+	fmt.Printf("Added: %v, Removed: %v\n", added, removed)
 
 	// 示例2：结构体类型（假设CronConfig实现了comparable）
 	type Person struct {
