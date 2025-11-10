@@ -3,7 +3,18 @@ package coll
 import (
 	"fmt"
 	"sort"
+
+	"github.com/acexy/golang-toolkit/math/random"
 )
+
+// SliceRandomOne 随机返回切片中的一个元素
+func SliceRandomOne[T any](slice []T) T {
+	if len(slice) == 0 {
+		var zeroValue T
+		return zeroValue
+	}
+	return slice[random.RandInt(len(slice)-1)]
+}
 
 // SliceContains 检查指定的元素是否存在切片中
 func SliceContains[T comparable](slice []T, target T, compare ...func(T, T) bool) bool {
