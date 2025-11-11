@@ -1,13 +1,12 @@
 package conversion
 
 import (
-	"fmt"
 	"strconv"
 	"unsafe"
 )
 
 func fromNumber(value int64) string {
-	return fmt.Sprintf("%d", value)
+	return strconv.FormatInt(value, 10)
 }
 func fromFloat(value float64) string {
 	return strconv.FormatFloat(value, 'f', -1, 64)

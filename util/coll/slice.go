@@ -2,8 +2,18 @@ package coll
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
 )
+
+// SliceRandomOne 随机返回切片中的一个元素
+func SliceRandomOne[T any](slice []T) T {
+	if len(slice) == 0 {
+		var zeroValue T
+		return zeroValue
+	}
+	return slice[rand.Intn(len(slice))]
+}
 
 // SliceContains 检查指定的元素是否存在切片中
 func SliceContains[T comparable](slice []T, target T, compare ...func(T, T) bool) bool {
@@ -211,14 +221,14 @@ func SliceComplement[T comparable](slicePart1, slicePart2 []T, compare ...func(p
 }
 
 // SliceDiff 返回两个集合的差异：新增的和减少的
-// added: b中有但a中没有的元素
-// removed: a中有但b中没有的元素
-func SliceDiff[T comparable](a, b []T, compare ...func(T, T) bool) (added, removed []T) {
+// added: partNew中有但partOld中没有的元素
+// removed: partOld中有但partNew中没有的元素
+func SliceDiff[T comparable](partOld, partNew []T, compare ...func(T, T) bool) (added, removed []T) {
 	if len(compare) > 0 {
 		eq := compare[0]
-		for _, va := range a {
+		for _, va := range partOld {
 			found := false
-			for _, vb := range b {
+			for _, vb := range partNew {
 				if eq(va, vb) {
 					found = true
 					break
@@ -228,9 +238,9 @@ func SliceDiff[T comparable](a, b []T, compare ...func(T, T) bool) (added, remov
 				removed = append(removed, va)
 			}
 		}
-		for _, vb := range b {
+		for _, vb := range partNew {
 			found := false
-			for _, va := range a {
+			for _, va := range partOld {
 				if eq(vb, va) {
 					found = true
 					break
@@ -242,21 +252,21 @@ func SliceDiff[T comparable](a, b []T, compare ...func(T, T) bool) (added, remov
 		}
 		return
 	}
-	amap := make(map[T]struct{}, len(a))
-	bmap := make(map[T]struct{}, len(b))
-	for _, v := range a {
+	amap := make(map[T]struct{}, len(partOld))
+	bmap := make(map[T]struct{}, len(partNew))
+	for _, v := range partOld {
 		amap[v] = struct{}{}
 	}
-	for _, v := range b {
+	for _, v := range partNew {
 		bmap[v] = struct{}{}
 	}
-	for _, v := range a {
+	for _, v := range partOld {
 		if _, ok := bmap[v]; !ok {
 			removed = append(removed, v)
 		}
 	}
-	// 找新增的（b 中有，a 中没有）
-	for _, v := range b {
+	// 找新增的（partNew 中有，partOld 中没有）
+	for _, v := range partNew {
 		if _, ok := amap[v]; !ok {
 			added = append(added, v)
 		}
@@ -265,13 +275,13 @@ func SliceDiff[T comparable](a, b []T, compare ...func(T, T) bool) (added, remov
 }
 
 // SliceAnyDiff 针对不可比较类型
-// added: b中有但a中没有的元素
-// removed: a中有但b中没有的元素
-func SliceAnyDiff[T any](a, b []T, compare func(T, T) bool) (added, removed []T) {
-	usedA := make([]bool, len(a))
-	usedB := make([]bool, len(b))
-	for i, va := range a {
-		for j, vb := range b {
+// added: partNew中有但partOld中没有的元素
+// removed: partOld中有但partNew中没有的元素
+func SliceAnyDiff[T any](partOld, partNew []T, compare func(T, T) bool) (added, removed []T) {
+	usedA := make([]bool, len(partOld))
+	usedB := make([]bool, len(partNew))
+	for i, va := range partOld {
+		for j, vb := range partNew {
 			if !usedB[j] && compare(va, vb) {
 				usedA[i] = true
 				usedB[j] = true
@@ -279,12 +289,12 @@ func SliceAnyDiff[T any](a, b []T, compare func(T, T) bool) (added, removed []T)
 			}
 		}
 	}
-	for i, va := range a {
+	for i, va := range partOld {
 		if !usedA[i] {
 			removed = append(removed, va)
 		}
 	}
-	for j, vb := range b {
+	for j, vb := range partNew {
 		if !usedB[j] {
 			added = append(added, vb)
 		}
