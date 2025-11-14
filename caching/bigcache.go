@@ -5,21 +5,35 @@ import (
 	"errors"
 	"time"
 
+	logrus "github.com/acexy/golang-toolkit/logger"
 	"github.com/acexy/golang-toolkit/util/gob"
 	"github.com/allegro/bigcache/v3"
 )
+
+type logger struct {
+}
+
+func (l logger) Printf(format string, v ...interface{}) {
+	logrus.Logrus().Debugln(format, v)
+}
 
 type BigCacheBucket struct {
 	cache *bigcache.BigCache
 }
 
 func NewBigCacheByConfig(config bigcache.Config) *BigCacheBucket {
+	config.Logger = logger{}
 	cache, _ := bigcache.New(context.Background(), config)
 	return &BigCacheBucket{cache: cache}
 }
 
 func NewSimpleBigCache(duration time.Duration) *BigCacheBucket {
-	cache, _ := bigcache.New(context.Background(), bigcache.DefaultConfig(duration))
+	c := bigcache.DefaultConfig(duration)
+	c.CleanWindow = 5 * time.Second
+	c.MaxEntrySize = 1024 * 1024 * 10
+	c.StatsEnabled = false
+	c.Logger = logger{}
+	cache, _ := bigcache.New(context.Background(), c)
 	return &BigCacheBucket{cache: cache}
 }
 

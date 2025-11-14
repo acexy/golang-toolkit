@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/acexy/golang-toolkit/logger"
+	lgr "github.com/acexy/golang-toolkit/logger"
 	"github.com/acexy/golang-toolkit/sys"
 )
 
@@ -24,12 +24,12 @@ func init() {
 func TestBigCache(t *testing.T) {
 	err := manager.Put("b1", NewNemCacheKey("key1"), "123")
 	if err != nil {
-		logger.Logrus().Errorln(err)
+		lgr.Logrus().Errorln(err)
 		return
 	}
 	err = manager.Put("b2", NewNemCacheKey("key1"), User{Name: "Q", Sex: 1})
 	if err != nil {
-		logger.Logrus().Errorln(err)
+		lgr.Logrus().Errorln(err)
 		return
 	}
 
