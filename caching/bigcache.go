@@ -30,7 +30,6 @@ func NewBigCacheByConfig(config bigcache.Config) *BigCacheBucket {
 func NewSimpleBigCache(duration time.Duration) *BigCacheBucket {
 	c := bigcache.DefaultConfig(duration)
 	c.CleanWindow = 5 * time.Second
-	c.MaxEntrySize = 1024 * 1024 * 10
 	c.StatsEnabled = false
 	c.Logger = log{}
 	cache, _ := bigcache.New(context.Background(), c)
