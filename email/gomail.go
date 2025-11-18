@@ -2,9 +2,10 @@ package email
 
 import (
 	"errors"
-	"gopkg.in/gomail.v2"
 	"strings"
 	"sync"
+
+	"gopkg.in/gomail.v2"
 )
 
 var goMailOnce sync.Once

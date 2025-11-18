@@ -60,22 +60,26 @@ func (h *autoConsole) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
 
-func enableConsole(level Level, disableColor bool) *logrus.Logger {
+func enableConsole(level Level, formatter logrus.Formatter, disableColor bool) *logrus.Logger {
 	logger := logrus.New()
 	logger.SetOutput(os.Stdout)
 	logger.SetReportCaller(true)
 	logger.SetLevel(logrus.Level(level))
-	format := &logrus.TextFormatter{
-		FullTimestamp:    true,
-		CallerPrettyfier: callerPrettifier,
-	}
-	if disableColor {
-		format.DisableColors = true
+	if formatter != nil {
+		logger.SetFormatter(formatter)
 	} else {
-		format.ForceColors = true
-		format.EnvironmentOverrideColors = true
+		format := &logrus.TextFormatter{
+			FullTimestamp:    true,
+			CallerPrettyfier: callerPrettifier,
+		}
+		if disableColor {
+			format.DisableColors = true
+		} else {
+			format.ForceColors = true
+			format.EnvironmentOverrideColors = true
+		}
+		logger.SetFormatter(format)
 	}
-	logger.SetFormatter(format)
 	return logger
 }
 
@@ -85,8 +89,14 @@ func EnableConsole(level Level, disableColor ...bool) {
 	if len(disableColor) > 0 {
 		disColor = disableColor[0]
 	}
-	consoleLogger = enableConsole(level, disColor)
-	activeLogger = consoleLogger
+	activeLogger = enableConsole(level, nil, disColor)
+	consoleLogger = activeLogger
+}
+
+// EnableConsoleWithFormatter 启用该设置后，日志内容将向标准控台输出
+func EnableConsoleWithFormatter(level Level, formatter logrus.Formatter) {
+	activeLogger = enableConsole(level, formatter, false)
+	consoleLogger = activeLogger
 }
 
 // SetTraceIdSupplier 设置TraceIdSupplier
@@ -117,6 +127,7 @@ func enableFile(level Level, formatter logrus.Formatter, fileConfig ...*lumberja
 }
 
 // EnableFileWithJson 启用该配置后将写入日志文件，并将日志输出json格式
+// 如果要使用console+file需要先初始化Console配置
 func EnableFileWithJson(level Level, fileConfig ...*lumberjack.Logger) {
 	if fileSet {
 		panic("repeated initialization")
@@ -127,13 +138,13 @@ func EnableFileWithJson(level Level, fileConfig ...*lumberjack.Logger) {
 		CallerPrettyfier: callerPrettifier,
 	}, fileConfig...)
 	if consoleLogger != nil {
-		consoleLogger.ReportCaller = false
 		fileLogger.AddHook(autoConsoleHook)
 	}
 	activeLogger = fileLogger
 }
 
 // EnableFileWithText 启用该配置后写入日志文件，将日志输出为text格式
+// 如果要使用console+file需要先初始化Console配置
 func EnableFileWithText(level Level, fileConfig ...*lumberjack.Logger) {
 	if fileSet {
 		panic("repeated initialization")
@@ -145,17 +156,31 @@ func EnableFileWithText(level Level, fileConfig ...*lumberjack.Logger) {
 		CallerPrettyfier: callerPrettifier,
 	}, fileConfig...)
 	if consoleLogger != nil {
-		consoleLogger.ReportCaller = false
 		fileLogger.AddHook(autoConsoleHook)
 	}
 	activeLogger = fileLogger
 }
 
+// EnableFileWithFormatter 启用该配置后写入日志文件，将日志输出为指定格式
+// 如果要使用console+file需要先初始化Console配置
+func EnableFileWithFormatter(level Level, formatter logrus.Formatter, fileConfig ...*lumberjack.Logger) {
+	if fileSet {
+		panic("repeated initialization")
+	}
+	fileSet = true
+	enableFile(level, formatter, fileConfig...)
+	if consoleLogger != nil {
+		fileLogger.AddHook(autoConsoleHook)
+	}
+	activeLogger = fileLogger
+}
+
+// Logrus 获取logrus实例
 func Logrus() *logrus.Logger {
 	logrusOnce.Do(func() {
-		if consoleLogger == nil && fileLogger == nil {
+		if activeLogger == nil {
 			// 如果未手动初始化，则执行默认初始化配置
-			activeLogger = enableConsole(DebugLevel, false)
+			activeLogger = enableConsole(DebugLevel, nil, false)
 		}
 	})
 	return activeLogger
