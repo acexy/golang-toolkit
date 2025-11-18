@@ -42,6 +42,7 @@ var (
 	logrusOnce    sync.Once
 )
 
+// TraceIdSupplier 生成日志跟踪id
 type TraceIdSupplier interface {
 	GetTraceId() string
 	SetTraceId(string)
@@ -184,4 +185,19 @@ func Logrus() *logrus.Logger {
 		}
 	})
 	return activeLogger
+}
+
+// RawConsoleLogger 获取原始控制台日志实例
+func RawConsoleLogger() *logrus.Logger {
+	return consoleLogger
+}
+
+// RawFileLogger 获取原始文件日志实例
+func RawFileLogger() *logrus.Logger {
+	return fileLogger
+}
+
+// IsLevelEnabled 判断指定级别是否启用 优先以fileLogger实例的状态判断
+func IsLevelEnabled(level Level) bool {
+	return Logrus().IsLevelEnabled(logrus.Level(level))
 }
