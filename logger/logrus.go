@@ -198,6 +198,9 @@ func RawFileLogger() *logrus.Logger {
 }
 
 // IsLevelEnabled 判断指定级别是否启用 优先以fileLogger实例的状态判断
-func IsLevelEnabled(level Level) bool {
+func IsLevelEnabled(level Level, log ...*logrus.Logger) bool {
+	if len(log) > 0 && log[0] != nil {
+		return log[0].IsLevelEnabled(logrus.Level(level))
+	}
 	return Logrus().IsLevelEnabled(logrus.Level(level))
 }

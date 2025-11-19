@@ -17,12 +17,12 @@ logrus在普通Test模式中由于Format环境变量的原因Console模式的out
 
 func TestConsole(t *testing.T) {
 	EnableConsole(DebugLevel, true) // 非tty模式即使未禁用color也不会生效，自动替换为json模式
+	println(IsLevelEnabled(DebugLevel))
 	Logrus().Traceln("trace")
 	Logrus().Debugf("%d %s\n", 1, "s")
 	Logrus().Infoln("Logger Console")
 	Logrus().WithError(errors.New("ERROR")).WithField("field", "value").Error("error")
 	Logrus().WithField("field", "value").Traceln("----------------------")
-	fmt.Println(Logrus().IsLevelEnabled(logrus.TraceLevel))
 	EnableConsole(TraceLevel, false) // 非tty模式即使未禁用color也不会生效，自动替换为json模式
 	Logrus().Traceln("trace")
 	Logrus().Debugf("%d %s\n", 1, "s")
@@ -80,7 +80,6 @@ func TestFileText(t *testing.T) {
 func TestFileJson(t *testing.T) {
 	EnableConsoleWithFormatter(TraceLevel, &JavaStyleFormatter{})
 	EnableFileWithJson(DebugLevel)
-
 	Logrus().Debugf("%d %s\n", 1, "s")
 	Logrus().Infoln("Logger Console")
 	Logrus().WithError(errors.New("ERROR")).WithField("field", "value").Error("error")
