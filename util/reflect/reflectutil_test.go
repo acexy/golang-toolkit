@@ -127,10 +127,12 @@ func TestSetFieldValue(t *testing.T) {
 		"FloatField":  3.14,
 		"PtrField":    &ptrVal,
 		"SliceField":  []string{"a", "b", "c"},
-		"MapField1":   map[string]int{"one": 1, "two": 2},
+		"MapField":    map[string]int{"one": 1, "two": 2},
 	}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println(json.ToJson(s))
+
+	fmt.Println(GetFieldValue(s, "MapField"))
 }
