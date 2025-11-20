@@ -134,5 +134,5 @@ func TestSetFieldValue(t *testing.T) {
 	}
 	fmt.Println(json.ToJson(s))
 
-	fmt.Println(GetFieldValue(s, "MapField"))
+	fmt.Println(GetFieldValue(s, "MapField1"))
 }
