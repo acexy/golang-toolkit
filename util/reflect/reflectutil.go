@@ -252,3 +252,25 @@ func tryConvertNumber(val reflect.Value, targetType reflect.Type) (reflect.Value
 func isNumericKind(kind reflect.Kind) bool {
 	return kind >= reflect.Int && kind <= reflect.Float64
 }
+
+// GetFieldValue 获取结构体中指定字段的值
+func GetFieldValue(value interface{}, fieldName string) (interface{}, error) {
+	if value == nil {
+		return nil, fmt.Errorf("input must be a struct or pointer to struct")
+	}
+	val := reflect.ValueOf(value)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	if val.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("input must be a struct or pointer to struct")
+	}
+	field := val.FieldByName(fieldName)
+	if !field.IsValid() {
+		return nil, fmt.Errorf("field %s does not exist in struct", fieldName)
+	}
+	if !field.CanInterface() {
+		return nil, fmt.Errorf("field %s is unexported", fieldName)
+	}
+	return field.Interface(), nil
+}
