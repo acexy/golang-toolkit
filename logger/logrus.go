@@ -57,6 +57,21 @@ func (h *autoConsole) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
 
+type formatter struct {
+	formatterFn func(trace TraceIdSupplier, entry *logrus.Entry) ([]byte, error)
+}
+
+func (f *formatter) Format(entry *logrus.Entry) ([]byte, error) {
+	return f.formatterFn(traceIdSupplier, entry)
+}
+
+// NewFormatter 创建一个自定义格式化器
+func NewFormatter(formatterFn func(traceSupplier TraceIdSupplier, entry *logrus.Entry) ([]byte, error)) *formatter {
+	return &formatter{
+		formatterFn: formatterFn,
+	}
+}
+
 func enableConsole(level Level, formatter logrus.Formatter, disableColor bool) *logrus.Logger {
 	logger := logrus.New()
 	logger.SetOutput(os.Stdout)
@@ -120,6 +135,15 @@ func EnableConsole(level Level, disableColor ...bool) {
 	setActiveLogger()
 }
 
+// EnableConsoleWithFormatter 启用该设置后，日志内容将向标准控台输出
+func EnableConsoleWithFormatter(level Level, formatter *formatter) {
+	if consoleLogger != nil {
+		panic("repeated initialization")
+	}
+	consoleLogger = enableConsole(level, formatter, false)
+	setActiveLogger()
+}
+
 // EnableFileWithJson 启用该配置后将写入日志文件，并将日志输出json格式
 // 如果要使用console+file需要先初始化Console配置
 func EnableFileWithJson(level Level, fileConfig ...*lumberjack.Logger) {
@@ -144,6 +168,16 @@ func EnableFileWithText(level Level, fileConfig ...*lumberjack.Logger) {
 		FullTimestamp:    true,
 		CallerPrettyfier: callerPrettifier,
 	}, fileConfig...)
+	setActiveLogger()
+}
+
+// EnableFileWithFormatter 启用该配置后写入日志文件，将日志输出为指定格式
+// 如果要使用console+file需要先初始化Console配置
+func EnableFileWithFormatter(level Level, formatter *formatter, fileConfig ...*lumberjack.Logger) {
+	if fileLogger != nil {
+		panic("repeated initialization")
+	}
+	enableFile(level, formatter, fileConfig...)
 	setActiveLogger()
 }
 
