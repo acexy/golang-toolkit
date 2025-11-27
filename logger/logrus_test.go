@@ -53,7 +53,7 @@ func (f *JavaStyleFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return []byte(log), nil
 }
 func TestConsoleWithFormatter(t *testing.T) {
-	EnableConsoleWithFormatter(TraceLevel, &JavaStyleFormatter{})
+	SetTraceIdSupplier(&traceId{})
 	Logrus().Traceln("trace")
 	Logrus().Debugf("%d %s\n", 1, "s")
 	Logrus().Infoln("Logger Console")
@@ -61,6 +61,7 @@ func TestConsoleWithFormatter(t *testing.T) {
 	Logrus().WithField("field", "value").Traceln("----------------------")
 }
 func TestConsoleDefault(t *testing.T) {
+	SetTraceIdSupplier(&traceId{})
 	Logrus().Traceln("trace")
 	Logrus().Debugf("%d %s\n", 1, "s")
 	Logrus().Infoln("Logger Console")
@@ -78,8 +79,9 @@ func TestFileText(t *testing.T) {
 }
 
 func TestFileJson(t *testing.T) {
-	EnableConsoleWithFormatter(TraceLevel, &JavaStyleFormatter{})
-	EnableFileWithJson(DebugLevel)
+	SetTraceIdSupplier(&traceId{})
+	EnableConsole(DebugLevel)
+	EnableFileWithJson(TraceLevel)
 	Logrus().Traceln("trace")
 	Logrus().Infoln("Logger Console")
 	Logrus().WithError(errors.New("ERROR")).WithField("field", "value").Error("error")
@@ -87,6 +89,8 @@ func TestFileJson(t *testing.T) {
 }
 
 func TestConsoleAndFile(t *testing.T) {
+	SetTraceIdSupplier(&traceId{})
+
 	EnableConsole(DebugLevel, false)
 	EnableFileWithJson(DebugLevel, &lumberjack.Logger{
 		Filename: "logrus.log",

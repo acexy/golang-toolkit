@@ -49,8 +49,7 @@ type autoConsole struct {
 }
 
 func (h *autoConsole) Fire(entry *logrus.Entry) error {
-	fn, file := callerPrettifier(entry.Caller)
-	h.log.WithFields(entry.Data).Logln(entry.Level, file, fn, entry.Message)
+	h.log.WithFields(entry.Data).Log(entry.Level, entry.Message)
 	return nil
 }
 
@@ -121,15 +120,6 @@ func EnableConsole(level Level, disableColor ...bool) {
 	setActiveLogger()
 }
 
-// EnableConsoleWithFormatter 启用该设置后，日志内容将向标准控台输出
-func EnableConsoleWithFormatter(level Level, formatter logrus.Formatter) {
-	if consoleLogger != nil {
-		panic("repeated initialization")
-	}
-	consoleLogger = enableConsole(level, formatter, false)
-	setActiveLogger()
-}
-
 // EnableFileWithJson 启用该配置后将写入日志文件，并将日志输出json格式
 // 如果要使用console+file需要先初始化Console配置
 func EnableFileWithJson(level Level, fileConfig ...*lumberjack.Logger) {
@@ -154,16 +144,6 @@ func EnableFileWithText(level Level, fileConfig ...*lumberjack.Logger) {
 		FullTimestamp:    true,
 		CallerPrettyfier: callerPrettifier,
 	}, fileConfig...)
-	setActiveLogger()
-}
-
-// EnableFileWithFormatter 启用该配置后写入日志文件，将日志输出为指定格式
-// 如果要使用console+file需要先初始化Console配置
-func EnableFileWithFormatter(level Level, formatter logrus.Formatter, fileConfig ...*lumberjack.Logger) {
-	if fileLogger != nil {
-		panic("repeated initialization")
-	}
-	enableFile(level, formatter, fileConfig...)
 	setActiveLogger()
 }
 
