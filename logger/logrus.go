@@ -5,14 +5,12 @@ import (
 	"os"
 	"path"
 	"runtime"
-	"sync"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var traceIdSupplier TraceIdSupplier
-var autoConsoleHook = new(autoConsole)
 
 type Level uint32
 
@@ -37,9 +35,7 @@ var (
 	}
 	consoleLogger *logrus.Logger
 	fileLogger    *logrus.Logger
-	activeLogger  *logrus.Logger
-	fileSet       bool
-	logrusOnce    sync.Once
+	activeLogger  = enableConsole(DebugLevel, nil, false)
 )
 
 // TraceIdSupplier 生成日志跟踪id
@@ -49,11 +45,12 @@ type TraceIdSupplier interface {
 }
 
 type autoConsole struct {
+	log *logrus.Logger
 }
 
 func (h *autoConsole) Fire(entry *logrus.Entry) error {
 	fn, file := callerPrettifier(entry.Caller)
-	consoleLogger.WithFields(entry.Data).Logln(entry.Level, file, fn, entry.Message)
+	h.log.WithFields(entry.Data).Logln(entry.Level, file, fn, entry.Message)
 	return nil
 }
 
@@ -84,31 +81,6 @@ func enableConsole(level Level, formatter logrus.Formatter, disableColor bool) *
 	return logger
 }
 
-// EnableConsole 启用该设置后，日志内容将向标准控台输出
-func EnableConsole(level Level, disableColor ...bool) {
-	var disColor bool
-	if len(disableColor) > 0 {
-		disColor = disableColor[0]
-	}
-	activeLogger = enableConsole(level, nil, disColor)
-	consoleLogger = activeLogger
-}
-
-// EnableConsoleWithFormatter 启用该设置后，日志内容将向标准控台输出
-func EnableConsoleWithFormatter(level Level, formatter logrus.Formatter) {
-	activeLogger = enableConsole(level, formatter, false)
-	consoleLogger = activeLogger
-}
-
-// SetTraceIdSupplier 设置TraceIdSupplier
-func SetTraceIdSupplier(supplier TraceIdSupplier) {
-	if traceIdSupplier == nil {
-		if supplier != nil {
-			traceIdSupplier = supplier
-		}
-	}
-}
-
 func enableFile(level Level, formatter logrus.Formatter, fileConfig ...*lumberjack.Logger) {
 	fileLogger = logrus.New()
 	fileLogger.SetReportCaller(true)
@@ -127,63 +99,98 @@ func enableFile(level Level, formatter logrus.Formatter, fileConfig ...*lumberja
 	}
 }
 
+// SetTraceIdSupplier 设置TraceIdSupplier
+func SetTraceIdSupplier(supplier TraceIdSupplier) {
+	if traceIdSupplier == nil {
+		if supplier != nil {
+			traceIdSupplier = supplier
+		}
+	}
+}
+
+// EnableConsole 启用该设置后，日志内容将向标准控台输出
+func EnableConsole(level Level, disableColor ...bool) {
+	if consoleLogger != nil {
+		panic("repeated initialization")
+	}
+	var disColor bool
+	if len(disableColor) > 0 {
+		disColor = disableColor[0]
+	}
+	consoleLogger = enableConsole(level, nil, disColor)
+	setActiveLogger()
+}
+
+// EnableConsoleWithFormatter 启用该设置后，日志内容将向标准控台输出
+func EnableConsoleWithFormatter(level Level, formatter logrus.Formatter) {
+	if consoleLogger != nil {
+		panic("repeated initialization")
+	}
+	consoleLogger = enableConsole(level, formatter, false)
+	setActiveLogger()
+}
+
 // EnableFileWithJson 启用该配置后将写入日志文件，并将日志输出json格式
 // 如果要使用console+file需要先初始化Console配置
 func EnableFileWithJson(level Level, fileConfig ...*lumberjack.Logger) {
-	if fileSet {
+	if fileLogger != nil {
 		panic("repeated initialization")
 	}
-	fileSet = true
 	enableFile(level, &logrus.JSONFormatter{
 		DataKey:          "data",
 		CallerPrettyfier: callerPrettifier,
 	}, fileConfig...)
-	if consoleLogger != nil {
-		fileLogger.AddHook(autoConsoleHook)
-	}
-	activeLogger = fileLogger
+	setActiveLogger()
 }
 
 // EnableFileWithText 启用该配置后写入日志文件，将日志输出为text格式
 // 如果要使用console+file需要先初始化Console配置
 func EnableFileWithText(level Level, fileConfig ...*lumberjack.Logger) {
-	if fileSet {
+	if fileLogger != nil {
 		panic("repeated initialization")
 	}
-	fileSet = true
 	enableFile(level, &logrus.TextFormatter{
 		DisableColors:    true,
 		FullTimestamp:    true,
 		CallerPrettyfier: callerPrettifier,
 	}, fileConfig...)
-	if consoleLogger != nil {
-		fileLogger.AddHook(autoConsoleHook)
-	}
-	activeLogger = fileLogger
+	setActiveLogger()
 }
 
 // EnableFileWithFormatter 启用该配置后写入日志文件，将日志输出为指定格式
 // 如果要使用console+file需要先初始化Console配置
 func EnableFileWithFormatter(level Level, formatter logrus.Formatter, fileConfig ...*lumberjack.Logger) {
-	if fileSet {
+	if fileLogger != nil {
 		panic("repeated initialization")
 	}
-	fileSet = true
 	enableFile(level, formatter, fileConfig...)
-	if consoleLogger != nil {
-		fileLogger.AddHook(autoConsoleHook)
+	setActiveLogger()
+}
+
+func setActiveLogger() {
+	if consoleLogger != nil && fileLogger == nil {
+		activeLogger = consoleLogger
+	} else if consoleLogger == nil && fileLogger != nil {
+		activeLogger = fileLogger
+	} else if consoleLogger != nil && fileLogger != nil {
+		consoleLevel := consoleLogger.GetLevel()
+		fileLevel := fileLogger.GetLevel()
+		if consoleLevel < fileLevel {
+			fileLogger.AddHook(&autoConsole{
+				log: consoleLogger,
+			})
+			activeLogger = fileLogger
+		} else {
+			consoleLogger.AddHook(&autoConsole{
+				log: fileLogger,
+			})
+			activeLogger = consoleLogger
+		}
 	}
-	activeLogger = fileLogger
 }
 
 // Logrus 获取logrus实例
 func Logrus() *logrus.Logger {
-	logrusOnce.Do(func() {
-		if activeLogger == nil {
-			// 如果未手动初始化，则执行默认初始化配置
-			activeLogger = enableConsole(DebugLevel, nil, false)
-		}
-	})
 	return activeLogger
 }
 
@@ -201,6 +208,9 @@ func RawFileLogger() *logrus.Logger {
 func IsLevelEnabled(level Level, log ...*logrus.Logger) bool {
 	if len(log) > 0 && log[0] != nil {
 		return log[0].IsLevelEnabled(logrus.Level(level))
+	}
+	if fileLogger != nil {
+		return fileLogger.IsLevelEnabled(logrus.Level(level))
 	}
 	return Logrus().IsLevelEnabled(logrus.Level(level))
 }

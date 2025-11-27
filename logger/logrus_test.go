@@ -80,7 +80,7 @@ func TestFileText(t *testing.T) {
 func TestFileJson(t *testing.T) {
 	EnableConsoleWithFormatter(TraceLevel, &JavaStyleFormatter{})
 	EnableFileWithJson(DebugLevel)
-	Logrus().Debugf("%d %s\n", 1, "s")
+	Logrus().Traceln("trace")
 	Logrus().Infoln("Logger Console")
 	Logrus().WithError(errors.New("ERROR")).WithField("field", "value").Error("error")
 	Logrus().WithField("field", "value").Traceln("----------------------")
