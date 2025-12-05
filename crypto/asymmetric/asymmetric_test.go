@@ -8,8 +8,9 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
-	"github.com/acexy/golang-toolkit/math/conversion"
 	"testing"
+
+	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
 func TestRsaKey(t *testing.T) {
