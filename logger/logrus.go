@@ -13,6 +13,7 @@ import (
 var traceIdSupplier TraceIdSupplier
 
 type Level uint32
+type Type int8
 
 const (
 	PanicLevel Level = iota
@@ -22,6 +23,9 @@ const (
 	InfoLevel
 	DebugLevel
 	TraceLevel
+
+	ConsoleLogger Type = 1
+	FileLogger    Type = 2
 )
 
 var (
@@ -219,9 +223,20 @@ func RawFileLogger() *logrus.Logger {
 }
 
 // IsLevelEnabled 判断指定级别是否启用 优先以fileLogger实例的状态判断
-func IsLevelEnabled(level Level, log ...*logrus.Logger) bool {
-	if len(log) > 0 && log[0] != nil {
-		return log[0].IsLevelEnabled(logrus.Level(level))
+func IsLevelEnabled(level Level, logType ...Type) bool {
+	if len(logType) > 0 && logType[0] != 0 {
+		if logType[0] == FileLogger {
+			if fileLogger == nil {
+				return false
+			}
+			return fileLogger.IsLevelEnabled(logrus.Level(level))
+		} else if logType[0] == ConsoleLogger {
+			if consoleLogger == nil {
+				return false
+			}
+			return consoleLogger.IsLevelEnabled(logrus.Level(level))
+		}
+		return false
 	}
 	if fileLogger != nil {
 		return fileLogger.IsLevelEnabled(logrus.Level(level))

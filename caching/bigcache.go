@@ -47,7 +47,7 @@ func (b *BigCacheBucket) GetBytes(key MemCacheKey, keyAppend ...interface{}) ([]
 	bytes, err := b.cache.Get(key.RawKeyString(keyAppend...))
 	if err != nil {
 		if errors.Is(err, bigcache.ErrEntryNotFound) {
-			return nil, CacheMiss
+			return nil, ErrCacheMiss
 		}
 		return nil, err
 	}

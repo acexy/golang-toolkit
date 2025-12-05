@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	CacheMiss = errors.New("cache miss")
+	ErrCacheMiss = errors.New("cache miss")
 )
 
 type MemCacheKey struct {
