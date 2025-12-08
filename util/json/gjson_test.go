@@ -40,7 +40,7 @@ func TestGetValue(t *testing.T) {
 	fmt.Println(GetArrayValue(jsonString, "phone"))
 	fmt.Println(GetRawJson(jsonString, "address"))
 	object, _ := GetObject(jsonString, "address")
-	fmt.Println(object.GetStringValue("street"))
+	fmt.Println(object.GetStringResult("street"))
 }
 
 func TestNewGJson(t *testing.T) {
