@@ -27,3 +27,4 @@ Golang Toolkit
 | github.com/tidwall/gjson      | json parse              |
 | github.com/google/uuid        | uuid                    |
 | github.com/iancoleman/strcase | string type convert     |
+| github.com/yl2chen/cidranger  | fast ip to CIDR lookup  |
