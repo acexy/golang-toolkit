@@ -10,8 +10,8 @@ func TestIpChecker(t *testing.T) {
 	fmt.Println(ipChecker.Match("91.231.222.173"))
 	fmt.Println(ipChecker.Match("192.168.1.3"))
 
-	ipChecker.NewRuleIp("192.168.1.3/32")
-	ipChecker.NewRuleIp("192.168.1.3/32")
+	ipChecker.AddRuleIp("192.168.1.3/32")
+	ipChecker.AddRuleIp("192.168.1.3/32")
 
 	fmt.Println(ipChecker.Match("192.168.1.3"))
 	ipChecker.RemoveRuleIp("192.168.1.3/32")

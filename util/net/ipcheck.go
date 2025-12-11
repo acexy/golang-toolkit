@@ -26,8 +26,8 @@ func NewIpChecker(ruleIps ...string) *IpChecker {
 	}
 }
 
-// NewRuleIp 添加新的ip规则
-func (i *IpChecker) NewRuleIp(ruleIps ...string) {
+// AddRuleIp 添加新的ip规则
+func (i *IpChecker) AddRuleIp(ruleIps ...string) {
 	if len(ruleIps) == 0 {
 		return
 	}
