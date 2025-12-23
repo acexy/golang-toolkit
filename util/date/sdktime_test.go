@@ -114,7 +114,7 @@ func TestFromUnixTimestamp(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := FromUnixTimestamp(test.ts)
+		got := ParseUnixSec(test.ts)
 		if !got.Equal(test.want) {
 			t.Errorf("FromUnixTimestamp(%d) = %v, want %v", test.ts, got, test.want)
 		}
@@ -131,7 +131,7 @@ func TestFromUnixNano(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := FromUnixNano(test.ts)
+		got := ParseUnixNano(test.ts)
 		if !got.Equal(test.want) {
 			t.Errorf("FromUnixNano(%d) = %v, want %v", test.ts, got, test.want)
 		}
@@ -148,7 +148,7 @@ func TestFromUnixMilli(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := FromUnixMilli(test.ts)
+		got := ParseUnixMilli(test.ts)
 		if !got.Equal(test.want) {
 			t.Errorf("FromUnixMilli(%d) = %v, want %v", test.ts, got, test.want)
 		}
