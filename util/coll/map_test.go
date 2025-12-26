@@ -66,3 +66,17 @@ func TestMapToSlice(t *testing.T) {
 	})
 	fmt.Printf("取出的元素: %v\n", result)
 }
+
+func TestMapRandomOne(t *testing.T) {
+	exampleMap := map[string]int{
+		"one":   1,
+		"two":   2,
+		"three": 3,
+		"four":  4,
+		"five":  5,
+	}
+	for i := 0; i < 10; i++ {
+		key, value := MapRandomOne(exampleMap)
+		fmt.Printf("取出的元素: key=%v, value=%v\n", key, value)
+	}
+}
