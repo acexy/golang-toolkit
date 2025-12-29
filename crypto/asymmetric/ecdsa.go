@@ -19,6 +19,16 @@ type CreateEcdsaSetting struct {
 	Curve elliptic.Curve
 }
 
+func NewEcdsaKeyManager(setting CreateEcdsaSetting) *EcdsaKeyManager {
+	return &EcdsaKeyManager{
+		CreateSetting: setting,
+	}
+}
+
+func NewEmptyEcdsaKeyManager() *EcdsaKeyManager {
+	return &EcdsaKeyManager{}
+}
+
 type EcdsaKeyManager struct {
 	CreateSetting CreateEcdsaSetting
 }
