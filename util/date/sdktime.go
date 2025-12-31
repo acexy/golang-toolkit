@@ -24,7 +24,7 @@ func FormatUnixSec(ts int64, layout ...string) string {
 	if len(layout) > 0 {
 		l = layout[0]
 	}
-	return Format(FromUnixTimestamp(ts), l)
+	return Format(ParseUnixSec(ts), l)
 }
 
 // FormatUnixMilli 将 Unix 毫秒时间戳转为指定格式字符串
@@ -33,7 +33,7 @@ func FormatUnixMilli(ts int64, layout ...string) string {
 	if len(layout) > 0 {
 		l = layout[0]
 	}
-	return Format(FromUnixMilli(ts), l)
+	return Format(ParseUnixMilli(ts), l)
 }
 
 // FormatUnixNano 将 Unix 纳秒时间戳转为指定格式字符串
@@ -42,41 +42,51 @@ func FormatUnixNano(ts int64, layout ...string) string {
 	if len(layout) > 0 {
 		l = layout[0]
 	}
-	return Format(FromUnixNano(ts), l)
+	return Format(ParseUnixNano(ts), l)
 }
 
-// FromUnixTimestamp 将 Unix (秒级)时间戳转为 time.Time
-func FromUnixTimestamp(ts int64) time.Time {
+// ParseUnixSec 从 Unix (秒级)时间戳转为 time.Time
+func ParseUnixSec(ts int64) time.Time {
 	return time.Unix(ts, 0)
 }
 
-// FromUnixNano 从 Unix (纳秒级)时间戳转为 time.Time
-func FromUnixNano(ts int64) time.Time {
+// ParseUnixNano 从 Unix (纳秒级)时间戳转为 time.Time
+func ParseUnixNano(ts int64) time.Time {
 	sec := ts / int64(time.Second)
 	nsec := ts % int64(time.Second)
 	return time.Unix(sec, nsec)
 }
 
-// FromUnixMilli 从 Unix (毫秒级)时间戳转为 time.Time
-func FromUnixMilli(ts int64) time.Time {
+// ParseUnixMilli 从 Unix (毫秒级)时间戳转为 time.Time
+func ParseUnixMilli(ts int64) time.Time {
 	sec := ts / 1000
 	nsec := (ts % 1000) * 1000000
 	return time.Unix(sec, nsec)
 }
 
-// UnixTimestamp 获取当前 Unix 时间戳（秒）
-func UnixTimestamp(t time.Time) int64 {
+// ToUnixSec 转换 Unix 时间戳（秒）
+func ToUnixSec(t time.Time) int64 {
 	return t.Unix()
 }
 
-// UnixNano 获取当前 Unix 纳秒时间戳
-func UnixNano(t time.Time) int64 {
+// ToUnixNano 转换 Unix 纳秒时间戳
+func ToUnixNano(t time.Time) int64 {
 	return t.UnixNano()
 }
 
-// UnixMilli 获取当前 Unix 毫秒时间戳
-func UnixMilli(t time.Time) int64 {
+// ToUnixMilli 转换 Unix 毫秒时间戳
+func ToUnixMilli(t time.Time) int64 {
 	return t.UnixMilli()
+}
+
+// CurrentUnixSec 当前 Unix时间戳 秒
+func CurrentUnixSec() int64 {
+	return time.Now().Unix()
+}
+
+// CurrentUnixMilli 获取当前时间戳 毫秒级
+func CurrentUnixMilli() int64 {
+	return time.Now().UnixMilli()
 }
 
 // CurrentYear 获取当前时间的年份

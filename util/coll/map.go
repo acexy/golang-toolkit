@@ -1,5 +1,7 @@
 package coll
 
+import "math/rand"
+
 // MapFirst 从map中抽取第一个元素
 func MapFirst[K comparable, V any](m map[K]V) (K, V) {
 	var key K
@@ -107,4 +109,24 @@ func MapAppend[K comparable, V any](current map[K]V, append map[K]V) {
 	for k, v := range append {
 		current[k] = v
 	}
+}
+
+// MapRandomOne 随机获取一个map的元素
+func MapRandomOne[K comparable, V any](m map[K]V) (K, V) {
+	if len(m) == 0 {
+		var zk K
+		var zv V
+		return zk, zv
+	}
+	r := rand.Intn(len(m))
+	i := 0
+	for k, v := range m {
+		if i == r {
+			return k, v
+		}
+		i++
+	}
+	var zk K
+	var zv V
+	return zk, zv
 }

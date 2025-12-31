@@ -98,6 +98,18 @@ type CreateRsaSetting struct {
 	Length int
 }
 
+func NewRsaKeyManager(keyLength int) *RsaKeyManager {
+	return &RsaKeyManager{
+		CreateSetting: CreateRsaSetting{
+			Length: keyLength,
+		},
+	}
+}
+
+func NewEmptyRasKeyManager() *RsaKeyManager {
+	return &RsaKeyManager{}
+}
+
 type RsaKeyManager struct {
 	CreateSetting CreateRsaSetting
 }
