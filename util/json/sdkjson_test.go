@@ -30,8 +30,8 @@ func TestCopyStructPanic(t *testing.T) {
 
 	ss := []*Student{{Name: "acexy", Sex: 1, School: "Q"}, {Name: "acexy", Sex: 1, School: "H"}}
 
-	fmt.Println(ToJson(ss))
-	fmt.Println(ToJsonFormat(ss))
+	fmt.Println(ToString(ss))
+	fmt.Println(ToStringFormat(ss))
 }
 
 type User struct {
@@ -52,19 +52,19 @@ func TestTimestamp(t *testing.T) {
 	//GlobalWrapperSetting(func(options *TypeWrapperOptions) {
 	//	options.TimestampType = TimestampTypeSecond
 	//})
-	fmt.Println(ToJson(user))
+	fmt.Println(ToString(user))
 	var u *User
-	ParseJson("{\"name\":\"acexy\",\"time\":1729136314000}", &u)
+	ParseString("{\"name\":\"acexy\",\"time\":1729136314000}", &u)
 	fmt.Println(u)
 
 	model := Model[User]{
 		T:    user,
 		Code: 200,
 	}
-	json := ToJson(model)
+	json := ToString(model)
 	fmt.Println(json)
 
 	var m1 Model[User]
-	ParseJson(json, &m1)
+	ParseString(json, &m1)
 	fmt.Println(m1)
 }

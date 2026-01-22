@@ -2,221 +2,228 @@ package date
 
 import "time"
 
-const defaultTimeLayout = "2006-01-02 15:04:05"
+const DefaultTimeLayout = "2006-01-02 15:04:05"
 
-// Parse 解析时间字符串为 time.Time
+//
+// -------------------- Parse & Format --------------------
+//
+
+// Parse 解析时间字符串为 time.Time（不带时区，使用 layout 自身语义）
 func Parse(layout, value string) (time.Time, error) {
 	return time.Parse(layout, value)
 }
 
-// Format 格式化时间为指定格式字符串
+// Format 格式化时间为字符串（默认使用 DefaultTimeLayout）
 func Format(t time.Time, layout ...string) string {
-	l := defaultTimeLayout
-	if len(layout) > 0 {
+	l := DefaultTimeLayout
+	if len(layout) > 0 && layout[0] != "" {
 		l = layout[0]
 	}
 	return t.Format(l)
 }
 
-// FormatUnixSec 将 Unix(秒) 时间戳转为指定格式字符串
-func FormatUnixSec(ts int64, layout ...string) string {
-	l := defaultTimeLayout
-	if len(layout) > 0 {
-		l = layout[0]
-	}
-	return Format(ParseUnixSec(ts), l)
-}
+//
+// -------------------- Unix Timestamp -> Time --------------------
+//
 
-// FormatUnixMilli 将 Unix 毫秒时间戳转为指定格式字符串
-func FormatUnixMilli(ts int64, layout ...string) string {
-	l := defaultTimeLayout
-	if len(layout) > 0 {
-		l = layout[0]
-	}
-	return Format(ParseUnixMilli(ts), l)
-}
-
-// FormatUnixNano 将 Unix 纳秒时间戳转为指定格式字符串
-func FormatUnixNano(ts int64, layout ...string) string {
-	l := defaultTimeLayout
-	if len(layout) > 0 {
-		l = layout[0]
-	}
-	return Format(ParseUnixNano(ts), l)
-}
-
-// ParseUnixSec 从 Unix (秒级)时间戳转为 time.Time
+// ParseUnixSec 从 Unix 秒级时间戳转为 time.Time
 func ParseUnixSec(ts int64) time.Time {
 	return time.Unix(ts, 0)
 }
 
-// ParseUnixNano 从 Unix (纳秒级)时间戳转为 time.Time
-func ParseUnixNano(ts int64) time.Time {
-	sec := ts / int64(time.Second)
-	nsec := ts % int64(time.Second)
-	return time.Unix(sec, nsec)
-}
-
-// ParseUnixMilli 从 Unix (毫秒级)时间戳转为 time.Time
+// ParseUnixMilli 从 Unix 毫秒级时间戳转为 time.Time
 func ParseUnixMilli(ts int64) time.Time {
-	sec := ts / 1000
-	nsec := (ts % 1000) * 1000000
-	return time.Unix(sec, nsec)
+	return time.UnixMilli(ts)
 }
 
-// ToUnixSec 转换 Unix 时间戳（秒）
+// ParseUnixNano 从 Unix 纳秒级时间戳转为 time.Time
+// ts 必须来自 time.Time.UnixNano()
+func ParseUnixNano(ts int64) time.Time {
+	return time.Unix(0, ts)
+}
+
+//
+// -------------------- Unix Timestamp -> Format --------------------
+//
+
+// FormatUnixSec 将 Unix 秒级时间戳格式化为字符串
+func FormatUnixSec(ts int64, layout ...string) string {
+	return Format(ParseUnixSec(ts), layout...)
+}
+
+// FormatUnixMilli 将 Unix 毫秒级时间戳格式化为字符串
+func FormatUnixMilli(ts int64, layout ...string) string {
+	return Format(ParseUnixMilli(ts), layout...)
+}
+
+// FormatUnixNano 将 Unix 纳秒级时间戳格式化为字符串
+func FormatUnixNano(ts int64, layout ...string) string {
+	return Format(ParseUnixNano(ts), layout...)
+}
+
+//
+// -------------------- Time -> Unix Timestamp --------------------
+//
+
 func ToUnixSec(t time.Time) int64 {
 	return t.Unix()
 }
 
-// ToUnixNano 转换 Unix 纳秒时间戳
-func ToUnixNano(t time.Time) int64 {
-	return t.UnixNano()
-}
-
-// ToUnixMilli 转换 Unix 毫秒时间戳
 func ToUnixMilli(t time.Time) int64 {
 	return t.UnixMilli()
 }
 
-// CurrentUnixSec 当前 Unix时间戳 秒
+func ToUnixNano(t time.Time) int64 {
+	return t.UnixNano()
+}
+
+//
+// -------------------- Current Time --------------------
+//
+
 func CurrentUnixSec() int64 {
 	return time.Now().Unix()
 }
 
-// CurrentUnixMilli 获取当前时间戳 毫秒级
 func CurrentUnixMilli() int64 {
 	return time.Now().UnixMilli()
 }
 
-// CurrentYear 获取当前时间的年份
+func CurrentUnixNano() int64 {
+	return time.Now().UnixNano()
+}
+
 func CurrentYear() int {
 	return time.Now().Year()
 }
 
-// CurrentMonth 获取当前月份
 func CurrentMonth() time.Month {
 	return time.Now().Month()
 }
 
-// CurrentDay 获取当前日期
 func CurrentDay() int {
 	return time.Now().Day()
 }
 
-// AddDays 将时间加上指定的天数
+func CurrentHour() int {
+	return time.Now().Hour()
+}
+
+func CurrentMinute() int {
+	return time.Now().Minute()
+}
+
+func CurrentSecond() int {
+	return time.Now().Second()
+}
+
+//
+// -------------------- Time Add --------------------
+//
+
 func AddDays(t time.Time, days int) time.Time {
 	return t.AddDate(0, 0, days)
 }
 
-// AddHours 将时间加上指定的小时数
 func AddHours(t time.Time, hours int) time.Time {
 	return t.Add(time.Duration(hours) * time.Hour)
 }
 
-// AddMinutes 将时间加上指定的分钟数
 func AddMinutes(t time.Time, minutes int) time.Time {
 	return t.Add(time.Duration(minutes) * time.Minute)
 }
 
-// AddSeconds 将时间加上指定的秒数
 func AddSeconds(t time.Time, seconds int) time.Time {
 	return t.Add(time.Duration(seconds) * time.Second)
 }
 
-// TimeDiffInSeconds 获取两者时间差（秒）
+//
+// -------------------- Time Diff --------------------
+//
+
+// TimeDiffInSeconds 返回 t1 - t2 的秒差（可能为负）
 func TimeDiffInSeconds(t1, t2 time.Time) int64 {
 	return int64(t1.Sub(t2).Seconds())
 }
 
-// StartOfYear 获取时间的年份开始日期
+// AbsTimeDiffInSeconds 返回绝对时间差（秒）
+func AbsTimeDiffInSeconds(t1, t2 time.Time) int64 {
+	diff := t1.Sub(t2)
+	if diff < 0 {
+		diff = -diff
+	}
+	return int64(diff.Seconds())
+}
+
+//
+// -------------------- Time Range --------------------
+//
+
 func StartOfYear(t time.Time) time.Time {
 	return time.Date(t.Year(), 1, 1, 0, 0, 0, 0, t.Location())
 }
 
-// EndOfYear 获取时间的年份结束日期
 func EndOfYear(t time.Time) time.Time {
-	return time.Date(t.Year(), 12, 31, 23, 59, 59, 999999999, t.Location())
+	return time.Date(t.Year(), 12, 31, 23, 59, 59, 999_999_999, t.Location())
 }
 
-// StartOfMonth 获取时间的月份开始日期
 func StartOfMonth(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
 }
 
-// EndOfMonth 获取时间的月份结束日期
 func EndOfMonth(t time.Time) time.Time {
-	return time.Date(t.Year(), t.Month()+1, 0, 23, 59, 59, 999999999, t.Location())
+	return time.Date(t.Year(), t.Month()+1, 0, 23, 59, 59, 999_999_999, t.Location())
 }
 
-// WeekdayName 获取时间的星期几（字符串）
+func StartOfDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+}
+
+func EndOfDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999_999_999, t.Location())
+}
+
+//
+// -------------------- Calendar Helpers --------------------
+//
+
+// WeekdayName 星期名
 func WeekdayName(t time.Time) string {
 	return t.Weekday().String()
 }
 
-// Quarter 获取时间的季度（1~4）
+// Quarter 季度
 func Quarter(t time.Time) int {
-	month := t.Month()
-	switch {
-	case month >= 1 && month <= 3:
+	switch t.Month() {
+	case time.January, time.February, time.March:
 		return 1
-	case month >= 4 && month <= 6:
+	case time.April, time.May, time.June:
 		return 2
-	case month >= 7 && month <= 9:
+	case time.July, time.August, time.September:
 		return 3
 	default:
 		return 4
 	}
 }
 
-// IsAfter 判断当前时间是否在指定日期之后
 func IsAfter(t time.Time, date time.Time) bool {
 	return t.After(date)
 }
 
-// IsBefore 判断当前时间是否在指定日期之前
 func IsBefore(t time.Time, date time.Time) bool {
 	return t.Before(date)
 }
 
-// IsSameDay 判断当前时间是否是同一天
 func IsSameDay(t1, t2 time.Time) bool {
 	return t1.Year() == t2.Year() && t1.YearDay() == t2.YearDay()
 }
 
-// CurrentHour 获取当前时间的小时
-func CurrentHour() int {
-	return time.Now().Hour()
-}
-
-// CurrentMinute 获取当前时间的分钟
-func CurrentMinute() int {
-	return time.Now().Minute()
-}
-
-// CurrentSecond 获取当前时间的秒钟
-func CurrentSecond() int {
-	return time.Now().Second()
-}
-
-// StartOfDay 获取当前日期的开始时间（00:00:00）
-func StartOfDay(t time.Time) time.Time {
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
-}
-
-// EndOfDay 获取当前日期的结束时间（23:59:59）
-func EndOfDay(t time.Time) time.Time {
-	return time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, t.Location())
-}
-
-// IsWeekday 获取当前时间是否在工作日
 func IsWeekday(t time.Time) bool {
-	weekday := t.Weekday()
-	return weekday >= time.Monday && weekday <= time.Friday
+	w := t.Weekday()
+	return w >= time.Monday && w <= time.Friday
 }
 
-// IsWeekend 获取当前时间是否在周末
 func IsWeekend(t time.Time) bool {
-	weekday := t.Weekday()
-	return weekday == time.Saturday || weekday == time.Sunday
+	w := t.Weekday()
+	return w == time.Saturday || w == time.Sunday
 }
