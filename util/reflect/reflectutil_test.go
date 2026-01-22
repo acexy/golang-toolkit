@@ -132,7 +132,7 @@ func TestSetFieldValue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(json.ToJson(s))
+	fmt.Println(json.ToString(s))
 
 	fmt.Println(GetFieldValue(s, "MapField1"))
 }

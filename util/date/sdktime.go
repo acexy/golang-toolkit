@@ -89,6 +89,10 @@ func CurrentUnixMilli() int64 {
 	return time.Now().UnixMilli()
 }
 
+func CurrentUnixNano() int64 {
+	return time.Now().UnixNano()
+}
+
 func CurrentYear() int {
 	return time.Now().Year()
 }
@@ -183,10 +187,12 @@ func EndOfDay(t time.Time) time.Time {
 // -------------------- Calendar Helpers --------------------
 //
 
+// WeekdayName 星期名
 func WeekdayName(t time.Time) string {
 	return t.Weekday().String()
 }
 
+// Quarter 季度
 func Quarter(t time.Time) int {
 	switch t.Month() {
 	case time.January, time.February, time.March:

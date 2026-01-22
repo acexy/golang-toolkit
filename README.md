@@ -16,7 +16,7 @@ Golang Toolkit
 
 - 第三方库清单
 
-| 库                             | 类型                      |
+| 库                             | 功能                      |
 |-------------------------------|-------------------------|
 | github.com/go-resty/resty/v2  | http client             |
 | github.com/sirupsen/logrus    | logger                  |

@@ -71,7 +71,7 @@ func TestStructResult(t *testing.T) {
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 	}
-	fmt.Println(json.ToJson(result))
+	fmt.Println(json.ToString(result))
 	fmt.Println(response.String())
 }
 
@@ -108,14 +108,14 @@ func TestGet(t *testing.T) {
 		return
 	}
 	fmt.Println(resp.String())
-	fmt.Println(json.ToJson(s))
+	fmt.Println(json.ToString(s))
 
 	resp, err = req.Get("http://t.weather.sojson.com/api/weather/city/101030100")
 	if err != nil {
 		return
 	}
 	fmt.Println(resp.String())
-	fmt.Println(json.ToJson(s))
+	fmt.Println(json.ToString(s))
 }
 
 func TestProxy(t *testing.T) {
