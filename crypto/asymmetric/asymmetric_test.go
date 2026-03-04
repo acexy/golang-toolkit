@@ -14,9 +14,7 @@ import (
 )
 
 func TestRsaKey(t *testing.T) {
-	var manager = RsaKeyManager{
-		CreateSetting: CreateRsaSetting{Length: 2048},
-	}
+	var manager = NewRsaKeyManager(1024)
 	key, err := manager.Create()
 	if err != nil {
 		fmt.Println(err.Error())
