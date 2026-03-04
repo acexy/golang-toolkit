@@ -278,8 +278,6 @@ type RsaSign struct {
 }
 
 func (r *RsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
-	defer r.Unlock()
-	r.Lock()
 	if r.hashForSign == nil {
 		return nil, errors.New("nil hash function")
 	}
@@ -287,13 +285,16 @@ func (r *RsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
 	if privateKey == nil {
 		return nil, errors.New("nil privateKey key")
 	}
+	r.Lock()
 	r.hashForSign.Reset()
 	r.hashForSign.Write(raw)
+	hashSum := r.hashForSign.Sum(nil)
+	r.Unlock()
 	switch r.paddingType {
 	case PaddingTypePKCS1:
-		return rsa.SignPKCS1v15(rand.Reader, privateKey.(*rsa.PrivateKey), r.hashTypeForSign, r.hashForSign.Sum(nil))
+		return rsa.SignPKCS1v15(rand.Reader, privateKey.(*rsa.PrivateKey), r.hashTypeForSign, hashSum)
 	case PaddingTypePSS:
-		return rsa.SignPSS(rand.Reader, privateKey.(*rsa.PrivateKey), r.hashTypeForSign, r.hashForSign.Sum(nil), r.options)
+		return rsa.SignPSS(rand.Reader, privateKey.(*rsa.PrivateKey), r.hashTypeForSign, hashSum, r.options)
 	default:
 
 	}
@@ -302,8 +303,6 @@ func (r *RsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
 
 // Verify 签名验证
 func (r *RsaSign) Verify(keyPair KeyPair, raw, sign []byte) error {
-	defer r.Unlock()
-	r.Lock()
 	if r.hashForSign == nil {
 		return errors.New("nil hash function")
 	}
@@ -311,13 +310,16 @@ func (r *RsaSign) Verify(keyPair KeyPair, raw, sign []byte) error {
 	if publicKey == nil {
 		return errors.New("nil public key")
 	}
+	r.Lock()
 	r.hashForSign.Reset()
 	r.hashForSign.Write(raw)
+	hashSum := r.hashForSign.Sum(nil)
+	r.Unlock()
 	switch r.paddingType {
 	case PaddingTypePKCS1:
-		return rsa.VerifyPKCS1v15(publicKey.(*rsa.PublicKey), r.hashTypeForSign, r.hashForSign.Sum(nil), sign)
+		return rsa.VerifyPKCS1v15(publicKey.(*rsa.PublicKey), r.hashTypeForSign, hashSum, sign)
 	case PaddingTypePSS:
-		return rsa.VerifyPSS(publicKey.(*rsa.PublicKey), r.hashTypeForSign, r.hashForSign.Sum(nil), sign, r.options)
+		return rsa.VerifyPSS(publicKey.(*rsa.PublicKey), r.hashTypeForSign, hashSum, sign, r.options)
 	default:
 
 	}
