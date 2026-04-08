@@ -1,6 +1,6 @@
 module github.com/acexy/golang-toolkit
 
-go 1.24.6
+go 1.25.8
 
 require (
 	github.com/allegro/bigcache/v3 v3.1.0
@@ -19,7 +19,7 @@ require (
 require (
 	github.com/tidwall/match v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
-	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/net v0.52.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
