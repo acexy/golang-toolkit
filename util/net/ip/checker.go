@@ -7,13 +7,13 @@ import (
 	"github.com/yl2chen/cidranger"
 )
 
-type IpChecker struct {
+type Checker struct {
 	ranger cidranger.Ranger
 }
 
-func NewIpChecker(ruleCIDRIps ...string) *IpChecker {
+func NewIpChecker(cidrIps ...string) *Checker {
 	ranger := cidranger.NewPCTrieRanger()
-	for _, ip := range ruleCIDRIps {
+	for _, ip := range cidrIps {
 		_, ipNet, err := net.ParseCIDR(ip)
 		if err != nil {
 			logger.Logrus().Warningln("parse ip error. ip:", ip)
@@ -21,17 +21,17 @@ func NewIpChecker(ruleCIDRIps ...string) *IpChecker {
 		}
 		_ = ranger.Insert(cidranger.NewBasicRangerEntry(*ipNet))
 	}
-	return &IpChecker{
+	return &Checker{
 		ranger: ranger,
 	}
 }
 
 // AddRuleIp 添加新的ip规则
-func (i *IpChecker) AddRuleIp(ruleCIDRIps ...string) {
-	if len(ruleCIDRIps) == 0 {
+func (i *Checker) AddRuleIp(cidrIps ...string) {
+	if len(cidrIps) == 0 {
 		return
 	}
-	for _, ip := range ruleCIDRIps {
+	for _, ip := range cidrIps {
 		_, ipNet, err := net.ParseCIDR(ip)
 		if err != nil {
 			logger.Logrus().Warningln("parse ip error. ip:", ip)
@@ -42,8 +42,8 @@ func (i *IpChecker) AddRuleIp(ruleCIDRIps ...string) {
 }
 
 // RemoveRuleIp 删除ip规则
-func (i *IpChecker) RemoveRuleIp(ruleCIDRIps ...string) {
-	for _, ip := range ruleCIDRIps {
+func (i *Checker) RemoveRuleIp(cidrIps ...string) {
+	for _, ip := range cidrIps {
 		_, ipNet, err := net.ParseCIDR(ip)
 		if err != nil {
 			logger.Logrus().Warningln("parse ip error. ip:", ip)
@@ -57,6 +57,6 @@ func (i *IpChecker) RemoveRuleIp(ruleCIDRIps ...string) {
 }
 
 // Match 检测ip是否匹配
-func (i *IpChecker) Match(ip string) (bool, error) {
+func (i *Checker) Match(ip string) (bool, error) {
 	return i.ranger.Contains(net.ParseIP(ip))
 }
