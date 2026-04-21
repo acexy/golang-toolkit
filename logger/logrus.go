@@ -53,8 +53,17 @@ type autoConsole struct {
 }
 
 func (h *autoConsole) Fire(entry *logrus.Entry) error {
-	h.log.WithFields(entry.Data).Log(entry.Level, entry.Message)
-	return nil
+	if h.log == nil || h.log.Formatter == nil || h.log.Out == nil {
+		return nil
+	}
+	dup := *entry
+	dup.Logger = h.log
+	formatted, err := h.log.Formatter.Format(&dup)
+	if err != nil {
+		return err
+	}
+	_, err = h.log.Out.Write(formatted)
+	return err
 }
 
 func (h *autoConsole) Levels() []logrus.Level {
