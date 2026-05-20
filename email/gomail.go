@@ -25,12 +25,19 @@ type ToAddress struct {
 }
 
 type Content struct {
+
+	// 发送方地址 可选
+	fromAddress string
+	// 发送方名称 可选
+	fromName string
+
 	// 接收地址
 	toAddresses []*ToAddress
 	// 邮件标题
 	subject     string
 	contentType string
 	body        string
+
 	// 附件文件路径
 	attachments []string
 }
@@ -48,6 +55,12 @@ func (c *Content) SetContent(contentType, body string) *Content {
 	return c
 }
 
+func (c *Content) SetFrom(fromAddress, fromName string) *Content {
+	c.fromAddress = fromAddress
+	c.fromName = fromName
+	return c
+}
+
 func (c *Content) SetAttach(attach []string) *Content {
 	if len(attach) != 0 {
 		c.attachments = attach
@@ -60,10 +73,16 @@ func (c *Content) toMessage() (*gomail.Message, error) {
 		return nil, errors.New("empty to addresses")
 	}
 	message := gomail.NewMessage()
-	if goMail.fromName != "" {
-		message.SetHeader("From", goMail.fromName+"<"+goMail.fromAddress+">")
+	fromAddress := goMail.fromAddress
+	fromName := goMail.fromName
+	if c.fromAddress != "" {
+		fromAddress = c.fromAddress
+		fromName = c.fromName
+	}
+	if fromName != "" {
+		message.SetHeader("From", fromName+"<"+fromAddress+">")
 	} else {
-		message.SetHeader("From", goMail.fromAddress)
+		message.SetHeader("From", fromAddress)
 	}
 	if c.subject != "" {
 		message.SetHeader("subject", c.subject)
