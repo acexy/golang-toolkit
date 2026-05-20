@@ -68,6 +68,12 @@ func (c *Content) SetAttach(attach []string) *Content {
 	return c
 }
 
+func (c *Content) SetSender(fromAddress, fromName string) *Content {
+	c.fromAddress = fromAddress
+	c.fromName = fromName
+	return c
+}
+
 func (c *Content) toMessage() (*gomail.Message, error) {
 	if len(c.toAddresses) == 0 {
 		return nil, errors.New("empty to addresses")
