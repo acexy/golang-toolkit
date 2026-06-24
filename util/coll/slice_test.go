@@ -2,6 +2,7 @@ package coll
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/acexy/golang-toolkit/math/conversion"
@@ -222,6 +223,26 @@ func TestSliceCollect(t *testing.T) {
 	output := SliceCollect(input, collect)
 	fmt.Println(output)
 
+}
+
+func TestSliceFlat(t *testing.T) {
+	input := [][]int{
+		{1, 2},
+		{3, 4},
+		{},
+		{5},
+	}
+	expected := []int{1, 2, 3, 4, 5}
+	output := SliceFlat(input)
+	if !slices.Equal(output, expected) {
+		t.Fatalf("SliceFlat() = %v, want %v", output, expected)
+	}
+
+	// 空二维切片也按展开处理，结果为空的一维切片。
+	output = SliceFlat[int](nil)
+	if output == nil || len(output) != 0 {
+		t.Fatalf("SliceFlat(nil) = %v, want empty slice", output)
+	}
 }
 
 func TestSliceDistinct(t *testing.T) {
