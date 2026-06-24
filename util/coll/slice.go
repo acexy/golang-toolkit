@@ -359,6 +359,22 @@ func SliceFilterCollect[T, R any](input []T, mapFn func(T) (R, bool)) []R {
 	return output
 }
 
+// SliceFlat 将二维切片中的所有元素聚合为一个新的切片
+func SliceFlat[T any](input [][]T) []T {
+	if len(input) == 0 {
+		return nil
+	}
+	total := 0
+	for i := range input {
+		total += len(input[i])
+	}
+	output := make([]T, 0, total)
+	for i := range input {
+		output = append(output, input[i]...)
+	}
+	return output
+}
+
 // SliceForeachAll 遍历所有切片并执行指定的函数
 func SliceForeachAll[T any](slice []T, fn func(T)) {
 	if len(slice) == 0 {
