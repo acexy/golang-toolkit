@@ -1,28 +1,59 @@
 package caching
 
 import (
-	"errors"
 	"fmt"
+	"sync"
 
+	toolkitError "github.com/acexy/golang-toolkit/error"
 	"github.com/acexy/golang-toolkit/logger"
+	"github.com/acexy/golang-toolkit/util/gob"
 )
 
-var (
-	ErrCacheMiss = errors.New("cache miss")
-)
-
-type MemCacheKey struct {
+type CacheKey struct {
 	// 最终key值的格式化格式 将使用 fmt.Sprintf(key.KeyFormat, keyAppend) 进行处理
 	KeyFormat string
 }
 
-// NewNemCacheKey 创建一个缓存key
-func NewNemCacheKey(keyFormat string) MemCacheKey {
-	return MemCacheKey{KeyFormat: keyFormat}
+type BucketName string
+
+type Codec interface {
+	// Encode 将缓存值编码为字节数组
+	Encode(data any) ([]byte, error)
+
+	// Decode 将缓存字节数组解码到 result 指针
+	Decode(bs []byte, result any) error
+}
+
+type GobCodec struct {
+}
+
+func (g GobCodec) Encode(data any) ([]byte, error) {
+	return gob.Encode(data)
+}
+
+func (g GobCodec) Decode(bs []byte, result any) error {
+	return gob.Decode(bs, result)
+}
+
+func defaultCodec(codec Codec) Codec {
+	if codec != nil {
+		return codec
+	}
+	return GobCodec{}
+}
+
+// NewCacheKey 创建一个缓存key
+func NewCacheKey(keyFormat string) CacheKey {
+	return CacheKey{KeyFormat: keyFormat}
+}
+
+// NewBucketName 创建一个缓存桶名称
+func NewBucketName(bucketName string) BucketName {
+	return BucketName(bucketName)
 }
 
 // RawKeyString 获取原始的key字符串
-func (m MemCacheKey) RawKeyString(keyAppend ...interface{}) string {
+func (m CacheKey) RawKeyString(keyAppend ...interface{}) string {
 	if len(keyAppend) > 0 {
 		return fmt.Sprintf(m.KeyFormat, keyAppend...)
 	}
@@ -30,72 +61,109 @@ func (m MemCacheKey) RawKeyString(keyAppend ...interface{}) string {
 }
 
 type CacheManager struct {
-	caches map[string]CacheBucket
+	lock   sync.RWMutex
+	caches map[BucketName]CacheBucket
+	codec  Codec
 }
 
 type CacheBucket interface {
 
-	// Get 获取指定key对应的值
-	// result 值类型指针 如果未能查到内容应当返还
-	Get(key MemCacheKey, result any, keyAppend ...interface{}) error
-
 	// GetBytes 获取指定key对应的值
-	GetBytes(key MemCacheKey, keyAppend ...interface{}) ([]byte, error)
+	GetBytes(key CacheKey, keyAppend ...interface{}) ([]byte, error)
 
-	// Put 设置key对应值
-	Put(key MemCacheKey, data any, keyAppend ...interface{}) error
+	// PutBytes 设置key对应的字节数组
+	PutBytes(key CacheKey, data []byte, keyAppend ...interface{}) error
 
 	// Evict 清除缓存
-	Evict(key MemCacheKey, keyAppend ...interface{}) error
+	Evict(key CacheKey, keyAppend ...interface{}) error
 }
 
-func NewCacheBucketManager(bucketName string, bucket CacheBucket) *CacheManager {
-	manager := NewEmptyCacheBucketManager()
-	manager.caches[bucketName] = bucket
-	return manager
-}
-
-func NewEmptyCacheBucketManager() *CacheManager {
+func NewCacheManager(codec ...Codec) *CacheManager {
+	var selectedCodec Codec
+	if len(codec) > 0 {
+		selectedCodec = codec[0]
+	}
 	return &CacheManager{
-		caches: make(map[string]CacheBucket),
+		caches: make(map[BucketName]CacheBucket),
+		codec:  defaultCodec(selectedCodec),
 	}
 }
 
-func (c *CacheManager) AddBucket(bucketName string, bucket CacheBucket) {
+// AddBucket 添加一个缓存桶
+func (c *CacheManager) AddBucket(bucketName BucketName, bucket CacheBucket) *CacheManager {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	if _, flag := c.caches[bucketName]; !flag {
 		c.caches[bucketName] = bucket
 	} else {
-		logger.Logrus().Warnln("duplicate bucketName")
+		logger.Logrus().Errorln("caching: duplicate bucketName", bucketName)
 	}
+	return c
 }
 
-func (c *CacheManager) GetBucket(bucketName string) CacheBucket {
+// GetBucket 获取缓存桶
+func (c *CacheManager) GetBucket(bucketName BucketName) CacheBucket {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
 	return c.caches[bucketName]
 }
 
-func (c *CacheManager) Get(bucketName string, key MemCacheKey, result any, keyAppend ...interface{}) error {
+// Get 获取缓存
+func (c *CacheManager) Get(bucketName BucketName, key CacheKey, result any, keyAppend ...interface{}) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
-		logger.Logrus().Warnln("bad bucketName", bucketName)
-		return errors.New("bad bucketName " + bucketName)
+		logger.Logrus().Errorln("caching: bad bucketName", bucketName)
+		return toolkitError.ErrBadBucketName
 	}
-	return bucket.Get(key, result, keyAppend...)
+	bs, err := bucket.GetBytes(key, keyAppend...)
+	if err != nil {
+		return err
+	}
+	return c.codec.Decode(bs, result)
 }
 
-func (c *CacheManager) Put(bucketName string, key MemCacheKey, data any, keyAppend ...interface{}) error {
+// GetBytes 获取缓存字节数组
+func (c *CacheManager) GetBytes(bucketName BucketName, key CacheKey, keyAppend ...interface{}) ([]byte, error) {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
-		logger.Logrus().Warnln("bad bucketName", bucketName)
-		return errors.New("bad bucketName " + bucketName)
+		logger.Logrus().Errorln("caching: bad bucketName", bucketName)
+		return nil, toolkitError.ErrBadBucketName
 	}
-	return bucket.Put(key, data, keyAppend...)
+	return bucket.GetBytes(key, keyAppend...)
 }
 
-func (c *CacheManager) Evict(bucketName string, key MemCacheKey, keyAppend ...interface{}) error {
+// Put 缓存数据
+func (c *CacheManager) Put(bucketName BucketName, key CacheKey, data any, keyAppend ...interface{}) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
-		logger.Logrus().Warnln("bad bucketName", bucketName)
-		return errors.New("bad bucketName " + bucketName)
+		logger.Logrus().Errorln("caching: bad bucketName", bucketName)
+		return toolkitError.ErrBadBucketName
+	}
+	bs, err := c.codec.Encode(data)
+	if err != nil {
+		return err
+	}
+	return bucket.PutBytes(key, bs, keyAppend...)
+}
+
+// PutBytes 缓存字节数组
+func (c *CacheManager) PutBytes(bucketName BucketName, key CacheKey, data []byte, keyAppend ...interface{}) error {
+	bucket := c.GetBucket(bucketName)
+	if bucket == nil {
+		logger.Logrus().Errorln("caching: bad bucketName", bucketName)
+		return toolkitError.ErrBadBucketName
+	}
+	return bucket.PutBytes(key, data, keyAppend...)
+}
+
+// Evict 清除缓存
+func (c *CacheManager) Evict(bucketName BucketName, key CacheKey, keyAppend ...interface{}) error {
+	bucket := c.GetBucket(bucketName)
+	if bucket == nil {
+		logger.Logrus().Errorln("caching: bad bucketName", bucketName)
+		return toolkitError.ErrBadBucketName
 	}
 	return bucket.Evict(key, keyAppend...)
 }

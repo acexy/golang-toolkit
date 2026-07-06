@@ -1,69 +1,121 @@
 package caching
 
 import (
-	"fmt"
+	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
-	lgr "github.com/acexy/golang-toolkit/logger"
-	"github.com/acexy/golang-toolkit/sys"
+	toolkitError "github.com/acexy/golang-toolkit/error"
 )
 
-var manager *CacheManager
-
-type User struct {
+type testUser struct {
 	Name string
 	Sex  uint8
 }
 
-func init() {
-	manager = NewCacheBucketManager("b1", NewSimpleBigCache(time.Second*10))
-	manager.AddBucket("b2", NewSimpleBigCache(time.Second*4))
+type jsonCodec struct {
 }
 
-func TestBigCache(t *testing.T) {
-	err := manager.Put("b1", NewNemCacheKey("key1"), "123")
-	if err != nil {
-		lgr.Logrus().Errorln(err)
-		return
-	}
-	err = manager.Put("b2", NewNemCacheKey("key1"), User{Name: "Q", Sex: 1})
-	if err != nil {
-		lgr.Logrus().Errorln(err)
-		return
-	}
-
-	go func() {
-		for {
-			var result string
-			err := manager.Get("b1", NewNemCacheKey("key1"), &result)
-			if err != nil {
-				return
-			}
-			fmt.Println("b1", "key1", result)
-			time.Sleep(time.Millisecond * 200)
-		}
-	}()
-
-	go func() {
-		for {
-			var result User
-			err := manager.Get("b2", NewNemCacheKey("key1"), &result)
-			if err != nil {
-				return
-			}
-			fmt.Println("b2", "key1", result)
-			time.Sleep(time.Millisecond * 200)
-		}
-	}()
-
-	sys.ShutdownHolding()
+func (j jsonCodec) Encode(data any) ([]byte, error) {
+	return json.Marshal(data)
 }
 
-func TestKeyFormat(t *testing.T) {
-	key := NewNemCacheKey("key:%s")
-	_ = manager.Put("b1", key, 3, "1")
-	var result int
-	_ = manager.Get("b1", key, &result, "1")
-	fmt.Println(result)
+func (j jsonCodec) Decode(bs []byte, result any) error {
+	return json.Unmarshal(bs, result)
+}
+
+func newTestCacheManager(t *testing.T, codec ...Codec) (*CacheManager, BucketName) {
+	t.Helper()
+
+	bucket, err := NewSimpleBigCache(time.Minute)
+	if err != nil {
+		t.Fatalf("new simple big cache: %v", err)
+	}
+	bucketName := NewBucketName("test")
+	return NewCacheManager(codec...).AddBucket(bucketName, bucket), bucketName
+}
+
+func TestCacheManagerPutGet(t *testing.T) {
+	manager, bucketName := newTestCacheManager(t)
+	key := NewCacheKey("user:%d")
+	want := testUser{Name: "Q", Sex: 1}
+
+	if err := manager.Put(bucketName, key, want, 1); err != nil {
+		t.Fatalf("put cache: %v", err)
+	}
+
+	var got testUser
+	if err := manager.Get(bucketName, key, &got, 1); err != nil {
+		t.Fatalf("get cache: %v", err)
+	}
+	if got != want {
+		t.Fatalf("unexpected cache value: got %+v, want %+v", got, want)
+	}
+}
+
+func TestCacheManagerPutGetBytes(t *testing.T) {
+	manager, bucketName := newTestCacheManager(t)
+	key := NewCacheKey("raw:%s")
+	want := []byte("raw-value")
+
+	if err := manager.PutBytes(bucketName, key, want, "1"); err != nil {
+		t.Fatalf("put cache bytes: %v", err)
+	}
+
+	got, err := manager.GetBytes(bucketName, key, "1")
+	if err != nil {
+		t.Fatalf("get cache bytes: %v", err)
+	}
+	if string(got) != string(want) {
+		t.Fatalf("unexpected cache bytes: got %q, want %q", got, want)
+	}
+}
+
+func TestCacheManagerEvict(t *testing.T) {
+	manager, bucketName := newTestCacheManager(t)
+	key := NewCacheKey("evict")
+
+	if err := manager.Put(bucketName, key, "value"); err != nil {
+		t.Fatalf("put cache: %v", err)
+	}
+	if err := manager.Evict(bucketName, key); err != nil {
+		t.Fatalf("evict cache: %v", err)
+	}
+	if _, err := manager.GetBytes(bucketName, key); !errors.Is(err, toolkitError.ErrCacheMiss) {
+		t.Fatalf("expected ErrCacheMiss after evict, got %v", err)
+	}
+}
+
+func TestCacheManagerBadBucketName(t *testing.T) {
+	manager := NewCacheManager()
+	err := manager.Put(NewBucketName("missing"), NewCacheKey("key"), "value")
+	if !errors.Is(err, toolkitError.ErrBadBucketName) {
+		t.Fatalf("expected ErrBadBucketName, got %v", err)
+	}
+}
+
+func TestCacheKeyFormat(t *testing.T) {
+	key := NewCacheKey("user:%d:%s")
+	if got, want := key.RawKeyString(1, "profile"), "user:1:profile"; got != want {
+		t.Fatalf("unexpected raw key: got %q, want %q", got, want)
+	}
+}
+
+func TestCacheManagerCustomCodec(t *testing.T) {
+	manager, bucketName := newTestCacheManager(t, jsonCodec{})
+	key := NewCacheKey("json")
+	want := testUser{Name: "Json", Sex: 2}
+
+	if err := manager.Put(bucketName, key, want); err != nil {
+		t.Fatalf("put cache with custom codec: %v", err)
+	}
+
+	var got testUser
+	if err := manager.Get(bucketName, key, &got); err != nil {
+		t.Fatalf("get cache with custom codec: %v", err)
+	}
+	if got != want {
+		t.Fatalf("unexpected custom codec value: got %+v, want %+v", got, want)
+	}
 }
