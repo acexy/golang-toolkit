@@ -153,11 +153,17 @@ type ecdsaKey struct {
 
 // PrivateKey 返回原始 ECDSA 私钥
 func (e *ecdsaKey) PrivateKey() any {
+	if e.privateKey == nil {
+		return nil
+	}
 	return e.privateKey
 }
 
 // PublicKey 返回原始 ECDSA 公钥
 func (e *ecdsaKey) PublicKey() any {
+	if e.publicKey == nil {
+		return nil
+	}
 	return e.publicKey
 }
 

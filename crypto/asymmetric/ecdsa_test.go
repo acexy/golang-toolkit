@@ -2,6 +2,7 @@ package asymmetric
 
 import (
 	"crypto"
+	"crypto/ecdsa"
 	"crypto/elliptic"
 	"encoding/base64"
 	"errors"
@@ -88,6 +89,19 @@ func TestEcdsaLoadPublicKeyOnly(t *testing.T) {
 	}
 	if loaded.PrivateKey() != nil {
 		t.Fatal("expected private key to be nil")
+	}
+	if !sameTestEcdsaPublicKey(keyPair.PublicKey(), loaded.PublicKey()) {
+		t.Fatal("expected loaded public key to equal original public key")
+	}
+
+	sign := NewEcdsaSign(crypto.SHA256.New())
+	raw := []byte("public key only verify")
+	signature, err := sign.Sign(keyPair, raw)
+	if err != nil {
+		t.Fatalf("sign ecdsa: %v", err)
+	}
+	if err = sign.Verify(loaded, raw, signature); err != nil {
+		t.Fatalf("verify with loaded public key: %v", err)
 	}
 }
 
@@ -206,4 +220,19 @@ func TestEcdsaVerifyRejectsWrongKeyType(t *testing.T) {
 	if !errors.Is(err, toolkitError.ErrNotEcdsaPublicKey) {
 		t.Fatalf("expected ErrNotEcdsaPublicKey, got %v", err)
 	}
+}
+
+func sameTestEcdsaPublicKey(expected, actual any) bool {
+	expectedKey, ok := expected.(*ecdsa.PublicKey)
+	if !ok || expectedKey == nil {
+		return false
+	}
+	actualKey, ok := actual.(*ecdsa.PublicKey)
+	if !ok || actualKey == nil {
+		return false
+	}
+	if expectedKey.Curve == nil || actualKey.Curve == nil || expectedKey.X == nil || expectedKey.Y == nil || actualKey.X == nil || actualKey.Y == nil {
+		return false
+	}
+	return expectedKey.Curve == actualKey.Curve && expectedKey.X.Cmp(actualKey.X) == 0 && expectedKey.Y.Cmp(actualKey.Y) == 0
 }

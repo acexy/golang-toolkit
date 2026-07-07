@@ -36,11 +36,17 @@ type rsaKey struct {
 
 // PrivateKey 返回原始 RSA 私钥
 func (r *rsaKey) PrivateKey() any {
+	if r.privateKey == nil {
+		return nil
+	}
 	return r.privateKey
 }
 
 // PublicKey 返回原始 RSA 公钥
 func (r *rsaKey) PublicKey() any {
+	if r.publicKey == nil {
+		return nil
+	}
 	return r.publicKey
 }
 
