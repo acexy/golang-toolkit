@@ -1,13 +1,14 @@
 package coll
 
 import (
-	"fmt"
 	"math/rand"
 	"sort"
+
+	toolkitError "github.com/acexy/golang-toolkit/error"
 )
 
-// SliceRandomOne 随机返回切片中的一个元素
-func SliceRandomOne[T any](slice []T) T {
+// SliceRandom 随机返回切片中的一个元素
+func SliceRandom[T any](slice []T) T {
 	if len(slice) == 0 {
 		var zeroValue T
 		return zeroValue
@@ -53,8 +54,8 @@ func SliceIndexOf[T comparable](slice []T, target T, compare ...func(T, T) bool)
 	return -1
 }
 
-// SliceAnyContains 检查指定的元素是否存在切片中，元素可以是任意类型
-func SliceAnyContains[T comparable](slice []T, compare func(ele T) bool) bool {
+// SliceContainsBy 按照指定条件检查切片中是否存在元素
+func SliceContainsBy[T any](slice []T, compare func(ele T) bool) bool {
 	if len(slice) == 0 {
 		return false
 	}
@@ -66,8 +67,8 @@ func SliceAnyContains[T comparable](slice []T, compare func(ele T) bool) bool {
 	return false
 }
 
-// SliceAnyIndexOf 获取指定元素在切片中的索引，如果元素不存在则返回-1
-func SliceAnyIndexOf[T comparable](slice []T, compare func(ele T) bool) int {
+// SliceIndexBy 按照指定条件获取切片元素索引，如果元素不存在则返回-1
+func SliceIndexBy[T any](slice []T, compare func(ele T) bool) int {
 	if len(slice) == 0 {
 		return -1
 	}
@@ -79,8 +80,8 @@ func SliceAnyIndexOf[T comparable](slice []T, compare func(ele T) bool) int {
 	return -1
 }
 
-// SliceFilterFirstOne 筛选切片 通过函数筛选出符合要求的第一个元素
-func SliceFilterFirstOne[T any](slice []T, filter func(item T) bool) (T, bool) {
+// SliceFind 筛选切片 通过函数筛选出符合要求的第一个元素
+func SliceFind[T any](slice []T, filter func(item T) bool) (T, bool) {
 	var t T
 	if len(slice) == 0 {
 		return t, false
@@ -97,8 +98,8 @@ func SliceFilterFirstOne[T any](slice []T, filter func(item T) bool) (T, bool) {
 	return t, exist
 }
 
-// SliceFilterFirstOneReverse 筛选切片 通过函数反向匹配筛选出符合要求的第一个元素
-func SliceFilterFirstOneReverse[T any](slice []T, filter func(item T) bool) (T, bool) {
+// SliceFindLast 筛选切片 通过函数反向匹配筛选出符合要求的第一个元素
+func SliceFindLast[T any](slice []T, filter func(item T) bool) (T, bool) {
 	var t T
 	if len(slice) == 0 {
 		return t, false
@@ -120,7 +121,7 @@ func SliceFilter[T any](slice []T, filter func(item T) bool) []T {
 	if len(slice) == 0 {
 		return nil
 	}
-	result := make([]T, 0)
+	result := make([]T, 0, len(slice))
 	for i := range slice {
 		flag := filter(slice[i])
 		if flag {
@@ -349,7 +350,7 @@ func SliceFilterCollect[T, R any](input []T, mapFn func(T) (R, bool)) []R {
 	if len(input) == 0 {
 		return nil
 	}
-	output := make([]R, 0)
+	output := make([]R, 0, len(input))
 	for i := range input {
 		v, f := mapFn(input[i])
 		if f {
@@ -362,7 +363,7 @@ func SliceFilterCollect[T, R any](input []T, mapFn func(T) (R, bool)) []R {
 // SliceFlat 将二维切片中的所有元素聚合为一个新的切片
 func SliceFlat[T any](input [][]T) []T {
 	if len(input) == 0 {
-		return nil
+		return []T{}
 	}
 	total := 0
 	for i := range input {
@@ -375,8 +376,8 @@ func SliceFlat[T any](input [][]T) []T {
 	return output
 }
 
-// SliceForeachAll 遍历所有切片并执行指定的函数
-func SliceForeachAll[T any](slice []T, fn func(T)) {
+// SliceForEachAll 遍历所有切片并执行指定的函数
+func SliceForEachAll[T any](slice []T, fn func(T)) {
 	if len(slice) == 0 {
 		return
 	}
@@ -385,8 +386,8 @@ func SliceForeachAll[T any](slice []T, fn func(T)) {
 	}
 }
 
-// SliceForeach 遍历切片并执行指定的函数，如果返回false则停止遍历
-func SliceForeach[T any](slice []T, foreach func(T) bool) {
+// SliceForEach 遍历切片并执行指定的函数，如果返回false则停止遍历
+func SliceForEach[T any](slice []T, foreach func(T) bool) {
 	if len(slice) == 0 {
 		return
 	}
@@ -402,21 +403,34 @@ func SliceDistinct[T comparable](slice []T) []T {
 	if len(slice) == 0 {
 		return nil
 	}
-	mapValue := SliceFilterToMap(slice, func(ele T) (T, any, bool) {
-		return ele, struct{}{}, true
-	})
-	return MapKeyToSlice(mapValue)
+	seen := make(map[T]struct{}, len(slice))
+	result := make([]T, 0, len(slice))
+	for _, ele := range slice {
+		if _, ok := seen[ele]; ok {
+			continue
+		}
+		seen[ele] = struct{}{}
+		result = append(result, ele)
+	}
+	return result
 }
 
-// SliceDistinctAny 按照指定的切片去重值去重元素
-func SliceDistinctAny[T any, K comparable](slice []T, keyBuild func(ele T) K) []T {
+// SliceDistinctBy 按照指定的切片去重值去重元素
+func SliceDistinctBy[T any, K comparable](slice []T, keyBuild func(ele T) K) []T {
 	if len(slice) == 0 {
 		return nil
 	}
-	mapValue := SliceFilterToMap(slice, func(ele T) (K, T, bool) {
-		return keyBuild(ele), ele, true
-	})
-	return MapValueToSlice(mapValue)
+	seen := make(map[K]struct{}, len(slice))
+	result := make([]T, 0, len(slice))
+	for _, ele := range slice {
+		key := keyBuild(ele)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, ele)
+	}
+	return result
 }
 
 // SliceSort 对切片进行排序
@@ -459,8 +473,8 @@ func SliceGroupBySingle[T any, K comparable](slice []T, groupFn func(T) K) map[K
 	return result
 }
 
-// SliceAnyGroupBy 将切片按照指定的分组函数进行分组
-func SliceAnyGroupBy[T, V any, K comparable](slice []T, groupFn func(T) (K, V)) map[K][]V {
+// SliceGroupByValue 将切片按照指定的分组函数进行分组
+func SliceGroupByValue[T, V any, K comparable](slice []T, groupFn func(T) (K, V)) map[K][]V {
 	result := make(map[K][]V)
 	for i := range slice {
 		k, v := groupFn(slice[i])
@@ -469,8 +483,8 @@ func SliceAnyGroupBy[T, V any, K comparable](slice []T, groupFn func(T) (K, V)) 
 	return result
 }
 
-// SliceAnyGroupBySingle 将切片按照指定的分组函数进行分组 适用于分组的值为单个元素
-func SliceAnyGroupBySingle[T, V any, K comparable](slice []T, groupFn func(T) (K, V)) map[K]V {
+// SliceGroupBySingleValue 将切片按照指定的分组函数进行分组 适用于分组的值为单个元素
+func SliceGroupBySingleValue[T, V any, K comparable](slice []T, groupFn func(T) (K, V)) map[K]V {
 	result := make(map[K]V)
 	for i := range slice {
 		k, v := groupFn(slice[i])
@@ -498,7 +512,7 @@ func SliceSplitChunk[T any](slice []T, size int) [][]T {
 // SliceRemove 删除指定索引的元素 （会影响原始值）
 func SliceRemove[T any](index int, slice []T) ([]T, error) {
 	if index < 0 || index >= len(slice) {
-		return slice, fmt.Errorf("index out of range: %d", index)
+		return slice, toolkitError.ErrSliceIndexOutOfRange
 	}
 	// 将后面的元素向前移动一位
 	copy(slice[index:], slice[index+1:])
@@ -509,18 +523,18 @@ func SliceRemove[T any](index int, slice []T) ([]T, error) {
 // SliceRemoveSafe 删除指定索引的元素（不影响原始 slice）
 func SliceRemoveSafe[T any](index int, slice []T) ([]T, error) {
 	if index < 0 || index >= len(slice) {
-		return nil, fmt.Errorf("index out of range: %d", index)
+		return nil, toolkitError.ErrSliceIndexOutOfRange
 	}
-	// 创建一个新的 slice 并拷贝
-	newSlice := make([]T, len(slice))
-	copy(newSlice, slice)
-	return append(newSlice[:index], newSlice[index+1:]...), nil
+	newSlice := make([]T, 0, len(slice)-1)
+	newSlice = append(newSlice, slice[:index]...)
+	newSlice = append(newSlice, slice[index+1:]...)
+	return newSlice, nil
 }
 
 // SliceInsert 插入元素 （可能影响原始值）
 func SliceInsert[T any](index int, new T, slice []T) ([]T, error) {
 	if index < 0 || index > len(slice) {
-		return slice, fmt.Errorf("index out of range: %d", index)
+		return slice, toolkitError.ErrSliceIndexOutOfRange
 	}
 	slice = append(slice, new) // 临时扩容，确保有空间
 	copy(slice[index+1:], slice[index:])
@@ -531,19 +545,19 @@ func SliceInsert[T any](index int, new T, slice []T) ([]T, error) {
 // SliceInsertSafe 在指定索引插入单个元素（不影响原始 slice）
 func SliceInsertSafe[T any](index int, new T, slice []T) ([]T, error) {
 	if index < 0 || index > len(slice) {
-		return nil, fmt.Errorf("index out of range: %d", index)
+		return nil, toolkitError.ErrSliceIndexOutOfRange
 	}
-	// 创建一个新的 slice 并拷贝
-	newSlice := make([]T, len(slice))
-	copy(newSlice, slice)
-	newSlice = append(newSlice[:index], append([]T{new}, newSlice[index:]...)...)
+	newSlice := make([]T, 0, len(slice)+1)
+	newSlice = append(newSlice, slice[:index]...)
+	newSlice = append(newSlice, new)
+	newSlice = append(newSlice, slice[index:]...)
 	return newSlice, nil
 }
 
 // SliceInserts 插入多个元素 （可能影响原始值）
 func SliceInserts[T any](index int, new []T, slice []T) ([]T, error) {
 	if index < 0 || index > len(slice) {
-		return slice, fmt.Errorf("index out of range: %d", index)
+		return slice, toolkitError.ErrSliceIndexOutOfRange
 	}
 	if len(new) == 0 {
 		return slice, nil
@@ -567,14 +581,15 @@ func SliceInserts[T any](index int, new []T, slice []T) ([]T, error) {
 // SliceInsertsSafe 在指定索引插入多个元素（不影响原始 slice）
 func SliceInsertsSafe[T any](index int, new []T, slice []T) ([]T, error) {
 	if index < 0 || index > len(slice) {
-		return nil, fmt.Errorf("index out of range: %d", index)
+		return nil, toolkitError.ErrSliceIndexOutOfRange
 	}
+	newSlice := make([]T, 0, len(slice)+len(new))
+	newSlice = append(newSlice, slice[:index]...)
 	if len(new) == 0 {
-		return slice, nil
+		newSlice = append(newSlice, slice[index:]...)
+		return newSlice, nil
 	}
-	// 创建一个新的 slice 并拷贝
-	newSlice := make([]T, len(slice))
-	copy(newSlice, slice)
-	newSlice = append(newSlice[:index], append(new, newSlice[index:]...)...)
+	newSlice = append(newSlice, new...)
+	newSlice = append(newSlice, slice[index:]...)
 	return newSlice, nil
 }

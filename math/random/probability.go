@@ -59,14 +59,14 @@ func ProbabilityResult(percentage map[any]float64) (any, error) {
 		return nil, toolkitError.ErrInvalidProbabilityTotal
 	}
 	var maxScale int
-	coll.MapForeachAll(percentage, func(k any, v float64) {
+	coll.MapForEachAll(percentage, func(k any, v float64) {
 		maxScale = int(math.Max(float64(maxScale), float64(decimalPlaces(v))))
 	})
 	calcPercentage := coll.MapCollect(percentage, func(k any, v float64) (any, decimal.Decimal) {
 		return k, decimal.NewFromFloat(v).Mul(decimal.NewFromFloat(math.Pow(10, float64(maxScale))))
 	})
 	sum := decimal.Zero
-	coll.MapForeachAll(calcPercentage, func(k any, v decimal.Decimal) {
+	coll.MapForEachAll(calcPercentage, func(k any, v decimal.Decimal) {
 		sum = sum.Add(v)
 	})
 	if sum.Compare(decimal.NewFromFloat(math.Pow(10, float64(maxScale))*100)) != 0 {
