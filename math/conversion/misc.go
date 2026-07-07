@@ -5,7 +5,7 @@ import "strings"
 const (
 	hexPrefix  = "0x"
 	zeroString = "0"
-	maxBit     = 256
+	maxByte    = 255
 )
 
 func appendLeftZero(value string, length int) string {

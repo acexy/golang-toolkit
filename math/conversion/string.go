@@ -8,6 +8,9 @@ import (
 func fromNumber(value int64) string {
 	return strconv.FormatInt(value, 10)
 }
+func fromUnsignedNumber(value uint64) string {
+	return strconv.FormatUint(value, 10)
+}
 func fromFloat(value float64) string {
 	return strconv.FormatFloat(value, 'f', -1, 64)
 }
@@ -19,7 +22,7 @@ func FromInt(value int) string {
 
 // FromUint Uint转字符串
 func FromUint(value uint) string {
-	return fromNumber(int64(value))
+	return fromUnsignedNumber(uint64(value))
 }
 
 // FromInt8 Int8转字符串
@@ -29,7 +32,7 @@ func FromInt8(value int8) string {
 
 // FromUint8 Uint8转字符串
 func FromUint8(value uint8) string {
-	return fromNumber(int64(value))
+	return fromUnsignedNumber(uint64(value))
 }
 
 // FromInt16 Int16转字符串
@@ -39,7 +42,7 @@ func FromInt16(value int16) string {
 
 // FromUint16 Uint16转字符串
 func FromUint16(value uint16) string {
-	return fromNumber(int64(value))
+	return fromUnsignedNumber(uint64(value))
 }
 
 // FromInt32 Int32转字符串
@@ -49,7 +52,7 @@ func FromInt32(value int32) string {
 
 // FromUint32 Uint32转字符串
 func FromUint32(value uint32) string {
-	return fromNumber(int64(value))
+	return fromUnsignedNumber(uint64(value))
 }
 
 // FromInt64 Int64转字符串
@@ -59,7 +62,7 @@ func FromInt64(value int64) string {
 
 // FromUint64 Uint64转字符串
 func FromUint64(value uint64) string {
-	return fromNumber(int64(value))
+	return fromUnsignedNumber(value)
 }
 
 // FromFloat32 Float32转字符串

@@ -1,6 +1,9 @@
 package conversion
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func TestFromInt(t *testing.T) {
 	tests := []struct {
@@ -19,6 +22,14 @@ func TestFromInt(t *testing.T) {
 				t.Errorf("FromInt(%d) = %s; expected %s", tt.value, actual, tt.expected)
 			}
 		})
+	}
+}
+
+func TestFromUint64Max(t *testing.T) {
+	actual := FromUint64(math.MaxUint64)
+	expected := "18446744073709551615"
+	if actual != expected {
+		t.Fatalf("FromUint64(MaxUint64) = %s; expected %s", actual, expected)
 	}
 }
 

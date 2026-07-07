@@ -11,6 +11,9 @@ const lettersLen = 62
 
 // RandString 生成指定长度的随机字符串
 func RandString(length int) string {
+	if length <= 0 {
+		return ""
+	}
 	result := make([]byte, length)
 	for i := range result {
 		index := RandInt(lettersLen - 1)

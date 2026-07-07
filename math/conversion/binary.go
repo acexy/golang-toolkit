@@ -1,10 +1,11 @@
 package conversion
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+
+	toolkitError "github.com/acexy/golang-toolkit/error"
 )
 
 // Binary 定义二进制值
@@ -53,21 +54,21 @@ func (b *Binary) Value() string {
 
 // To8Bit 将该二进制值转换为计算机bit 8位
 func (b *Binary) To8Bit() (string, error) {
-	if b.value > 256 {
-		return "", errors.New("binary value more than " + strconv.Itoa(maxBit))
+	if b.value > maxByte {
+		return "", toolkitError.ErrBinaryValueOutOfByteRange
 	}
 	return appendLeftZero(b.Value(), 8), nil
 }
 
-// ToHexValue 转换位原始hex值
+// ToHexValue 转换为原始hex值
 func (b *Binary) ToHexValue() string {
 	return fmt.Sprintf("%x", b.value)
 }
 
 // To2Hex 将该二进制值转化为hex 2位
 func (b *Binary) To2Hex() (string, error) {
-	if b.value > 256 {
-		return "", errors.New("binary value more than " + strconv.Itoa(maxBit))
+	if b.value > maxByte {
+		return "", toolkitError.ErrBinaryValueOutOfByteRange
 	}
 	return appendLeftZero(b.ToHexValue(), 2), nil
 }
@@ -110,7 +111,7 @@ func (b *Binaries) To8Bits(char ...string) (string, error) {
 	return b.join(func(b *Binary) (string, error) {
 		value, err := b.To8Bit()
 		if err != nil {
-			return "error", err
+			return "", err
 		}
 		return value, nil
 	}, char...)
@@ -121,7 +122,7 @@ func (b *Binaries) To2Hex(char ...string) string {
 	hexString, _ := b.join(func(b *Binary) (string, error) {
 		value, err := b.To2Hex()
 		if err != nil {
-			return "error", err
+			return "", err
 		}
 		return value, nil
 	}, char...)
