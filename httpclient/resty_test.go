@@ -1,198 +1,128 @@
 package httpclient
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
 	"testing"
-	"time"
 
-	"github.com/acexy/golang-toolkit/logger"
-	"github.com/acexy/golang-toolkit/math/conversion"
-	"github.com/acexy/golang-toolkit/util/json"
+	toolkitError "github.com/acexy/golang-toolkit/error"
 )
 
-func init() {
-	logger.EnableConsole(logger.TraceLevel)
+func TestMethodExecute(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("unexpected method: %s", r.Method)
+		}
+		_, _ = w.Write([]byte("ok"))
+	}))
+	defer server.Close()
+
+	response, err := NewRestyClient().R().Method(http.MethodGet, server.URL).Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.String() != "ok" {
+		t.Fatalf("unexpected response: %s", response.String())
+	}
 }
 
-var client *RestyClient
-
-func TestPoxyClientInit(t *testing.T) {
-	c := NewRestyClient("http://127.0.0.1:7890")
-	response, err := c.R().Get("https://google.com")
-	if err != nil {
-		fmt.Printf("%+v\n", err)
+func TestMethodExecuteUnsupportedMethod(t *testing.T) {
+	_, err := NewRestyClient().R().Method("BAD", "http://example.com").Execute()
+	if !errors.Is(err, toolkitError.ErrUnsupportedHTTPMethod) {
+		t.Fatalf("expected ErrUnsupportedHTTPMethod, got %v", err)
 	}
-	fmt.Println(response.RawResponse)
-	response, err = c.R().Get("https://google.com")
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-	}
-	fmt.Println(response.RawResponse)
 }
 
-func TestPoxyClientSet(t *testing.T) {
-	response, err := NewRestyClient().SetProxy("http://127.0.0.1:7891").R().Get("https://google.com")
+func TestSetQueryValuesAndPathValues(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/users/100" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		if r.URL.Query().Get("status") != "active" {
+			t.Fatalf("unexpected query: %s", r.URL.RawQuery)
+		}
+		_, _ = w.Write([]byte("ok"))
+	}))
+	defer server.Close()
+
+	query := url.Values{}
+	query.Set("status", "active")
+	response, err := NewRestyClient().R().
+		Method(http.MethodGet, server.URL+"/users/{id}").
+		SetPathValues(map[string]string{"id": "100"}).
+		SetQueryValues(query).
+		Execute()
 	if err != nil {
-		fmt.Printf("%+v\n", err)
+		t.Fatal(err)
 	}
-	fmt.Println(response.RawResponse)
+	if response.String() != "ok" {
+		t.Fatalf("unexpected response: %s", response.String())
+	}
 }
 
-func TestMultiPoxyClientInit(t *testing.T) {
-	c := NewRestyClientWithMultiProxy([]string{"http://127.0.0.1:7891", "http://127.0.0.1:7890"})
-	c.SetHeader("user-agent", "curl/8.7.1")
-	c.DisableAllAutoRedirect()
-	response, err := c.R().Get("https://ifconfig.me")
+func TestPostJSON(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get(HeaderContentType) != "application/json; charset=utf-8" {
+			t.Fatalf("unexpected content type: %s", r.Header.Get(HeaderContentType))
+		}
+		_, _ = w.Write([]byte("ok"))
+	}))
+	defer server.Close()
+
+	response, err := NewRestyClient().R().PostJSON(server.URL, `{"name":"toolkit"}`, "utf-8")
 	if err != nil {
-		fmt.Printf("%+v\n", err)
+		t.Fatal(err)
 	}
-	fmt.Println(response.String())
-	response, err = c.R().Get("https://google.com")
-	if err != nil {
-		fmt.Printf("%+v\n", err)
+	if response.String() != "ok" {
+		t.Fatalf("unexpected response: %s", response.String())
 	}
-	fmt.Println(response.String())
 }
 
-func TestStructResult(t *testing.T) {
-	type R[T any] struct {
-		Message string `json:"message"`
-		Data    struct {
-			Forecast T `json:"forecast"`
-		} `json:"data"`
-	}
-	type T struct {
-		Date string `json:"date"`
-	}
+func TestSetDownloadFile(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("download content"))
+	}))
+	defer server.Close()
 
-	var result R[[]*T]
-	response, err := client.R().SetReturnStruct(&result).Get("http://t.weather.sojson.com/api/weather/city/101030100")
+	filepath := filepath.Join(t.TempDir(), "download.txt")
+	response, err := NewRestyClient().R().SetDownloadFile(filepath).Get(server.URL)
 	if err != nil {
-		fmt.Printf("%+v\n", err)
+		t.Fatal(err)
 	}
-	fmt.Println(json.ToString(result))
-	fmt.Println(response.String())
+	if response.IsError() {
+		t.Fatalf("unexpected response status: %s", response.Status())
+	}
+	content, err := os.ReadFile(filepath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(content) != "download content" {
+		t.Fatalf("unexpected file content: %s", string(content))
+	}
 }
 
-func TestGet(t *testing.T) {
-	resp, err := client.SetTimeout(time.Second * 3).R().Get("https://github.com")
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		return
-	}
+func TestDisableTLSVerify(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("ok"))
+	}))
+	defer server.Close()
 
-	println(resp.String())
-	resp, err = client.R().M(http.MethodGet, "https://github.com").E()
+	response, err := NewRestyClient().DisableTLSVerify().R().Get(server.URL)
 	if err != nil {
-		fmt.Printf("%+v\n", err)
-		return
+		t.Fatal(err)
 	}
-	fmt.Println(resp.String())
-	s := struct {
-		Message  string `json:"message"`
-		CityInfo struct {
-			City string `json:"city"`
-		} `json:"cityInfo"`
-		Data struct {
-			Shidu string `json:"shidu"`
-		} `json:"data"`
-	}{}
-
-	req := client.R().
-		SetHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36").
-		SetReturnStruct(&s)
-
-	resp, err = req.Get("http://t.weather.sojson.com/api/weather/city/101030100")
-	if err != nil {
-		return
+	if response.String() != "ok" {
+		t.Fatalf("unexpected response: %s", response.String())
 	}
-	fmt.Println(resp.String())
-	fmt.Println(json.ToString(s))
-
-	resp, err = req.Get("http://t.weather.sojson.com/api/weather/city/101030100")
-	if err != nil {
-		return
-	}
-	fmt.Println(resp.String())
-	fmt.Println(json.ToString(s))
 }
 
-func TestProxy(t *testing.T) {
-	restyClient := NewRestyClient()
-
-	restyClient.SetTimeout(time.Second * 3)
-	resp, err := restyClient.R().Get("https://www.google.com")
-	if err != nil {
-		t.Errorf("%v\n", err)
-	} else {
-		fmt.Println(conversion.FromBytes(resp.Body()))
+func TestNewRestyClientWithMultiProxyFallback(t *testing.T) {
+	client := NewRestyClientWithMultiProxy([]string{"http://127.0.0.1:7890"})
+	if client == nil {
+		t.Fatal("expected fallback resty client")
 	}
-
-	restyClient.SetProxy("http://127.0.0.1:7890")
-	resp, err = restyClient.R().M(http.MethodGet, "https://www.google.com").E()
-	if err != nil {
-		t.Errorf("%v\n", err)
-	} else {
-		fmt.Println(conversion.FromBytes(resp.Body()))
-	}
-
-	resp, err = restyClient.R().Get("https://www.google.com")
-	if err != nil {
-		t.Errorf("%v\n", err)
-	} else {
-		fmt.Println(conversion.FromBytes(resp.Body()))
-	}
-
-	restyClient.SetProxy("http://127.0.0.1:1234")
-	resp, err = restyClient.R().M(http.MethodGet, "https://google.com").E()
-	if err != nil {
-		t.Errorf("%v\n", err)
-	} else {
-		fmt.Println(conversion.FromBytes(resp.Body()))
-	}
-
-}
-
-func TestMultiProxy(t *testing.T) {
-	restyClient := NewRestyClientWithMultiProxy([]string{
-		"http://localhost:7890",
-		"http://localhost:1234",
-	})
-
-	restyClient.SetTimeout(time.Second * 3)
-	resp, err := restyClient.R().Get("https://www.google.com")
-	if err != nil {
-		t.Errorf("%v\n", err)
-	} else {
-		fmt.Println(conversion.FromBytes(resp.Body()))
-	}
-
-	resp, err = restyClient.R().M(http.MethodGet, "https://www.google.com").E()
-	if err != nil {
-		t.Errorf("%v\n", err)
-	} else {
-		fmt.Println(conversion.FromBytes(resp.Body()))
-	}
-
-	resp, err = restyClient.R().Get("https://www.google.com")
-	if err != nil {
-		t.Errorf("%v\n", err)
-	} else {
-		fmt.Println(conversion.FromBytes(resp.Body()))
-	}
-
-	resp, err = restyClient.R().M(http.MethodGet, "https://google.com").E()
-	if err != nil {
-		t.Errorf("%v\n", err)
-	} else {
-		fmt.Println(conversion.FromBytes(resp.Body()))
-	}
-
-}
-
-func TestDownloadFile(t *testing.T) {
-	restyClient := NewRestyClient()
-	response, _ := restyClient.R().SetDownloadFile("/Users/acexy/Downloads/a").Get("https://images.performgroup.com/di/library/omnisport/3/a5/parejo_u3lcc7qycemx1c1kzmdibicha.jpg?t=-1784964847&w=1200&h=630")
-	println(response.Header().Get("content-type"))
 }

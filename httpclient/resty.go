@@ -3,12 +3,11 @@ package httpclient
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
+	toolkitError "github.com/acexy/golang-toolkit/error"
 	"github.com/acexy/golang-toolkit/logger"
 	"github.com/acexy/golang-toolkit/math/random"
 	"github.com/acexy/golang-toolkit/util/coll"
@@ -57,7 +56,7 @@ func NewRestyClient(proxyHttpHost ...string) *RestyClient {
 func NewRestyClientWithMultiProxy(multiProxy []string, choose ...ChooseProxy) *RestyClient {
 	if len(multiProxy) < 2 {
 		logger.Logrus().Warningln("multiProxies must be greater than 2")
-		return nil
+		return NewRestyClient(multiProxy...)
 	}
 	client := &RestyClient{
 		r: resty.New(),
@@ -77,6 +76,9 @@ type randomChoose struct {
 }
 
 func (r *randomChoose) Choose(_ *http.Request, all []string) string {
+	if len(all) == 0 {
+		return ""
+	}
 	return all[random.RandInt(len(all)-1)]
 }
 
@@ -84,6 +86,9 @@ func (r *randomChoose) Choose(_ *http.Request, all []string) string {
 
 // SetProxies 设置代理池
 func (r *RestyClient) SetProxies(proxyUrls []string, choose ...ChooseProxy) {
+	if len(proxyUrls) == 0 {
+		return
+	}
 	// 为原始client设置已设置代理的标识
 	transport, err := r.r.SetProxy(proxyUrls[0]).Transport()
 	if err != nil {
@@ -119,10 +124,8 @@ func (r *RestyClient) SetProxy(proxy string) *RestyClient {
 
 // DisableTLSVerify 禁用TLS验证
 func (r *RestyClient) DisableTLSVerify() *RestyClient {
-	r.r.SetTransport(&http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true, // 不验证证书签名
-		},
+	r.r.SetTLSClientConfig(&tls.Config{
+		InsecureSkipVerify: true, // 不验证证书签名
 	})
 	return r
 }
@@ -133,9 +136,9 @@ func (r *RestyClient) DisableAllAutoRedirect() *RestyClient {
 	return r
 }
 
-// SetBaseUrl 设置BaseUrl
-func (r *RestyClient) SetBaseUrl(baseUrl string) *RestyClient {
-	r.r.SetBaseURL(baseUrl)
+// SetBaseURL 设置BaseURL
+func (r *RestyClient) SetBaseURL(baseURL string) *RestyClient {
+	r.r.SetBaseURL(baseURL)
 	return r
 }
 
@@ -174,16 +177,6 @@ func (r *RestyRequest) SetReturnStruct(any interface{}) *RestyRequest {
 // SetDownloadFile 将原始内容下载为文件
 // filepath 文件完整路径(含文件名)
 func (r *RestyRequest) SetDownloadFile(filepath string) *RestyRequest {
-	outputFile, err := os.Create(filepath)
-	if err != nil {
-		logger.Logrus().WithError(err).Println("Failed to create output file", filepath)
-	}
-	defer func() {
-		if outputFile == nil {
-			return
-		}
-		_ = outputFile.Close()
-	}()
 	r.request.SetOutput(filepath)
 	return r
 }
@@ -203,8 +196,8 @@ func (r *RestyRequest) SetHeader(key, value string) *RestyRequest {
 	return r
 }
 
-// M set Method
-func (r *RestyRequest) M(httpMethod string, url string) *RestyMethod {
+// Method 设置请求方法
+func (r *RestyRequest) Method(httpMethod string, url string) *RestyMethod {
 	return &RestyMethod{
 		request: r,
 		method:  httpMethod,
@@ -218,22 +211,22 @@ func (m *RestyMethod) SetRawBody(raw func(raw *resty.Request)) *RestyMethod {
 }
 func (m *RestyMethod) SetRequestBody(body interface{}, contentType string) *RestyMethod {
 	m.request.request.SetBody(body)
-	m.request.SetHeader(HeadContentType, contentType)
+	m.request.SetHeader(HeaderContentType, contentType)
 	return m
 }
 
 func (m *RestyMethod) SetQueryValues(query url.Values) *RestyMethod {
-	m.request.request.QueryParam = query
+	m.request.request.SetQueryParamsFromValues(query)
 	return m
 }
 
 func (m *RestyMethod) SetPathValues(pathParams map[string]string) *RestyMethod {
-	m.request.request.PathParams = pathParams
+	m.request.request.SetPathParams(pathParams)
 	return m
 }
 
-func (m *RestyMethod) SetBodyJson(bodyJson string, charset ...string) *RestyMethod {
-	m.SetRequestBody(bodyJson, getContentType(ContentTypeJson, charset...))
+func (m *RestyMethod) SetBodyJSON(bodyJSON string, charset ...string) *RestyMethod {
+	m.SetRequestBody(bodyJSON, getContentType(ContentTypeJSON, charset...))
 	return m
 }
 
@@ -242,8 +235,8 @@ func (m *RestyMethod) SetBodyForm(formEncode map[string]string) *RestyMethod {
 	return m
 }
 
-// E Execution
-func (m *RestyMethod) E() (*resty.Response, error) {
+// Execute 执行请求
+func (m *RestyMethod) Execute() (*resty.Response, error) {
 	switch m.method {
 	case http.MethodGet:
 		return m.request.request.Get(m.url)
@@ -260,7 +253,7 @@ func (m *RestyMethod) E() (*resty.Response, error) {
 	case http.MethodPatch:
 		return m.request.request.Patch(m.url)
 	}
-	return nil, errors.New("Unknown Method " + m.method)
+	return nil, toolkitError.ErrUnsupportedHTTPMethod
 }
 
 // 常用的快捷请求方法，默认使用resty.R()
@@ -280,8 +273,8 @@ func (r *RestyRequest) PostForm(url string, formEncode map[string]string) (*rest
 	return r.request.SetFormData(formEncode).Post(url)
 }
 
-func (r *RestyRequest) PostJson(url string, jsonString string, charset ...string) (*resty.Response, error) {
+func (r *RestyRequest) PostJSON(url string, jsonString string, charset ...string) (*resty.Response, error) {
 	r.request.SetBody(jsonString)
-	r.request.SetHeader(HeadContentType, getContentType(ContentTypeJson, charset...))
+	r.request.SetHeader(HeaderContentType, getContentType(ContentTypeJSON, charset...))
 	return r.request.Post(url)
 }

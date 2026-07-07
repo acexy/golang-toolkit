@@ -3,15 +3,15 @@ package httpclient
 type ContentType string
 
 const (
-	HeadContentType = "content-type"
+	HeaderContentType = "content-type"
 )
 
 const (
-	ContentTypeJson ContentType = "application/json"
-	ContentTypeForm             = "application/x-www-form-urlencoded"
-	ContentTypeText             = "text/plain"
-	ContentTypeXml              = "application/xml"
-	ContentTypeHtml             = "text/html"
+	ContentTypeJSON ContentType = "application/json"
+	ContentTypeForm ContentType = "application/x-www-form-urlencoded"
+	ContentTypeText ContentType = "text/plain"
+	ContentTypeXML  ContentType = "application/xml"
+	ContentTypeHTML ContentType = "text/html"
 )
 
 func getContentType(contentType ContentType, charset ...string) string {
