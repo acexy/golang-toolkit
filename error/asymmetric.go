@@ -1,9 +1,6 @@
 package error
 
-import (
-	"errors"
-	"fmt"
-)
+import "errors"
 
 var (
 	// ErrNilKeyPair 表示公私钥对为空
@@ -60,13 +57,3 @@ var (
 	// ErrVerifyFailed 表示签名验证失败
 	ErrVerifyFailed = errors.New("verify failed")
 )
-
-// NewUnsupportedPublicKeyTypeError 创建不支持的公钥 PEM 类型错误
-func NewUnsupportedPublicKeyTypeError(keyType string) error {
-	return fmt.Errorf("%w: %s", ErrUnsupportedPublicKeyType, keyType)
-}
-
-// NewUnsupportedPrivateKeyTypeError 创建不支持的私钥 PEM 类型错误
-func NewUnsupportedPrivateKeyTypeError(keyType string) error {
-	return fmt.Errorf("%w: %s", ErrUnsupportedPrivateKeyType, keyType)
-}

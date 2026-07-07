@@ -2,7 +2,6 @@ package error
 
 import (
 	"errors"
-	"fmt"
 )
 
 var (
@@ -57,26 +56,3 @@ var (
 	// ErrSeparateCipherDataFailed 表示分离密文失败
 	ErrSeparateCipherDataFailed = errors.New("failed to separate cipher data")
 )
-
-// NewInvalidAESKeySizeError 创建 AES 密钥长度无效错误
-func NewInvalidAESKeySizeError(size int) error {
-	return fmt.Errorf("%w: must be 16, 24, or 32 bytes, got %d", ErrInvalidAESKeySize, size)
-}
-
-// NewInvalidIVSizeError 创建 IV 长度无效错误
-func NewInvalidIVSizeError(expected, actual int) error {
-	return fmt.Errorf("%w: expected %d, got %d", ErrInvalidIVSize, expected, actual)
-}
-
-// NewInvalidNonceSizeError 创建 nonce 长度无效错误
-func NewInvalidNonceSizeError(expected, actual int) error {
-	return fmt.Errorf("%w: expected %d, got %d", ErrInvalidNonceSize, expected, actual)
-}
-
-// WrapSymmetricError 包装对称加密错误
-func WrapSymmetricError(base, err error) error {
-	if err == nil {
-		return base
-	}
-	return fmt.Errorf("%w: %w", base, err)
-}

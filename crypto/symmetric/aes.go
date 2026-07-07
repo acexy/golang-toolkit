@@ -45,7 +45,7 @@ type AESOption struct {
 // NewAES 创建默认 CBC 模式的 AES 加解密实例
 func NewAES(key []byte) (*AESEncrypt, error) {
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		return nil, toolkitError.NewInvalidAESKeySizeError(len(key))
+		return nil, toolkitError.ErrInvalidAESKeySize
 	}
 	// 复制密钥以避免外部修改
 	keyCopy := make([]byte, len(key))
@@ -63,7 +63,7 @@ func NewAES(key []byte) (*AESEncrypt, error) {
 // NewAESWithOption 使用指定配置创建 AES 加解密实例
 func NewAESWithOption(key []byte, option AESOption) (*AESEncrypt, error) {
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		return nil, toolkitError.NewInvalidAESKeySizeError(len(key))
+		return nil, toolkitError.ErrInvalidAESKeySize
 	}
 
 	keyCopy := make([]byte, len(key))
@@ -146,7 +146,7 @@ type RandomIvCreator struct{}
 func (r *RandomIvCreator) CreateForEncrypt(key, rawData []byte) ([]byte, error) {
 	iv := make([]byte, aes.BlockSize)
 	if _, err := rand.Read(iv); err != nil {
-		return nil, toolkitError.WrapSymmetricError(toolkitError.ErrCreateIVFailed, err)
+		return nil, toolkitError.ErrCreateIVFailed
 	}
 	return iv, nil
 }
@@ -167,7 +167,7 @@ func (r *RandomGCMNonceCreator) CreateForEncrypt(key, rawData []byte) ([]byte, e
 	// GCM标准推荐使用12字节的nonce
 	nonce := make([]byte, 12)
 	if _, err := rand.Read(nonce); err != nil {
-		return nil, toolkitError.WrapSymmetricError(toolkitError.ErrCreateNonceFailed, err)
+		return nil, toolkitError.ErrCreateNonceFailed
 	}
 	return nonce, nil
 }
@@ -269,7 +269,7 @@ func (a *AESEncrypt) Encrypt(rawData []byte) ([]byte, error) {
 
 	block, err := a.cipherBlock()
 	if err != nil {
-		return nil, toolkitError.WrapSymmetricError(toolkitError.ErrCreateCipherBlockFailed, err)
+		return nil, toolkitError.ErrCreateCipherBlockFailed
 	}
 
 	switch a.mode {
@@ -293,10 +293,10 @@ func (a *AESEncrypt) encryptCBC(block cipher.Block, rawData []byte) ([]byte, err
 	// 生成IV
 	iv, err := a.ivCreator.CreateForEncrypt(a.key, paddedData)
 	if err != nil {
-		return nil, toolkitError.WrapSymmetricError(toolkitError.ErrCreateIVFailed, err)
+		return nil, toolkitError.ErrCreateIVFailed
 	}
 	if len(iv) != aes.BlockSize {
-		return nil, toolkitError.NewInvalidIVSizeError(aes.BlockSize, len(iv))
+		return nil, toolkitError.ErrInvalidIVSize
 	}
 
 	// 加密
@@ -312,18 +312,18 @@ func (a *AESEncrypt) encryptCBC(block cipher.Block, rawData []byte) ([]byte, err
 func (a *AESEncrypt) encryptGCM(block cipher.Block, rawData []byte) ([]byte, error) {
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, toolkitError.WrapSymmetricError(toolkitError.ErrCreateGCMFailed, err)
+		return nil, toolkitError.ErrCreateGCMFailed
 	}
 
 	// 生成nonce
 	nonce, err := a.ivCreator.CreateForEncrypt(a.key, rawData)
 	if err != nil {
-		return nil, toolkitError.WrapSymmetricError(toolkitError.ErrCreateNonceFailed, err)
+		return nil, toolkitError.ErrCreateNonceFailed
 	}
 
 	// 确保nonce长度正确
 	if len(nonce) != gcm.NonceSize() {
-		return nil, toolkitError.NewInvalidNonceSizeError(gcm.NonceSize(), len(nonce))
+		return nil, toolkitError.ErrInvalidNonceSize
 	}
 
 	// GCM加密（包含认证标签）
@@ -350,7 +350,7 @@ func (a *AESEncrypt) Decrypt(cipherData []byte) ([]byte, error) {
 
 	block, err := a.cipherBlock()
 	if err != nil {
-		return nil, toolkitError.WrapSymmetricError(toolkitError.ErrCreateCipherBlockFailed, err)
+		return nil, toolkitError.ErrCreateCipherBlockFailed
 	}
 
 	switch a.mode {
@@ -368,16 +368,16 @@ func (a *AESEncrypt) decryptCBC(block cipher.Block, cipherData []byte) ([]byte, 
 	// 使用IVCreator提取IV
 	iv, err := a.ivCreator.ExtractForDecrypt(a.key, cipherData)
 	if err != nil {
-		return nil, toolkitError.WrapSymmetricError(toolkitError.ErrExtractIVFailed, err)
+		return nil, toolkitError.ErrExtractIVFailed
 	}
 	if len(iv) != aes.BlockSize {
-		return nil, toolkitError.NewInvalidIVSizeError(aes.BlockSize, len(iv))
+		return nil, toolkitError.ErrInvalidIVSize
 	}
 
 	// 分离实际密文
 	actualCipherData, err := a.resultCreator.SeparateResult(cipherData, len(iv))
 	if err != nil {
-		return nil, toolkitError.WrapSymmetricError(toolkitError.ErrSeparateCipherDataFailed, err)
+		return nil, toolkitError.ErrSeparateCipherDataFailed
 	}
 
 	if len(actualCipherData)%aes.BlockSize != 0 {
@@ -397,24 +397,24 @@ func (a *AESEncrypt) decryptCBC(block cipher.Block, cipherData []byte) ([]byte, 
 func (a *AESEncrypt) decryptGCM(block cipher.Block, cipherData []byte) ([]byte, error) {
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, toolkitError.WrapSymmetricError(toolkitError.ErrCreateGCMFailed, err)
+		return nil, toolkitError.ErrCreateGCMFailed
 	}
 
 	// 使用IVCreator提取nonce
 	nonce, err := a.ivCreator.ExtractForDecrypt(a.key, cipherData)
 	if err != nil {
-		return nil, toolkitError.WrapSymmetricError(toolkitError.ErrExtractNonceFailed, err)
+		return nil, toolkitError.ErrExtractNonceFailed
 	}
 
 	// 分离实际密文
 	actualCipherData, err := a.resultCreator.SeparateResult(cipherData, len(nonce))
 	if err != nil {
-		return nil, toolkitError.WrapSymmetricError(toolkitError.ErrSeparateCipherDataFailed, err)
+		return nil, toolkitError.ErrSeparateCipherDataFailed
 	}
 
 	// 验证nonce长度
 	if len(nonce) != gcm.NonceSize() {
-		return nil, toolkitError.NewInvalidNonceSizeError(gcm.NonceSize(), len(nonce))
+		return nil, toolkitError.ErrInvalidNonceSize
 	}
 
 	// GCM解密（包含认证验证）
@@ -425,7 +425,7 @@ func (a *AESEncrypt) decryptGCM(block cipher.Block, cipherData []byte) ([]byte, 
 func (a *AESEncrypt) DecryptBase64(base64CipherData string) (string, error) {
 	data, err := base64.StdEncoding.DecodeString(base64CipherData)
 	if err != nil {
-		return "", toolkitError.WrapSymmetricError(toolkitError.ErrInvalidBase64Data, err)
+		return "", toolkitError.ErrInvalidBase64Data
 	}
 
 	plain, err := a.Decrypt(data)

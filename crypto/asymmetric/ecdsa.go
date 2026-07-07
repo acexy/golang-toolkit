@@ -88,7 +88,7 @@ func (e *EcdsaKeyManager) LoadKeyPair(pubPem, priPem string) (EcdsaKeyPair, erro
 				return nil, toolkitError.ErrNotEcdsaPublicKey
 			}
 		default:
-			return nil, toolkitError.NewUnsupportedPublicKeyTypeError(block.Type)
+			return nil, toolkitError.ErrUnsupportedPublicKeyType
 		}
 	}
 
@@ -117,7 +117,7 @@ func (e *EcdsaKeyManager) LoadKeyPair(pubPem, priPem string) (EcdsaKeyPair, erro
 				return nil, toolkitError.ErrNotEcdsaPrivateKey
 			}
 		default:
-			return nil, toolkitError.NewUnsupportedPrivateKeyTypeError(block.Type)
+			return nil, toolkitError.ErrUnsupportedPrivateKeyType
 		}
 	}
 	if pub == nil && pri != nil {
