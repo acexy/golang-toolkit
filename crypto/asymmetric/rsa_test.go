@@ -181,7 +181,7 @@ func TestRsaLoadKeyPairMismatch(t *testing.T) {
 }
 
 func TestRsaRejectsWrongKeyType(t *testing.T) {
-	ecdsaKeyPair, err := NewEcdsaKeyManager(CreateEcdsaSetting{Curve: elliptic.P256()}).Create()
+	ecdsaKeyPair, err := NewEcdsaKeyManager(elliptic.P256()).Create()
 	if err != nil {
 		t.Fatalf("create ecdsa key pair: %v", err)
 	}

@@ -13,7 +13,7 @@ import (
 func newTestEcdsaKeyPair(t *testing.T) EcdsaKeyPair {
 	t.Helper()
 
-	keyPair, err := NewEcdsaKeyManager(CreateEcdsaSetting{Curve: elliptic.P256()}).Create()
+	keyPair, err := NewEcdsaKeyManager(elliptic.P256()).Create()
 	if err != nil {
 		t.Fatalf("create ecdsa key pair: %v", err)
 	}
@@ -40,6 +40,22 @@ func TestEcdsaPemRoundTrip(t *testing.T) {
 	}
 }
 
+func TestEcdsaECPrivatePemRoundTrip(t *testing.T) {
+	keyPair := newTestEcdsaKeyPair(t)
+	privatePem, err := keyPair.ToECPrivatePem()
+	if err != nil {
+		t.Fatalf("export ec private pem: %v", err)
+	}
+
+	loaded, err := NewEmptyEcdsaKeyManager().LoadPrivateKey(privatePem)
+	if err != nil {
+		t.Fatalf("load ec private key: %v", err)
+	}
+	if loaded.PublicKey() == nil || loaded.PrivateKey() == nil {
+		t.Fatal("expected loaded public and private keys")
+	}
+}
+
 func TestEcdsaLoadPrivateKeyDerivesPublicKey(t *testing.T) {
 	keyPair := newTestEcdsaKeyPair(t)
 	privatePem, err := keyPair.ToPrivatePem()
@@ -53,6 +69,43 @@ func TestEcdsaLoadPrivateKeyDerivesPublicKey(t *testing.T) {
 	}
 	if loaded.PublicKey() == nil {
 		t.Fatal("expected public key derived from private key")
+	}
+}
+
+func TestEcdsaLoadPublicKeyOnly(t *testing.T) {
+	keyPair := newTestEcdsaKeyPair(t)
+	publicPem, err := keyPair.ToPublicPem()
+	if err != nil {
+		t.Fatalf("export public pem: %v", err)
+	}
+
+	loaded, err := NewEmptyEcdsaKeyManager().LoadPublicKey(publicPem)
+	if err != nil {
+		t.Fatalf("load public key: %v", err)
+	}
+	if loaded.PublicKey() == nil {
+		t.Fatal("expected loaded public key")
+	}
+	if loaded.PrivateKey() != nil {
+		t.Fatal("expected private key to be nil")
+	}
+}
+
+func TestEcdsaLoadKeyPairMismatch(t *testing.T) {
+	keyPair1 := newTestEcdsaKeyPair(t)
+	keyPair2 := newTestEcdsaKeyPair(t)
+	publicPem, err := keyPair1.ToPublicPem()
+	if err != nil {
+		t.Fatalf("export public pem: %v", err)
+	}
+	privatePem, err := keyPair2.ToPrivatePem()
+	if err != nil {
+		t.Fatalf("export private pem: %v", err)
+	}
+
+	_, err = NewEmptyEcdsaKeyManager().LoadKeyPair(publicPem, privatePem)
+	if !errors.Is(err, toolkitError.ErrKeyPairMismatch) {
+		t.Fatalf("expected ErrKeyPairMismatch, got %v", err)
 	}
 }
 
@@ -137,5 +190,20 @@ func TestEcdsaRejectsWrongKeyType(t *testing.T) {
 	_, err := sign.Sign(rsaKeyPair, []byte("raw"))
 	if !errors.Is(err, toolkitError.ErrNotEcdsaPrivateKey) {
 		t.Fatalf("expected ErrNotEcdsaPrivateKey, got %v", err)
+	}
+}
+
+func TestEcdsaVerifyRejectsWrongKeyType(t *testing.T) {
+	ecdsaKeyPair := newTestEcdsaKeyPair(t)
+	rsaKeyPair := newTestRsaKeyPair(t)
+	sign := NewEcdsaSign(crypto.SHA256.New())
+	signature, err := sign.Sign(ecdsaKeyPair, []byte("raw"))
+	if err != nil {
+		t.Fatalf("sign ecdsa: %v", err)
+	}
+
+	err = sign.Verify(rsaKeyPair, []byte("raw"), signature)
+	if !errors.Is(err, toolkitError.ErrNotEcdsaPublicKey) {
+		t.Fatalf("expected ErrNotEcdsaPublicKey, got %v", err)
 	}
 }

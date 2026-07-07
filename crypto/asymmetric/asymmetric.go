@@ -45,6 +45,8 @@ type RsaKeyPairManager interface {
 // EcdsaKeyPair ECDSA 专用公私钥信息
 type EcdsaKeyPair interface {
 	KeyPair
+	// ToECPrivatePem 将 ECDSA 私钥转换为 SEC1 EC PRIVATE KEY PEM 格式
+	ToECPrivatePem() (string, error)
 }
 
 // EcdsaKeyPairManager ECDSA 专用 KeyPair 管理器

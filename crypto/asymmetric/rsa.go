@@ -17,6 +17,7 @@ import (
 	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
+// PaddingType 表示 RSA 加密或签名使用的填充模式
 type PaddingType uint8
 
 const (
@@ -33,22 +34,27 @@ type rsaKey struct {
 	publicKey  *rsa.PublicKey
 }
 
+// PrivateKey 返回原始 RSA 私钥
 func (r *rsaKey) PrivateKey() any {
 	return r.privateKey
 }
 
+// PublicKey 返回原始 RSA 公钥
 func (r *rsaKey) PublicKey() any {
 	return r.publicKey
 }
 
+// ToPublicPem 将 RSA 公钥导出为默认 PKIX PEM 格式
 func (r *rsaKey) ToPublicPem() (string, error) {
 	return r.ToPKIXPublicPem()
 }
 
+// ToPrivatePem 将 RSA 私钥导出为默认 PKCS8 PEM 格式
 func (r *rsaKey) ToPrivatePem() (string, error) {
 	return r.ToPKCS8PrivatePem()
 }
 
+// ToPKCS1PublicPem 将 RSA 公钥导出为 PKCS1 PEM 格式
 func (r *rsaKey) ToPKCS1PublicPem() (string, error) {
 	if r.publicKey == nil {
 		return "", toolkitError.ErrNilPublicKey
@@ -60,6 +66,7 @@ func (r *rsaKey) ToPKCS1PublicPem() (string, error) {
 	})), nil
 }
 
+// ToPKCS1PrivatePem 将 RSA 私钥导出为 PKCS1 PEM 格式
 func (r *rsaKey) ToPKCS1PrivatePem() (string, error) {
 	if r.privateKey == nil {
 		return "", toolkitError.ErrNilPrivateKey
@@ -71,6 +78,7 @@ func (r *rsaKey) ToPKCS1PrivatePem() (string, error) {
 	})), nil
 }
 
+// ToPKIXPublicPem 将 RSA 公钥导出为 PKIX PEM 格式
 func (r *rsaKey) ToPKIXPublicPem() (string, error) {
 	if r.publicKey == nil {
 		return "", toolkitError.ErrNilPublicKey
@@ -85,6 +93,7 @@ func (r *rsaKey) ToPKIXPublicPem() (string, error) {
 	})), nil
 }
 
+// ToPKCS8PrivatePem 将 RSA 私钥导出为 PKCS8 PEM 格式
 func (r *rsaKey) ToPKCS8PrivatePem() (string, error) {
 	if r.privateKey == nil {
 		return "", toolkitError.ErrNilPrivateKey
@@ -99,7 +108,9 @@ func (r *rsaKey) ToPKCS8PrivatePem() (string, error) {
 	})), nil
 }
 
+// CreateRsaSetting 表示创建 RSA 密钥时使用的配置
 type CreateRsaSetting struct {
+	// Length 表示 RSA 密钥长度，单位为 bit
 	Length int
 }
 
@@ -117,10 +128,13 @@ func NewEmptyRsaKeyManager() *RsaKeyManager {
 	return &RsaKeyManager{}
 }
 
+// RsaKeyManager 管理 RSA 密钥创建和 PEM 加载
 type RsaKeyManager struct {
+	// CreateSetting 表示创建 RSA 密钥时使用的默认配置
 	CreateSetting CreateRsaSetting
 }
 
+// Create 创建新的 RSA 公私钥对
 func (r *RsaKeyManager) Create() (RsaKeyPair, error) {
 	if r.CreateSetting.Length == 0 {
 		return nil, toolkitError.ErrBadKeyLength
@@ -135,14 +149,17 @@ func (r *RsaKeyManager) Create() (RsaKeyPair, error) {
 	}, nil
 }
 
+// LoadPublicKey 从 PEM 字符串加载 RSA 公钥
 func (r *RsaKeyManager) LoadPublicKey(pubPem string) (RsaKeyPair, error) {
 	return r.LoadKeyPair(pubPem, "")
 }
 
+// LoadPrivateKey 从 PEM 字符串加载 RSA 私钥，并派生对应公钥
 func (r *RsaKeyManager) LoadPrivateKey(priPem string) (RsaKeyPair, error) {
 	return r.LoadKeyPair("", priPem)
 }
 
+// LoadKeyPair 从 PEM 字符串加载 RSA 公私钥，并校验二者是否匹配
 func (r *RsaKeyManager) LoadKeyPair(pubPem, priPem string) (RsaKeyPair, error) {
 	if pubPem == "" && priPem == "" {
 		return nil, toolkitError.ErrBadKey
@@ -226,6 +243,7 @@ func (r *RsaKeyManager) LoadKeyPair(pubPem, priPem string) (RsaKeyPair, error) {
 	}, nil
 }
 
+// Load 从 PEM 字符串加载 RSA 公私钥
 func (r *RsaKeyManager) Load(pubPem, priPem string) (RsaKeyPair, error) {
 	return r.LoadKeyPair(pubPem, priPem)
 }
@@ -260,12 +278,14 @@ func loadRsaPrivateKey(keyPair KeyPair) (*rsa.PrivateKey, error) {
 	return rsaPrivateKey, nil
 }
 
+// RsaEncrypt 提供 RSA 加解密能力
 type RsaEncrypt struct {
 	paddingType  PaddingType
 	hashForOAEP  hash.Hash
 	labelForOAEP []byte
 }
 
+// Encrypt 使用 RSA 公钥加密原始字节
 func (r *RsaEncrypt) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
 	publicKey, err := loadRsaPublicKey(keyPair)
 	if err != nil {
@@ -285,6 +305,7 @@ func (r *RsaEncrypt) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
 	return nil, toolkitError.ErrUnsupportedPaddingType
 }
 
+// EncryptBase64 解码 Base64 明文后加密，并返回 Base64 密文
 func (r *RsaEncrypt) EncryptBase64(keyPair KeyPair, base64Raw string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {
@@ -297,6 +318,7 @@ func (r *RsaEncrypt) EncryptBase64(keyPair KeyPair, base64Raw string) (string, e
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
+// Decrypt 使用 RSA 私钥解密密文字节
 func (r *RsaEncrypt) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) {
 	privateKey, err := loadRsaPrivateKey(keyPair)
 	if err != nil {
@@ -316,6 +338,7 @@ func (r *RsaEncrypt) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) {
 	return nil, toolkitError.ErrUnsupportedPaddingType
 }
 
+// DecryptBase64 解码 Base64 密文后解密，并返回 Base64 明文
 func (r *RsaEncrypt) DecryptBase64(keyPair KeyPair, base64Cipher string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Cipher)
 	if err != nil {
@@ -328,6 +351,7 @@ func (r *RsaEncrypt) DecryptBase64(keyPair KeyPair, base64Cipher string) (string
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
+// RsaSign 提供 RSA 签名和验签能力
 type RsaSign struct {
 	sync.Mutex
 	paddingType     PaddingType
@@ -336,6 +360,7 @@ type RsaSign struct {
 	options         *rsa.PSSOptions
 }
 
+// Sign 使用 RSA 私钥对原始数据签名
 func (r *RsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
 	if r.hashForSign == nil {
 		return nil, toolkitError.ErrNilHashFunction
@@ -360,7 +385,7 @@ func (r *RsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
 	return nil, toolkitError.ErrUnsupportedPaddingType
 }
 
-// Verify 签名验证
+// Verify 使用 RSA 公钥验证签名
 func (r *RsaSign) Verify(keyPair KeyPair, raw, sign []byte) error {
 	if r.hashForSign == nil {
 		return toolkitError.ErrNilHashFunction
@@ -385,6 +410,7 @@ func (r *RsaSign) Verify(keyPair KeyPair, raw, sign []byte) error {
 	return toolkitError.ErrUnsupportedPaddingType
 }
 
+// SignBase64 解码 Base64 原文后签名，并返回 Base64 签名
 func (r *RsaSign) SignBase64(keyPair KeyPair, base64Raw string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {
@@ -397,6 +423,7 @@ func (r *RsaSign) SignBase64(keyPair KeyPair, base64Raw string) (string, error) 
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
+// VerifyBase64 解码 Base64 原文和签名后执行验签
 func (r *RsaSign) VerifyBase64(keyPair KeyPair, base64Raw, base64Sign string) error {
 	rawContent, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {
