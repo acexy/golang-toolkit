@@ -1,70 +1,121 @@
 package json
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 	"time"
+
+	toolkitError "github.com/acexy/golang-toolkit/error"
 )
 
-type Person struct {
-	Name string
-	Sex  uint
+type person struct {
+	Name string `json:"name"`
+	Sex  uint   `json:"sex"`
 }
 
-type Student struct {
-	Name   string
-	Sex    uint
-	School string
+type student struct {
+	Name   string `json:"name"`
+	Sex    uint   `json:"sex"`
+	School string `json:"school"`
 }
 
-func TestCopyStructPanic(t *testing.T) {
-	s := Student{
-		Name:   "acexy",
-		Sex:    1,
-		School: "Q",
+func TestToStringAndParseString(t *testing.T) {
+	raw := person{Name: "acexy", Sex: 1}
+	jsonString := ToString(raw)
+	if jsonString != `{"name":"acexy","sex":1}` {
+		t.Fatalf("unexpected json string: %s", jsonString)
 	}
 
-	var person Person
-	CopyStructPanic(s, &person)
-	fmt.Printf("%+v\n", person)
-
-	ss := []*Student{{Name: "acexy", Sex: 1, School: "Q"}, {Name: "acexy", Sex: 1, School: "H"}}
-
-	fmt.Println(ToString(ss))
-	fmt.Println(ToStringFormat(ss))
+	var parsed person
+	if err := ParseStringError(jsonString, &parsed); err != nil {
+		t.Fatal(err)
+	}
+	if parsed != raw {
+		t.Fatalf("unexpected parsed value: %+v", parsed)
+	}
 }
 
-type User struct {
+func TestToStringFormat(t *testing.T) {
+	jsonString, err := ToStringFormatError(person{Name: "acexy", Sex: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := "{\n  \"name\": \"acexy\",\n  \"sex\": 1\n}"
+	if jsonString != expected {
+		t.Fatalf("unexpected formatted json:\n%s", jsonString)
+	}
+}
+
+func TestCopyStruct(t *testing.T) {
+	source := student{Name: "acexy", Sex: 1, School: "Q"}
+	var target person
+	if err := CopyStructError(source, &target); err != nil {
+		t.Fatal(err)
+	}
+	if target != (person{Name: "acexy", Sex: 1}) {
+		t.Fatalf("unexpected copied value: %+v", target)
+	}
+}
+
+type timestampUser struct {
 	Name string     `json:"name"`
 	Time *Timestamp `json:"time"`
 }
 
-type Model[T any] struct {
-	T    T `json:"data"`
-	Code int
+func TestTimestampMilli(t *testing.T) {
+	baseTime := time.UnixMilli(1729136314000)
+	user := timestampUser{
+		Name: "acexy",
+		Time: &Timestamp{baseTime},
+	}
+	jsonString := ToString(user)
+	if jsonString != `{"name":"acexy","time":1729136314000}` {
+		t.Fatalf("unexpected timestamp json: %s", jsonString)
+	}
+
+	var parsed timestampUser
+	if err := ParseStringError(jsonString, &parsed); err != nil {
+		t.Fatal(err)
+	}
+	if !parsed.Time.Equal(baseTime) {
+		t.Fatalf("unexpected parsed time: %s", parsed.Time)
+	}
 }
 
-func TestTimestamp(t *testing.T) {
-	user := User{
-		Name: "acexy",
-		Time: &Timestamp{time.Now()},
+func TestTimestampSecond(t *testing.T) {
+	baseTime := time.Unix(1729136314, 0)
+	jsonBytes, err := Time2TimestampWithType(baseTime, TimestampTypeSecond)
+	if err != nil {
+		t.Fatal(err)
 	}
-	//GlobalWrapperSetting(func(options *TypeWrapperOptions) {
-	//	options.TimestampType = TimestampTypeSecond
-	//})
-	fmt.Println(ToString(user))
-	var u *User
-	ParseString("{\"name\":\"acexy\",\"time\":1729136314000}", &u)
-	fmt.Println(u)
-
-	model := Model[User]{
-		T:    user,
-		Code: 200,
+	if string(jsonBytes) != "1729136314" {
+		t.Fatalf("unexpected timestamp: %s", string(jsonBytes))
 	}
-	json := ToString(model)
-	fmt.Println(json)
 
-	var m1 Model[User]
-	ParseString(json, &m1)
-	fmt.Println(m1)
+	parsed, err := Timestamp2TimeWithType([]byte("1729136314"), TimestampTypeSecond)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !parsed.Equal(baseTime) {
+		t.Fatalf("unexpected parsed time: %s", parsed)
+	}
+}
+
+func TestTimestampNull(t *testing.T) {
+	parsed, err := Timestamp2Time([]byte("null"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !parsed.IsZero() {
+		t.Fatalf("expected zero time, got %s", parsed)
+	}
+}
+
+func TestUnsupportedTimestampType(t *testing.T) {
+	if _, err := Time2TimestampWithType(time.Now(), TimestampType(99)); !errors.Is(err, toolkitError.ErrUnsupportedTimestampType) {
+		t.Fatalf("expected ErrUnsupportedTimestampType, got %v", err)
+	}
+	if _, err := Timestamp2TimeWithType([]byte("1"), TimestampType(99)); !errors.Is(err, toolkitError.ErrUnsupportedTimestampType) {
+		t.Fatalf("expected ErrUnsupportedTimestampType, got %v", err)
+	}
 }
