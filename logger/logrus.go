@@ -135,6 +135,14 @@ func SetTraceIdSupplier(supplier TraceIdSupplier) {
 	}
 }
 
+// GetTraceId 获取当前traceId
+func GetTraceId() string {
+	if traceIdSupplier != nil {
+		return traceIdSupplier.GetTraceId()
+	}
+	return ""
+}
+
 // EnableConsole 启用该设置后，日志内容将向标准控台输出
 func EnableConsole(level Level, disableColor ...bool) {
 	if consoleLogger != nil {
