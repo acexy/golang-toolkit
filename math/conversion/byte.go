@@ -10,8 +10,7 @@ func ParseBytes(s string) []byte {
 	return unsafe.Slice(unsafe.StringData(s), len(s))
 }
 
-// ParesBytesFromHex 将hex编码的字符串转换成字节数组
-func ParesBytesFromHex(s string) []byte {
-	v, _ := hex.DecodeString(s)
-	return v
+// ParseBytesFromHex 将hex编码的字符串转换成字节数组
+func ParseBytesFromHex(s string) ([]byte, error) {
+	return hex.DecodeString(s)
 }

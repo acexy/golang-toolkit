@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
+	toolkitError "github.com/acexy/golang-toolkit/error"
 	logrus "github.com/acexy/golang-toolkit/logger"
-	"github.com/acexy/golang-toolkit/util/gob"
 	"github.com/allegro/bigcache/v3"
 )
 
@@ -21,51 +21,46 @@ type BigCacheBucket struct {
 	cache *bigcache.BigCache
 }
 
-func NewBigCacheByConfig(config bigcache.Config) *BigCacheBucket {
+func NewBigCacheByConfig(config bigcache.Config) (*BigCacheBucket, error) {
 	config.Logger = log{}
-	cache, _ := bigcache.New(context.Background(), config)
-	return &BigCacheBucket{cache: cache}
+	cache, err := bigcache.New(context.Background(), config)
+	if err != nil {
+		return nil, err
+	}
+	return &BigCacheBucket{cache: cache}, nil
 }
 
-func NewSimpleBigCache(duration time.Duration) *BigCacheBucket {
+func NewSimpleBigCache(duration time.Duration) (*BigCacheBucket, error) {
 	c := bigcache.DefaultConfig(duration)
 	c.CleanWindow = 5 * time.Second
 	c.StatsEnabled = false
 	c.Logger = log{}
-	cache, _ := bigcache.New(context.Background(), c)
-	return &BigCacheBucket{cache: cache}
+	cache, err := bigcache.New(context.Background(), c)
+	if err != nil {
+		return nil, err
+	}
+	return &BigCacheBucket{cache: cache}, nil
 }
 
-func (b *BigCacheBucket) Get(key MemCacheKey, result any, keyAppend ...interface{}) error {
-	bs, err := b.GetBytes(key, keyAppend...)
-	if err != nil {
-		return err
-	}
-	return gob.Decode(bs, result)
-}
-func (b *BigCacheBucket) GetBytes(key MemCacheKey, keyAppend ...interface{}) ([]byte, error) {
+func (b *BigCacheBucket) GetBytes(key CacheKey, keyAppend ...interface{}) ([]byte, error) {
 	bytes, err := b.cache.Get(key.RawKeyString(keyAppend...))
 	if err != nil {
 		if errors.Is(err, bigcache.ErrEntryNotFound) {
-			return nil, ErrCacheMiss
+			return nil, toolkitError.ErrCacheMiss
 		}
 		return nil, err
 	}
 	return bytes, nil
 }
 
-func (b *BigCacheBucket) Put(key MemCacheKey, data any, keyAppend ...interface{}) error {
-	bs, err := gob.Encode(data)
-	if err != nil {
-		return err
-	}
-	err = b.cache.Set(key.RawKeyString(keyAppend...), bs)
+func (b *BigCacheBucket) PutBytes(key CacheKey, data []byte, keyAppend ...interface{}) error {
+	err := b.cache.Set(key.RawKeyString(keyAppend...), data)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (b *BigCacheBucket) Evict(key MemCacheKey, keyAppend ...interface{}) error {
+func (b *BigCacheBucket) Evict(key CacheKey, keyAppend ...interface{}) error {
 	return b.cache.Delete(key.RawKeyString(keyAppend...))
 }

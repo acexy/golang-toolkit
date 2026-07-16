@@ -1,10 +1,7 @@
 package json
 
 import (
-	"bytes"
-	"encoding/json"
-
-	"github.com/acexy/golang-toolkit/math/conversion"
+	stdjson "encoding/json"
 )
 
 // ToString 转json字符串 忽略任何错误
@@ -19,7 +16,7 @@ func ToStringError(any any) (jsonString string, err error) {
 	if err != nil {
 		return
 	}
-	jsonString = conversion.FromBytes(jsonBytes)
+	jsonString = string(jsonBytes)
 	return
 }
 
@@ -40,16 +37,8 @@ func ToStringFormat(any any) (jsonFormat string) {
 
 // ToStringFormatError 转json字符串并格式化输出 返回任何错误
 func ToStringFormatError(any any) (string, error) {
-	jsonString, err := ToStringError(any)
-	if err != nil {
-		return "", err
-	}
-	var formattedJSON bytes.Buffer
-	err = json.Indent(&formattedJSON, conversion.ParseBytes(jsonString), "", "  ")
-	if err == nil {
-		return formattedJSON.String(), nil
-	}
-	return "", err
+	jsonBytes, err := stdjson.MarshalIndent(any, "", "  ")
+	return string(jsonBytes), err
 }
 
 // ToBytes 转json字节 忽略任何错误
@@ -60,7 +49,7 @@ func ToBytes(any any) (bytes []byte) {
 
 // ToBytesError 转json字节 返回任何错误
 func ToBytesError(any any) ([]byte, error) {
-	return json.Marshal(any)
+	return stdjson.Marshal(any)
 }
 
 // ToBytesPanic 转json字节 任何错误将触发panic
@@ -79,7 +68,7 @@ func ParseBytes(bytes []byte, any any) {
 
 // ParseBytesError 将byte数据转化成对象 返回任何错误
 func ParseBytesError(bytes []byte, any any) error {
-	return json.Unmarshal(bytes, any)
+	return stdjson.Unmarshal(bytes, any)
 }
 
 // ParseBytesPanic 将byte数据转化成对象 任何错误将触发panic
@@ -97,7 +86,7 @@ func ParseString(jsonString string, any any) {
 
 // ParseStringError 转对象 返回任何错误
 func ParseStringError(jsonString string, any any) error {
-	return ParseBytesError(conversion.ParseBytes(jsonString), any)
+	return ParseBytesError([]byte(jsonString), any)
 }
 
 // ParseStringPanic 转对象 任何错误将触发panic
@@ -115,11 +104,11 @@ func CopyStruct(originData, targetStruct any) {
 
 // CopyStructError 通过json序列化/反序列化将origin struct复制给target struct 返回任何错误
 func CopyStructError(originData, targetStruct any) error {
-	jsonString, err := ToStringError(originData)
+	jsonBytes, err := ToBytesError(originData)
 	if err != nil {
 		return err
 	}
-	err = ParseStringError(jsonString, targetStruct)
+	err = ParseBytesError(jsonBytes, targetStruct)
 	if err != nil {
 		return err
 	}

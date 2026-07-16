@@ -2,42 +2,39 @@ package coll
 
 import "math/rand"
 
-// MapFirst 从map中抽取第一个元素
-func MapFirst[K comparable, V any](m map[K]V) (K, V) {
+// MapAny 从map中抽取任意一个元素
+func MapAny[K comparable, V any](m map[K]V) (K, V) {
 	var key K
 	var value V
 	if len(m) == 0 {
-
 		return key, value
 	}
 	for k, v := range m {
-		key = k
-		value = v
-		return key, value
+		return k, v
 	}
 	return key, value
 }
 
-// MapKeyToSlice 将map的key转换为slice
-func MapKeyToSlice[K comparable, V any](m map[K]V) []K {
+// MapKeys 将map的key转换为slice
+func MapKeys[K comparable, V any](m map[K]V) []K {
 	if len(m) == 0 {
 		return nil
 	}
-	result := make([]K, 0)
-	for k, _ := range m {
+	result := make([]K, 0, len(m))
+	for k := range m {
 		result = append(result, k)
 	}
 	return result
 }
 
-// MapValueToSlice 将map的value转换为slice
-func MapValueToSlice[K comparable, V any](m map[K]V) []V {
+// MapValues 将map的value转换为slice
+func MapValues[K comparable, V any](m map[K]V) []V {
 	if len(m) == 0 {
 		return nil
 	}
-	result := make([]V, 0)
-	for i := range m {
-		result = append(result, m[i])
+	result := make([]V, 0, len(m))
+	for _, v := range m {
+		result = append(result, v)
 	}
 	return result
 }
@@ -47,7 +44,7 @@ func MapCollect[K, RK comparable, V, RV any](m map[K]V, mapFn func(K, V) (RK, RV
 	if len(m) == 0 {
 		return nil
 	}
-	result := make(map[RK]RV)
+	result := make(map[RK]RV, len(m))
 	for k, v := range m {
 		key, value := mapFn(k, v)
 		result[key] = value
@@ -60,7 +57,7 @@ func MapFilterCollect[K, RK comparable, V, RV any](m map[K]V, mapFn func(K, V) (
 	if len(m) == 0 {
 		return nil
 	}
-	result := make(map[RK]RV)
+	result := make(map[RK]RV, len(m))
 	for k, v := range m {
 		key, value, ok := mapFn(k, v)
 		if ok {
@@ -75,7 +72,7 @@ func MapFilterToSlice[K comparable, V, R any](m map[K]V, mapFn func(K, V) (R, bo
 	if len(m) == 0 {
 		return nil
 	}
-	result := make([]R, 0)
+	result := make([]R, 0, len(m))
 	for k, v := range m {
 		n, f := mapFn(k, v)
 		if f {
@@ -85,8 +82,8 @@ func MapFilterToSlice[K comparable, V, R any](m map[K]V, mapFn func(K, V) (R, bo
 	return result
 }
 
-// MapForeach 遍历map return false时停止迭代
-func MapForeach[K comparable, V any](m map[K]V, fn func(k K, v V) bool) {
+// MapForEach 遍历map return false时停止迭代
+func MapForEach[K comparable, V any](m map[K]V, fn func(k K, v V) bool) {
 	for k, v := range m {
 		if !fn(k, v) {
 			return
@@ -94,25 +91,29 @@ func MapForeach[K comparable, V any](m map[K]V, fn func(k K, v V) bool) {
 	}
 }
 
-// MapForeachAll 遍历map
-func MapForeachAll[K comparable, V any](m map[K]V, fn func(k K, v V)) {
+// MapForEachAll 遍历map
+func MapForEachAll[K comparable, V any](m map[K]V, fn func(k K, v V)) {
 	for k, v := range m {
 		fn(k, v)
 	}
 }
 
-// MapAppend 将map追加到当前map中
-func MapAppend[K comparable, V any](current map[K]V, append map[K]V) {
-	if len(current) == 0 || len(append) == 0 {
-		return
+// MapMerge 将source追加到target中
+func MapMerge[K comparable, V any](target map[K]V, source map[K]V) map[K]V {
+	if len(source) == 0 {
+		return target
 	}
-	for k, v := range append {
-		current[k] = v
+	if target == nil {
+		target = make(map[K]V, len(source))
 	}
+	for k, v := range source {
+		target[k] = v
+	}
+	return target
 }
 
-// MapRandomOne 随机获取一个map的元素
-func MapRandomOne[K comparable, V any](m map[K]V) (K, V) {
+// MapRandom 随机获取一个map的元素
+func MapRandom[K comparable, V any](m map[K]V) (K, V) {
 	if len(m) == 0 {
 		var zk K
 		var zv V

@@ -1,38 +1,44 @@
 package random
 
 import (
+	"errors"
 	"testing"
 
-	"github.com/acexy/golang-toolkit/util/coll"
+	toolkitError "github.com/acexy/golang-toolkit/error"
 )
 
 func TestProbabilityTrue(t *testing.T) {
-	var count int
-	for i := 0; i < 1000; i++ {
-		if ProbabilityTrue(10) {
-			count++
-		}
+	if ProbabilityTrue(-1) {
+		t.Fatal("negative probability should be false")
 	}
-	print(count)
+	if ProbabilityTrue(101) {
+		t.Fatal("probability greater than 100 should be false")
+	}
+	if ProbabilityTrue(0) {
+		t.Fatal("zero probability should be false")
+	}
+	if !ProbabilityTrue(100) {
+		t.Fatal("100 probability should be true")
+	}
 }
 
 func TestProbabilityResult(t *testing.T) {
-	result := map[any]int{
-		"A": 0,
-		"B": 0,
-		"C": 0,
-		"D": 0,
-	}
-	for i := 0; i < 100000; i++ {
-		r, _ := ProbabilityResult(map[any]float64{
-			"A": 10.15,
-			"B": 20.85,
-			"C": 53.05,
-			"D": 15.95,
-		})
-		result[r]++
-	}
-	coll.MapForeachAll(result, func(k any, v int) {
-		println(k.(string), v)
+	result, err := ProbabilityResult(map[any]float64{
+		"A": 100,
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != "A" {
+		t.Fatalf("unexpected result: %v", result)
+	}
+}
+
+func TestProbabilityResultError(t *testing.T) {
+	if _, err := ProbabilityResult(nil); !errors.Is(err, toolkitError.ErrEmptyProbability) {
+		t.Fatalf("expected ErrEmptyProbability, got %v", err)
+	}
+	if _, err := ProbabilityResult(map[any]float64{"A": 50}); !errors.Is(err, toolkitError.ErrInvalidProbabilityTotal) {
+		t.Fatalf("expected ErrInvalidProbabilityTotal, got %v", err)
+	}
 }

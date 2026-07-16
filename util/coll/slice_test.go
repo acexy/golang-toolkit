@@ -1,329 +1,323 @@
 package coll
 
 import (
-	"fmt"
+	"errors"
 	"slices"
 	"testing"
 
-	"github.com/acexy/golang-toolkit/math/conversion"
-	"github.com/acexy/golang-toolkit/util/str"
+	toolkitError "github.com/acexy/golang-toolkit/error"
 )
 
-type people struct {
+type person struct {
 	name string
 	age  int
 }
 
-func TestSliceContains(t *testing.T) {
-	intSlice := []int{1, 2, 3, 4, 5}
-	stringSlice := []string{"apple", "banana", "cherry"}
-
-	fmt.Println(SliceContains(intSlice, 3)) // 输出: true
-	fmt.Println(SliceIndexOf(intSlice, 3))
-	fmt.Println(SliceContains(intSlice, 6)) // 输出: false
-	fmt.Println(SliceIndexOf(intSlice, 6))
-	fmt.Println(SliceContains(stringSlice, "banana")) // 输出: true
-	fmt.Println(SliceContains(stringSlice, "grape"))  // 输出: false
-
-	peoples := []*people{
-		{name: "张三", age: 28},
-		{name: "李四", age: 20},
-		{name: "王五", age: 22},
-		{name: "赵六", age: 20},
+func TestSliceRandom(t *testing.T) {
+	if got := SliceRandom([]int{10}); got != 10 {
+		t.Fatalf("SliceRandom() = %d", got)
 	}
-	fmt.Println(SliceContains(peoples, &people{name: "张三", age: 28}, func(a, b *people) bool {
-		return a.name == b.name && a.age == b.age
-	}))
-	list := []string{"US", ""}
-	fmt.Println(SliceContains(list, ""))
+	if got := SliceRandom([]int{}); got != 0 {
+		t.Fatalf("SliceRandom(empty) = %d", got)
+	}
 }
 
-func TestSliceAnyContains(t *testing.T) {
-	peoples := []people{
-		{name: "张三", age: 28},
-		{name: "李四", age: 20},
-		{name: "王五", age: 22},
-		{name: "赵六", age: 20},
+func TestSliceContainsAndIndex(t *testing.T) {
+	values := []int{1, 2, 3}
+	if !SliceContains(values, 2) {
+		t.Fatal("expected contains 2")
 	}
-	fmt.Println(SliceAnyContains(peoples, func(a people) bool {
-		return a.name == "张三"
-	}))
-	fmt.Println(SliceAnyIndexOf(peoples, func(a people) bool {
-		return a.name == "张三"
-	}))
+	if SliceContains(values, 4) {
+		t.Fatal("should not contain 4")
+	}
+	if index := SliceIndexOf(values, 3); index != 2 {
+		t.Fatalf("SliceIndexOf() = %d", index)
+	}
+
+	people := []*person{{name: "a", age: 1}}
+	if !SliceContains(people, &person{name: "a", age: 1}, func(a, b *person) bool {
+		return a.name == b.name && a.age == b.age
+	}) {
+		t.Fatal("expected custom contains")
+	}
+}
+
+func TestSliceContainsByAndIndexBy(t *testing.T) {
+	people := []person{{name: "a", age: 1}, {name: "b", age: 2}}
+	if !SliceContainsBy(people, func(p person) bool {
+		return p.name == "b"
+	}) {
+		t.Fatal("expected contains by")
+	}
+	if index := SliceIndexBy(people, func(p person) bool {
+		return p.name == "b"
+	}); index != 1 {
+		t.Fatalf("SliceIndexBy() = %d", index)
+	}
+}
+
+func TestSliceFind(t *testing.T) {
+	values := []int{1, 2, 3, 2}
+	got, ok := SliceFind(values, func(v int) bool { return v == 2 })
+	if !ok || got != 2 {
+		t.Fatalf("SliceFind() = %d, %v", got, ok)
+	}
+	got, ok = SliceFindLast(values, func(v int) bool { return v == 2 })
+	if !ok || got != 2 {
+		t.Fatalf("SliceFindLast() = %d, %v", got, ok)
+	}
 }
 
 func TestSliceFilter(t *testing.T) {
-	peoples := []people{
-		{name: "张三", age: 28},
-		{name: "李四", age: 20},
-		{name: "王五", age: 22},
-		{name: "赵六", age: 20},
+	got := SliceFilter([]int{1, 2, 3}, func(v int) bool { return v > 1 })
+	if !slices.Equal(got, []int{2, 3}) {
+		t.Fatalf("unexpected filter result: %v", got)
 	}
-
-	peoplesPt := []*people{
-		{name: "张三", age: 28},
-		{name: "李四", age: 20},
-		{name: "王五", age: 22},
-		{name: "赵六", age: 20},
-	}
-	fmt.Println(SliceFilter(peoples, func(item people) bool {
-		return item.age == 20
-	}))
-	fmt.Println(SliceFilterFirstOne(peoplesPt, func(item *people) bool {
-		return item.age == 20
-	}))
-}
-func TestSliceIntersection(t *testing.T) {
-	intSlice1 := []int{3, 4, 4, 5, 6, 7}
-	intSlice2 := []int{1, 2, 3, 4, 3, 5}
-	fmt.Println(SliceIntersection(intSlice1, intSlice2))
-
-	intSlice3 := []int{1, 2, 3, 4, 5}
-	intSlice4 := []int{6, 6, 7, 7, 8, 9, 0}
-	fmt.Println(SliceIntersection(intSlice3, intSlice4))
-	peoples1 := []people{
-		{name: "张三", age: 28},
-		{name: "李四", age: 20},
-		{name: "王五", age: 22},
-		{name: "赵六", age: 20},
-	}
-	peoples2 := []people{
-		{name: "李四", age: 20},
-		{name: "赵六", age: 20},
-	}
-	fmt.Println(SliceIntersection(peoples1, peoples2, func(a, b people) bool {
-		return a.name == b.name && a.age == b.age
-	}))
 }
 
-func TestSliceUnion(t *testing.T) {
-	intSlice1 := []int{1, 2, 3, 4, 3, 5}
-	intSlice2 := []int{3, 4, 4, 5, 6, 7}
-	fmt.Println(SliceUnion(intSlice1, intSlice2))
-
-	peoples1 := []people{
-		{name: "张三", age: 28},
-		{name: "李四", age: 20},
-		{name: "王五", age: 22},
-		{name: "赵六", age: 20},
-		{name: "赵六", age: 21},
+func TestSliceSetOperations(t *testing.T) {
+	if got := SliceIntersection([]int{1, 2, 2, 3}, []int{2, 3, 4}); !slices.Equal(got, []int{2, 3}) {
+		t.Fatalf("unexpected intersection: %v", got)
 	}
-	peoples2 := []people{
-		{name: "张三", age: 28},
-		{name: "李四", age: 20},
-		{name: "赵六", age: 20},
-		{name: "赵六", age: 21},
-		{name: "赵六", age: 21},
+	if got := SliceUnion([]int{1, 2}, []int{2, 3}); !slices.Equal(got, []int{1, 2, 3}) {
+		t.Fatalf("unexpected union: %v", got)
 	}
-	fmt.Println(SliceUnion(peoples1, peoples2, func(a, b people) bool {
-		return a.name == b.name && a.age == b.age
-	}))
+	if got := SliceComplement([]int{1, 2, 3}, []int{2}); !slices.Equal(got, []int{1, 3}) {
+		t.Fatalf("unexpected complement: %v", got)
+	}
 }
 
-func TestSliceSort(t *testing.T) {
-	peoples1 := []people{
-		{name: "张三", age: 28},
-		{name: "李四", age: 20},
-		{name: "王五", age: 22},
-		{name: "赵六", age: 20},
-		{name: "赵六", age: 21},
+func TestSliceDiff(t *testing.T) {
+	added, removed := SliceDiff([]int{1, 2, 3}, []int{2, 3, 4})
+	if !slices.Equal(added, []int{4}) || !slices.Equal(removed, []int{1}) {
+		t.Fatalf("unexpected diff added=%v removed=%v", added, removed)
 	}
-	fmt.Println(peoples1)
-	SliceSort(peoples1, func(e people) int {
-		return e.age
-	}, true)
-	fmt.Println(peoples1)
 
+	oldPeople := []person{{name: "a", age: 1}, {name: "b", age: 2}}
+	newPeople := []person{{name: "b", age: 20}, {name: "c", age: 3}}
+	addedPeople, removedPeople := SliceDiff(oldPeople, newPeople, func(a, b person) bool {
+		return a.name == b.name
+	})
+	if len(addedPeople) != 1 || addedPeople[0].name != "c" || len(removedPeople) != 1 || removedPeople[0].name != "a" {
+		t.Fatalf("unexpected custom diff added=%v removed=%v", addedPeople, removedPeople)
+	}
 }
 
-func TestSliceComplement(t *testing.T) {
-	intSlice1 := []int{1, 2, 3, 4, 3, 5}
-	intSlice2 := []int{3, 4, 4, 5}
-	fmt.Println(SliceComplement(intSlice1, intSlice2))
-	peoples1 := []people{
-		{name: "张三", age: 28},
-		{name: "李四", age: 20},
-		{name: "王五", age: 22},
-		{name: "赵六", age: 20},
-		{name: "赵六", age: 21},
+func TestSliceAnyDiff(t *testing.T) {
+	oldValues := [][]int{{1}, {2}}
+	newValues := [][]int{{2}, {3}}
+	added, removed := SliceAnyDiff(oldValues, newValues, func(a, b []int) bool {
+		return slices.Equal(a, b)
+	})
+	if len(added) != 1 || !slices.Equal(added[0], []int{3}) || len(removed) != 1 || !slices.Equal(removed[0], []int{1}) {
+		t.Fatalf("unexpected any diff added=%v removed=%v", added, removed)
 	}
-	peoples2 := []people{
-		{name: "张三", age: 28},
-		{name: "赵六", age: 20},
-		{name: "赵六", age: 21},
-		{name: "赵六", age: 21},
-	}
-	fmt.Println(SliceComplement(peoples1, peoples2, func(a, b people) bool {
-		return a.name == b.name && a.age == b.age
-	}))
 }
 
-type Person struct {
-	Name string
-	Age  int
+func TestSliceIsSubset(t *testing.T) {
+	if !SliceIsSubset([]string{"a", "b"}, []string{"a", "b", "c"}) {
+		t.Fatal("expected subset")
+	}
+	if SliceIsSubset([]string{"a", "d"}, []string{"a", "b", "c"}) {
+		t.Fatal("should not be subset")
+	}
 }
 
 func TestSliceFilterToMap(t *testing.T) {
-	// 示例1: 整数切片
-	ints := []int{1, 2, 3, 4, 5, 6}
-	intMap := SliceFilterToMap(ints, func(t int) (string, int, bool) {
-		if t > 3 {
-			fromInt := conversion.FromInt(t)
-			return fromInt, t, true
-		}
-		return "", 0, false
+	got := SliceFilterToMap([]int{1, 2, 3}, func(v int) (int, string, bool) {
+		return v, "ok", v > 1
 	})
-	fmt.Println(intMap)
-
-	// 示例2: 字符串切片
-	strings := []string{"apple", "banana", "cherry", "date"}
-	stringMap := SliceFilterToMap(strings, func(t string) (string, string, bool) {
-		if str.CharLength(t) > 4 {
-			return t, t, true
-		}
-		return "", "", false
-	})
-	fmt.Println(stringMap)
-
-	// 定义一个结构体切片
-	people := []*Person{
-		{Name: "Alice", Age: 25},
-		{Name: "Bob", Age: 30},
-		{Name: "Charlie", Age: 35},
-		{Name: "Dave", Age: 40},
+	if len(got) != 2 || got[2] != "ok" || got[3] != "ok" {
+		t.Fatalf("unexpected map: %v", got)
 	}
-
-	// 调用通用方法
-	personMap := SliceFilterToMap(people, func(t *Person) (string, int, bool) {
-		if t.Age > 30 {
-			return t.Name, t.Age, true
-		}
-		return "", 0, false
-	})
-
-	// 打印结果
-	fmt.Println(personMap)
 }
 
 func TestSliceCollect(t *testing.T) {
-	// 输入切片
-	input := []Person{
-		{Name: "Alice", Age: 25},
-		{Name: "Bob", Age: 30},
-		{Name: "Charlie", Age: 35},
+	got := SliceCollect([]int{1, 2}, func(v int) string {
+		if v == 1 {
+			return "one"
+		}
+		return "two"
+	})
+	if !slices.Equal(got, []string{"one", "two"}) {
+		t.Fatalf("unexpected collect result: %v", got)
 	}
+}
 
-	// 定义映射函数，用于从 Person 提取 Age
-	collect := func(p Person) int {
-		return p.Age
+func TestSliceFilterCollect(t *testing.T) {
+	got := SliceFilterCollect([]int{1, 2, 3}, func(v int) (int, bool) {
+		return v * 10, v > 1
+	})
+	if !slices.Equal(got, []int{20, 30}) {
+		t.Fatalf("unexpected filter collect result: %v", got)
 	}
-
-	// 调用 SliceCollect
-	output := SliceCollect(input, collect)
-	fmt.Println(output)
-
 }
 
 func TestSliceFlat(t *testing.T) {
-	input := [][]int{
-		{1, 2},
-		{3, 4},
-		{},
-		{5},
+	got := SliceFlat([][]int{{1, 2}, {}, {3}})
+	if !slices.Equal(got, []int{1, 2, 3}) {
+		t.Fatalf("unexpected flat result: %v", got)
 	}
-	expected := []int{1, 2, 3, 4, 5}
-	output := SliceFlat(input)
-	if !slices.Equal(output, expected) {
-		t.Fatalf("SliceFlat() = %v, want %v", output, expected)
+	got = SliceFlat[int](nil)
+	if got == nil || len(got) != 0 {
+		t.Fatalf("SliceFlat(nil) = %v, want empty slice", got)
+	}
+}
+
+func TestSliceForEach(t *testing.T) {
+	count := 0
+	SliceForEach([]int{1, 2, 3}, func(v int) bool {
+		count++
+		return false
+	})
+	if count != 1 {
+		t.Fatalf("SliceForEach should stop after first item, got %d", count)
 	}
 
-	// 空二维切片也按展开处理，结果为空的一维切片。
-	output = SliceFlat[int](nil)
-	if output == nil || len(output) != 0 {
-		t.Fatalf("SliceFlat(nil) = %v, want empty slice", output)
+	count = 0
+	SliceForEachAll([]int{1, 2, 3}, func(v int) {
+		count++
+	})
+	if count != 3 {
+		t.Fatalf("SliceForEachAll count = %d", count)
 	}
 }
 
 func TestSliceDistinct(t *testing.T) {
-	input := []Person{
-		{Name: "Alice", Age: 35},
-		{Name: "Bob", Age: 30},
-		{Name: "Charlie", Age: 35},
-		{Name: "Charlie", Age: 35},
-	}
-	fmt.Println(SliceDistinct(input))
-
-	fmt.Println(SliceDistinctAny(input, func(t Person) int {
-		return t.Age
-	}))
-}
-func TestSliceGroupBy(t *testing.T) {
-	input := []Person{
-		{Name: "Alice", Age: 25},
-		{Name: "Bob", Age: 30},
-		{Name: "Charlie", Age: 35},
-		{Name: "Charlie", Age: 36},
-	}
-	fmt.Println(SliceGroupBy(input, func(t Person) string {
-		return t.Name
-	}))
-	fmt.Println(SliceAnyGroupBy(input, func(t Person) (string, int) {
-		return t.Name, t.Age
-	}))
-}
-
-func TestSliceGroupBySingle(t *testing.T) {
-	input := []Person{
-		{Name: "Alice", Age: 25},
-		{Name: "Bob", Age: 30},
-		{Name: "Charlie1", Age: 35},
-		{Name: "Charlie", Age: 36},
-	}
-	fmt.Println(SliceGroupBySingle(input, func(t Person) string {
-		return t.Name
-	}))
-	fmt.Println(SliceAnyGroupBySingle(input, func(t Person) (string, int) {
-		return t.Name, t.Age
-	}))
-}
-
-func TestSliceIsSubset(t *testing.T) {
-	set := []string{"a", "b", "c", "d"}
-	subset1 := []string{"a", "c"}
-	subset2 := []string{"a", "e"}
-
-	fmt.Println(SliceIsSubset(subset1, set)) // true
-	fmt.Println(SliceIsSubset(subset2, set)) // false
-}
-
-func TestSliceDiff(t *testing.T) {
-	old := []int{1, 2, 3, 4}
-	new := []int{2, 3, 5, 6}
-	added, removed := SliceDiff(old, new)
-	fmt.Printf("Added: %v, Removed: %v\n", added, removed)
-	added, removed = SliceDiff(new, old)
-	// 输出: Added: [5 6], Removed: [1 4]
-	fmt.Printf("Added: %v, Removed: %v\n", added, removed)
-
-	// 示例2：结构体类型（假设CronConfig实现了comparable）
-	type Person struct {
-		ID   int
-		Name string
+	if got := SliceDistinct([]int{1, 2, 1, 3, 2}); !slices.Equal(got, []int{1, 2, 3}) {
+		t.Fatalf("unexpected distinct result: %v", got)
 	}
 
-	oldPeople := []Person{{1, "Alice"}, {2, "Bob"}}
-	newPeople := []Person{{2, "Bob"}, {3, "Charlie"}}
-	addedPeople, removedPeople := SliceDiff(oldPeople, newPeople)
-	fmt.Printf("Added: %v, Removed: %v\n", addedPeople, removedPeople)
-
-	// 示例3：使用自定义比较函数（比较ID）
-	addedByID, removedByID := SliceDiff(oldPeople, newPeople, func(a, b Person) bool {
-		return a.ID == b.ID
+	people := []person{{name: "a", age: 1}, {name: "b", age: 2}, {name: "a", age: 3}}
+	got := SliceDistinctBy(people, func(p person) string {
+		return p.name
 	})
-	fmt.Printf("Added by ID: %v, Removed by ID: %v\n", addedByID, removedByID)
+	if len(got) != 2 || got[0].age != 1 || got[1].name != "b" {
+		t.Fatalf("unexpected distinct by result: %v", got)
+	}
+}
+
+func TestSliceSort(t *testing.T) {
+	values := []int{3, 1, 2}
+	SliceSort(values, func(v int) int { return v })
+	if !slices.Equal(values, []int{1, 2, 3}) {
+		t.Fatalf("unexpected ascending sort: %v", values)
+	}
+	SliceSort(values, func(v int) int { return v }, true)
+	if !slices.Equal(values, []int{3, 2, 1}) {
+		t.Fatalf("unexpected descending sort: %v", values)
+	}
+}
+
+func TestSliceGroupBy(t *testing.T) {
+	people := []person{{name: "a", age: 1}, {name: "a", age: 2}, {name: "b", age: 3}}
+	group := SliceGroupBy(people, func(p person) string { return p.name })
+	if len(group["a"]) != 2 || len(group["b"]) != 1 {
+		t.Fatalf("unexpected group: %v", group)
+	}
+
+	single := SliceGroupBySingle(people, func(p person) string { return p.name })
+	if single["a"].age != 2 {
+		t.Fatalf("unexpected single group: %v", single)
+	}
+
+	valueGroup := SliceGroupByValue(people, func(p person) (string, int) {
+		return p.name, p.age
+	})
+	if !slices.Equal(valueGroup["a"], []int{1, 2}) {
+		t.Fatalf("unexpected value group: %v", valueGroup)
+	}
+
+	valueSingle := SliceGroupBySingleValue(people, func(p person) (string, int) {
+		return p.name, p.age
+	})
+	if valueSingle["a"] != 2 {
+		t.Fatalf("unexpected value single group: %v", valueSingle)
+	}
 }
 
 func TestSliceSplitChunk(t *testing.T) {
-	fmt.Println(SliceSplitChunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 11))
+	got := SliceSplitChunk([]int{1, 2, 3, 4, 5}, 2)
+	if len(got) != 3 || !slices.Equal(got[0], []int{1, 2}) || !slices.Equal(got[2], []int{5}) {
+		t.Fatalf("unexpected chunks: %v", got)
+	}
+	if got := SliceSplitChunk([]int{1}, 0); got != nil {
+		t.Fatalf("expected nil chunks, got %v", got)
+	}
+}
+
+func TestSliceRemove(t *testing.T) {
+	got, err := SliceRemove(1, []int{1, 2, 3})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []int{1, 3}) {
+		t.Fatalf("unexpected remove result: %v", got)
+	}
+	if _, err = SliceRemove(3, []int{1}); !errors.Is(err, toolkitError.ErrSliceIndexOutOfRange) {
+		t.Fatalf("expected ErrSliceIndexOutOfRange, got %v", err)
+	}
+}
+
+func TestSliceRemoveSafe(t *testing.T) {
+	source := []int{1, 2, 3}
+	got, err := SliceRemoveSafe(1, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []int{1, 3}) || !slices.Equal(source, []int{1, 2, 3}) {
+		t.Fatalf("unexpected safe remove result=%v source=%v", got, source)
+	}
+}
+
+func TestSliceInsert(t *testing.T) {
+	got, err := SliceInsert(1, 9, []int{1, 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []int{1, 9, 2}) {
+		t.Fatalf("unexpected insert result: %v", got)
+	}
+	if _, err = SliceInsert(3, 9, []int{1}); !errors.Is(err, toolkitError.ErrSliceIndexOutOfRange) {
+		t.Fatalf("expected ErrSliceIndexOutOfRange, got %v", err)
+	}
+}
+
+func TestSliceInsertSafe(t *testing.T) {
+	source := []int{1, 2}
+	got, err := SliceInsertSafe(1, 9, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []int{1, 9, 2}) || !slices.Equal(source, []int{1, 2}) {
+		t.Fatalf("unexpected safe insert result=%v source=%v", got, source)
+	}
+}
+
+func TestSliceInserts(t *testing.T) {
+	got, err := SliceInserts(1, []int{8, 9}, []int{1, 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []int{1, 8, 9, 2}) {
+		t.Fatalf("unexpected inserts result: %v", got)
+	}
+}
+
+func TestSliceInsertsSafe(t *testing.T) {
+	source := []int{1, 2}
+	got, err := SliceInsertsSafe(1, []int{8, 9}, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []int{1, 8, 9, 2}) || !slices.Equal(source, []int{1, 2}) {
+		t.Fatalf("unexpected safe inserts result=%v source=%v", got, source)
+	}
+	got, err = SliceInsertsSafe(1, nil, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, source) || &got[0] == &source[0] {
+		t.Fatalf("expected copied source when inserting empty slice")
+	}
 }
