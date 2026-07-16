@@ -1,9 +1,11 @@
 package httpclient
 
+import "mime"
+
 type ContentType string
 
 const (
-	HeaderContentType = "content-type"
+	HeaderContentType = "Content-Type"
 )
 
 const (
@@ -15,8 +17,8 @@ const (
 )
 
 func getContentType(contentType ContentType, charset ...string) string {
-	if len(charset) > 0 {
-		return string(contentType) + "; charset=" + charset[0]
+	if len(charset) == 0 || charset[0] == "" {
+		return string(contentType)
 	}
-	return string(contentType)
+	return mime.FormatMediaType(string(contentType), map[string]string{"charset": charset[0]})
 }
