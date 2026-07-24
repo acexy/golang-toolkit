@@ -12,6 +12,16 @@ import (
 	toolkitError "github.com/acexy/golang-toolkit/error"
 )
 
+type roundRobinChooseProxy struct {
+	count int
+}
+
+func (c *roundRobinChooseProxy) Choose(_ *http.Request, all []string) string {
+	proxy := all[c.count%len(all)]
+	c.count++
+	return proxy
+}
+
 func TestMethodExecute(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -124,5 +134,32 @@ func TestNewRestyClientWithMultiProxyFallback(t *testing.T) {
 	client := NewRestyClientWithMultiProxy([]string{"http://127.0.0.1:7890"})
 	if client == nil {
 		t.Fatal("expected fallback resty client")
+	}
+}
+
+func TestMultiProxyChoosesForEveryRoundTrip(t *testing.T) {
+	newProxy := func(responseBody string) *httptest.Server {
+		return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = w.Write([]byte(responseBody))
+		}))
+	}
+	proxy1 := newProxy("proxy-1")
+	defer proxy1.Close()
+	proxy2 := newProxy("proxy-2")
+	defer proxy2.Close()
+
+	choose := &roundRobinChooseProxy{}
+	client := NewRestyClientWithMultiProxy([]string{proxy1.URL, proxy2.URL}, choose)
+	for _, expected := range []string{"proxy-1", "proxy-2", "proxy-1"} {
+		response, err := client.R().Get("http://multi-proxy.test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if response.String() != expected {
+			t.Fatalf("expected response %q, got %q", expected, response.String())
+		}
+	}
+	if choose.count != 3 {
+		t.Fatalf("expected choose proxy to be called three times, got %d", choose.count)
 	}
 }
