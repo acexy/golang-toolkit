@@ -17,3 +17,5 @@
 logs
 .DS_Store
 *.log
+AGENTS.md
+.codex
