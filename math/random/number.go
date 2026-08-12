@@ -1,19 +1,7 @@
 package random
 
 import (
-	"math/rand"
-	"sync"
-	"time"
-)
-
-var (
-	// 使用 sync.Pool 提供每个 Goroutine 独立的随机数生成器
-	randPool = sync.Pool{
-		New: func() interface{} {
-			seed := time.Now().UnixNano()
-			return rand.New(rand.NewSource(seed))
-		},
-	}
+	"math/rand/v2"
 )
 
 // RandInt 生成指定范围内随机数 [0,max]
@@ -21,9 +9,7 @@ func RandInt(max int) int {
 	if max < 0 {
 		return -1
 	}
-	r := randPool.Get().(*rand.Rand)
-	defer randPool.Put(r)
-	return r.Intn(max + 1)
+	return int(rand.Uint64N(uint64(max) + 1))
 }
 
 // RandRangeInt 生成指定范围内随机数 [min,max]
@@ -31,7 +17,12 @@ func RandRangeInt(min, max int) int {
 	if min > max {
 		return -1
 	}
-	r := randPool.Get().(*rand.Rand)
-	defer randPool.Put(r)
-	return r.Intn(max-min+1) + min
+
+	// 使用无符号运算计算区间宽度，避免有符号整数在边界处溢出。
+	width := uint64(max) - uint64(min) + 1
+	if width == 0 {
+		// 64 位平台完整 int 区间的宽度是 2^64，无法用 uint64 表示。
+		return int(rand.Uint64())
+	}
+	return int(uint64(min) + rand.Uint64N(width))
 }
