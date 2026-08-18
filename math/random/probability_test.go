@@ -2,6 +2,7 @@ package random
 
 import (
 	"errors"
+	"math"
 	"testing"
 
 	toolkitError "github.com/acexy/golang-toolkit/error"
@@ -19,6 +20,9 @@ func TestProbabilityTrue(t *testing.T) {
 	}
 	if !ProbabilityTrue(100) {
 		t.Fatal("100 probability should be true")
+	}
+	if ProbabilityTrue(math.NaN()) || ProbabilityTrue(math.Inf(1)) {
+		t.Fatal("non-finite probability should be false")
 	}
 }
 
@@ -40,5 +44,15 @@ func TestProbabilityResultError(t *testing.T) {
 	}
 	if _, err := ProbabilityResult(map[any]float64{"A": 50}); !errors.Is(err, toolkitError.ErrInvalidProbabilityTotal) {
 		t.Fatalf("expected ErrInvalidProbabilityTotal, got %v", err)
+	}
+	invalidValues := []map[any]float64{
+		{"A": -10, "B": 110},
+		{"A": math.NaN(), "B": 100},
+		{"A": math.Inf(1), "B": 100},
+	}
+	for _, values := range invalidValues {
+		if _, err := ProbabilityResult(values); !errors.Is(err, toolkitError.ErrInvalidProbabilityTotal) {
+			t.Fatalf("expected ErrInvalidProbabilityTotal, got %v", err)
+		}
 	}
 }
