@@ -13,7 +13,7 @@ import (
 type log struct {
 }
 
-func (l log) Printf(format string, v ...interface{}) {
+func (l log) Printf(format string, v ...any) {
 	logrus.Logrus().Debugln(format, v)
 }
 
@@ -42,7 +42,7 @@ func NewSimpleBigCache(duration time.Duration) (*BigCacheBucket, error) {
 	return &BigCacheBucket{cache: cache}, nil
 }
 
-func (b *BigCacheBucket) GetBytes(key CacheKey, keyAppend ...interface{}) ([]byte, error) {
+func (b *BigCacheBucket) GetBytes(key CacheKey, keyAppend ...any) ([]byte, error) {
 	bytes, err := b.cache.Get(key.RawKeyString(keyAppend...))
 	if err != nil {
 		if errors.Is(err, bigcache.ErrEntryNotFound) {
@@ -53,7 +53,7 @@ func (b *BigCacheBucket) GetBytes(key CacheKey, keyAppend ...interface{}) ([]byt
 	return bytes, nil
 }
 
-func (b *BigCacheBucket) PutBytes(key CacheKey, data []byte, keyAppend ...interface{}) error {
+func (b *BigCacheBucket) PutBytes(key CacheKey, data []byte, keyAppend ...any) error {
 	err := b.cache.Set(key.RawKeyString(keyAppend...), data)
 	if err != nil {
 		return err
@@ -61,6 +61,6 @@ func (b *BigCacheBucket) PutBytes(key CacheKey, data []byte, keyAppend ...interf
 	return nil
 }
 
-func (b *BigCacheBucket) Evict(key CacheKey, keyAppend ...interface{}) error {
+func (b *BigCacheBucket) Evict(key CacheKey, keyAppend ...any) error {
 	return b.cache.Delete(key.RawKeyString(keyAppend...))
 }

@@ -8,7 +8,6 @@ import (
 )
 
 func TestNonZeroField(t *testing.T) {
-	i := 1
 	testStruct := struct {
 		A string
 		B *int
@@ -19,7 +18,7 @@ func TestNonZeroField(t *testing.T) {
 		G map[string]int
 	}{
 		A: "a",
-		B: &i,
+		B: new(1),
 		C: true,
 	}
 	fields, err := NonZeroFieldName(testStruct)
@@ -30,7 +29,6 @@ func TestNonZeroField(t *testing.T) {
 }
 
 func TestGetNonZeroFieldValue(t *testing.T) {
-	i := 1
 	testStruct := struct {
 		A string
 		B *int
@@ -38,7 +36,7 @@ func TestGetNonZeroFieldValue(t *testing.T) {
 		D int
 	}{
 		A: "a",
-		B: &i,
+		B: new(1),
 		C: true,
 	}
 	value, err := NonZeroFieldValue(testStruct)
@@ -49,7 +47,6 @@ func TestGetNonZeroFieldValue(t *testing.T) {
 }
 
 func TestAllField(t *testing.T) {
-	i := 1
 	testStruct := struct {
 		A string
 		B *int
@@ -60,7 +57,7 @@ func TestAllField(t *testing.T) {
 		G map[string]int
 	}{
 		A: "a",
-		B: &i,
+		B: new(1),
 		C: true,
 	}
 	fields, err := AllFieldName(testStruct)
@@ -71,7 +68,6 @@ func TestAllField(t *testing.T) {
 }
 
 func TestAllFieldValue(t *testing.T) {
-	i := 1
 	testStruct := struct {
 		A string
 		B *int
@@ -79,7 +75,7 @@ func TestAllFieldValue(t *testing.T) {
 		D int
 	}{
 		A: "a",
-		B: &i,
+		B: new(1),
 		C: true,
 	}
 	value, err := AllFieldValue(testStruct)
@@ -100,32 +96,29 @@ type TestStruct struct {
 }
 
 func BenchmarkDeepCopy(b *testing.B) {
-	ptrVal := 10
 	testStruct := &TestStruct{
 		IntField:    10,
 		StringField: "Hello",
 		BoolField:   true,
 		FloatField:  3.14,
-		PtrField:    &ptrVal,
+		PtrField:    new(10),
 		SliceField:  []string{"a", "b", "c"},
 		MapField:    map[string]int{"one": 1, "two": 2},
 	}
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		DeepCopy(testStruct)
 	}
 }
 
 func TestSetFieldValue(t *testing.T) {
 	var s = new(TestStruct)
-	ptrVal := 10
-
 	err := SetFieldValue(s, map[string]any{
 		"IntField":    10,
 		"StringField": "Hello",
 		"BoolField":   true,
 		"FloatField":  3.14,
-		"PtrField":    &ptrVal,
+		"PtrField":    new(10),
 		"SliceField":  []string{"a", "b", "c"},
 		"MapField":    map[string]int{"one": 1, "two": 2},
 	}, true)

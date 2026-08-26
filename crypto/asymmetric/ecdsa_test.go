@@ -231,8 +231,5 @@ func sameTestEcdsaPublicKey(expected, actual any) bool {
 	if !ok || actualKey == nil {
 		return false
 	}
-	if expectedKey.Curve == nil || actualKey.Curve == nil || expectedKey.X == nil || expectedKey.Y == nil || actualKey.X == nil || actualKey.Y == nil {
-		return false
-	}
-	return expectedKey.Curve == actualKey.Curve && expectedKey.X.Cmp(actualKey.X) == 0 && expectedKey.Y.Cmp(actualKey.Y) == 0
+	return expectedKey.Equal(actualKey)
 }

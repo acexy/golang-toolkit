@@ -7,32 +7,29 @@ import (
 )
 
 // processStructFields 处理结构体字段的通用方法
-func processStructFields(value interface{}, filter func(field reflect.Value) bool, process func(fieldName string, field reflect.Value)) error {
+func processStructFields(value any, filter func(field reflect.Value) bool, process func(fieldName string, field reflect.Value)) error {
 	val := reflect.ValueOf(value)
-	if val.Kind() == reflect.Ptr {
+	if val.Kind() == reflect.Pointer {
 		val = val.Elem()
 	}
 	if val.Kind() != reflect.Struct {
 		return errors.New("inputStruct must be a struct or a pointer to a struct")
 	}
 
-	typ := val.Type()
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Field(i)
+	for structField, field := range val.Fields() {
 		// 跳过未导出的字段
 		if !field.CanInterface() {
 			continue
 		}
 		if filter == nil || filter(field) {
-			fieldName := typ.Field(i).Name
-			process(fieldName, field)
+			process(structField.Name, field)
 		}
 	}
 	return nil
 }
 
 // AllFieldName 返回结构体的所有字段
-func AllFieldName(value interface{}) ([]string, error) {
+func AllFieldName(value any) ([]string, error) {
 	var allFields []string
 	err := processStructFields(value,
 		nil, // 不需要过滤
@@ -43,8 +40,8 @@ func AllFieldName(value interface{}) ([]string, error) {
 }
 
 // AllFieldValue 返回结构体的所有字段的值
-func AllFieldValue(value interface{}) (map[string]interface{}, error) {
-	allValue := make(map[string]interface{})
+func AllFieldValue(value any) (map[string]any, error) {
+	allValue := make(map[string]any)
 	err := processStructFields(value,
 		nil, // 不需要过滤
 		func(fieldName string, field reflect.Value) {
@@ -54,7 +51,7 @@ func AllFieldValue(value interface{}) (map[string]interface{}, error) {
 }
 
 // NonZeroFieldName 返回结构体的非零字段
-func NonZeroFieldName(value interface{}) ([]string, error) {
+func NonZeroFieldName(value any) ([]string, error) {
 	var nonZeroFields []string
 	err := processStructFields(value,
 		func(field reflect.Value) bool {
@@ -67,8 +64,8 @@ func NonZeroFieldName(value interface{}) ([]string, error) {
 }
 
 // NonZeroFieldValue 返回结构体的非零字段的值
-func NonZeroFieldValue(value interface{}) (map[string]interface{}, error) {
-	nonZeroValue := make(map[string]interface{})
+func NonZeroFieldValue(value any) (map[string]any, error) {
+	nonZeroValue := make(map[string]any)
 	err := processStructFields(value,
 		func(field reflect.Value) bool {
 			return !isZeroValue(field)
@@ -80,7 +77,7 @@ func NonZeroFieldValue(value interface{}) (map[string]interface{}, error) {
 }
 
 // DeepCopy 深拷贝 源和目标需要是同类型
-func DeepCopy(src interface{}) interface{} {
+func DeepCopy(src any) any {
 	if src == nil {
 		return nil
 	}
@@ -104,8 +101,8 @@ func deepCopyRecursive(src, dst reflect.Value) {
 			dst.Set(newValue)
 		}
 	case reflect.Struct:
-		for i := 0; i < src.NumField(); i++ {
-			deepCopyRecursive(src.Field(i), dst.Field(i))
+		for structField, field := range src.Fields() {
+			deepCopyRecursive(field, dst.FieldByIndex(structField.Index))
 		}
 	case reflect.Slice:
 		if !src.IsNil() {
@@ -254,7 +251,7 @@ func isNumericKind(kind reflect.Kind) bool {
 }
 
 // GetFieldValue 获取结构体中指定字段的值
-func GetFieldValue(value interface{}, fieldName string) (interface{}, error) {
+func GetFieldValue(value any, fieldName string) (any, error) {
 	if value == nil {
 		return nil, fmt.Errorf("input must be a struct or pointer to struct")
 	}
