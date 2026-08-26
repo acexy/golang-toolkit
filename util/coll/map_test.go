@@ -31,6 +31,13 @@ func TestMapKeysAndValues(t *testing.T) {
 	if !slices.Equal(values, []int{1, 2}) {
 		t.Fatalf("unexpected values: %v", values)
 	}
+
+	if keys := MapKeys(map[string]int(nil)); keys != nil {
+		t.Fatalf("MapKeys(nil) = %v, want nil", keys)
+	}
+	if values := MapValues(map[string]int{}); values != nil {
+		t.Fatalf("MapValues(empty) = %v, want nil", values)
+	}
 }
 
 func TestMapCollect(t *testing.T) {
