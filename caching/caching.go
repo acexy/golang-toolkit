@@ -53,7 +53,7 @@ func NewBucketName(bucketName string) BucketName {
 }
 
 // RawKeyString 获取原始的key字符串
-func (m CacheKey) RawKeyString(keyAppend ...interface{}) string {
+func (m CacheKey) RawKeyString(keyAppend ...any) string {
 	if len(keyAppend) > 0 {
 		return fmt.Sprintf(m.KeyFormat, keyAppend...)
 	}
@@ -69,13 +69,13 @@ type CacheManager struct {
 type CacheBucket interface {
 
 	// GetBytes 获取指定key对应的值
-	GetBytes(key CacheKey, keyAppend ...interface{}) ([]byte, error)
+	GetBytes(key CacheKey, keyAppend ...any) ([]byte, error)
 
 	// PutBytes 设置key对应的字节数组
-	PutBytes(key CacheKey, data []byte, keyAppend ...interface{}) error
+	PutBytes(key CacheKey, data []byte, keyAppend ...any) error
 
 	// Evict 清除缓存
-	Evict(key CacheKey, keyAppend ...interface{}) error
+	Evict(key CacheKey, keyAppend ...any) error
 }
 
 func NewCacheManager(codec ...Codec) *CacheManager {
@@ -111,7 +111,7 @@ func (c *CacheManager) GetBucket(bucketName BucketName) CacheBucket {
 }
 
 // Get 获取缓存
-func (c *CacheManager) Get(bucketName BucketName, key CacheKey, result any, keyAppend ...interface{}) error {
+func (c *CacheManager) Get(bucketName BucketName, key CacheKey, result any, keyAppend ...any) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
 		logger.Logrus().Errorln("caching: bad bucketName", bucketName)
@@ -125,7 +125,7 @@ func (c *CacheManager) Get(bucketName BucketName, key CacheKey, result any, keyA
 }
 
 // GetBytes 获取缓存字节数组
-func (c *CacheManager) GetBytes(bucketName BucketName, key CacheKey, keyAppend ...interface{}) ([]byte, error) {
+func (c *CacheManager) GetBytes(bucketName BucketName, key CacheKey, keyAppend ...any) ([]byte, error) {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
 		logger.Logrus().Errorln("caching: bad bucketName", bucketName)
@@ -135,7 +135,7 @@ func (c *CacheManager) GetBytes(bucketName BucketName, key CacheKey, keyAppend .
 }
 
 // Put 缓存数据
-func (c *CacheManager) Put(bucketName BucketName, key CacheKey, data any, keyAppend ...interface{}) error {
+func (c *CacheManager) Put(bucketName BucketName, key CacheKey, data any, keyAppend ...any) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
 		logger.Logrus().Errorln("caching: bad bucketName", bucketName)
@@ -149,7 +149,7 @@ func (c *CacheManager) Put(bucketName BucketName, key CacheKey, data any, keyApp
 }
 
 // PutBytes 缓存字节数组
-func (c *CacheManager) PutBytes(bucketName BucketName, key CacheKey, data []byte, keyAppend ...interface{}) error {
+func (c *CacheManager) PutBytes(bucketName BucketName, key CacheKey, data []byte, keyAppend ...any) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
 		logger.Logrus().Errorln("caching: bad bucketName", bucketName)
@@ -159,7 +159,7 @@ func (c *CacheManager) PutBytes(bucketName BucketName, key CacheKey, data []byte
 }
 
 // Evict 清除缓存
-func (c *CacheManager) Evict(bucketName BucketName, key CacheKey, keyAppend ...interface{}) error {
+func (c *CacheManager) Evict(bucketName BucketName, key CacheKey, keyAppend ...any) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
 		logger.Logrus().Errorln("caching: bad bucketName", bucketName)

@@ -22,24 +22,6 @@ func newTestRsaKeyPair(t *testing.T) RsaKeyPair {
 	return keyPair
 }
 
-func TestRsaPKCS1EncryptDecrypt(t *testing.T) {
-	keyPair := newTestRsaKeyPair(t)
-	encrypt := NewRsaEncryptWithPKCS1()
-	raw := []byte("hello rsa")
-
-	cipher, err := encrypt.Encrypt(keyPair, raw)
-	if err != nil {
-		t.Fatalf("encrypt pkcs1: %v", err)
-	}
-	got, err := encrypt.Decrypt(keyPair, cipher)
-	if err != nil {
-		t.Fatalf("decrypt pkcs1: %v", err)
-	}
-	if string(got) != string(raw) {
-		t.Fatalf("unexpected decrypt result: got %q, want %q", got, raw)
-	}
-}
-
 func TestRsaOAEPEncryptDecrypt(t *testing.T) {
 	keyPair := newTestRsaKeyPair(t)
 	encrypt, err := NewRsaEncryptWithOAEP(sha1.New(), []byte("label"))
@@ -63,7 +45,10 @@ func TestRsaOAEPEncryptDecrypt(t *testing.T) {
 
 func TestRsaBase64EncryptDecrypt(t *testing.T) {
 	keyPair := newTestRsaKeyPair(t)
-	encrypt := NewRsaEncryptWithPKCS1()
+	encrypt, err := NewRsaEncryptWithOAEP(sha1.New(), nil)
+	if err != nil {
+		t.Fatalf("create oaep encrypt: %v", err)
+	}
 	raw := []byte("hello base64")
 	base64Raw := base64.StdEncoding.EncodeToString(raw)
 
@@ -186,7 +171,11 @@ func TestRsaRejectsWrongKeyType(t *testing.T) {
 		t.Fatalf("create ecdsa key pair: %v", err)
 	}
 
-	_, err = NewRsaEncryptWithPKCS1().Encrypt(ecdsaKeyPair, []byte("raw"))
+	encrypt, err := NewRsaEncryptWithOAEP(sha1.New(), nil)
+	if err != nil {
+		t.Fatalf("create oaep encrypt: %v", err)
+	}
+	_, err = encrypt.Encrypt(ecdsaKeyPair, []byte("raw"))
 	if !errors.Is(err, toolkitError.ErrNotRsaPublicKey) {
 		t.Fatalf("expected ErrNotRsaPublicKey, got %v", err)
 	}
@@ -194,7 +183,7 @@ func TestRsaRejectsWrongKeyType(t *testing.T) {
 
 func TestRsaOAEPRequiresHashAtRuntime(t *testing.T) {
 	keyPair := newTestRsaKeyPair(t)
-	encrypt := &RsaEncrypt{paddingType: PaddingTypeOAEP}
+	encrypt := &RsaEncrypt{}
 
 	_, err := encrypt.Encrypt(keyPair, []byte("raw"))
 	if !errors.Is(err, toolkitError.ErrNilHashFunction) {

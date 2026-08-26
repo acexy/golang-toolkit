@@ -135,10 +135,10 @@ func (e *EcdsaKeyManager) LoadKeyPair(pubPem, priPem string) (EcdsaKeyPair, erro
 }
 
 func sameEcdsaPublicKey(pub1, pub2 *ecdsa.PublicKey) bool {
-	if pub1 == nil || pub2 == nil || pub1.Curve == nil || pub2.Curve == nil || pub1.X == nil || pub1.Y == nil || pub2.X == nil || pub2.Y == nil {
+	if pub1 == nil || pub2 == nil {
 		return false
 	}
-	return pub1.Curve == pub2.Curve && pub1.X.Cmp(pub2.X) == 0 && pub1.Y.Cmp(pub2.Y) == 0
+	return pub1.Equal(pub2)
 }
 
 // Load 从 PEM 字符串加载 ECDSA 公私钥

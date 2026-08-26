@@ -17,15 +17,13 @@ import (
 	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
-// PaddingType 表示 RSA 加密或签名使用的填充模式
+// PaddingType 表示 RSA 签名使用的填充模式
 type PaddingType uint8
 
 const (
-	// PaddingTypePKCS1 表示 RSA PKCS#1 v1.5 填充，可用于加解密和签名验签
+	// PaddingTypePKCS1 表示 RSA PKCS#1 v1.5 签名填充
 	PaddingTypePKCS1 PaddingType = 1
-	// PaddingTypeOAEP 表示 RSA OAEP 填充，仅用于加解密
-	PaddingTypeOAEP PaddingType = 2
-	// PaddingTypePSS 表示 RSA PSS 填充，仅用于签名验签
+	// PaddingTypePSS 表示 RSA PSS 签名填充
 	PaddingTypePSS PaddingType = 3
 )
 
@@ -286,7 +284,6 @@ func loadRsaPrivateKey(keyPair KeyPair) (*rsa.PrivateKey, error) {
 
 // RsaEncrypt 提供 RSA 加解密能力
 type RsaEncrypt struct {
-	paddingType  PaddingType
 	hashForOAEP  hash.Hash
 	labelForOAEP []byte
 }
@@ -297,18 +294,10 @@ func (r *RsaEncrypt) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	switch r.paddingType {
-	case PaddingTypePKCS1:
-		return rsa.EncryptPKCS1v15(rand.Reader, publicKey, raw)
-	case PaddingTypeOAEP:
-		if r.hashForOAEP == nil {
-			return nil, toolkitError.ErrNilHashFunction
-		}
-		return rsa.EncryptOAEP(r.hashForOAEP, rand.Reader, publicKey, raw, r.labelForOAEP)
-	default:
-
+	if r.hashForOAEP == nil {
+		return nil, toolkitError.ErrNilHashFunction
 	}
-	return nil, toolkitError.ErrUnsupportedPaddingType
+	return rsa.EncryptOAEP(r.hashForOAEP, rand.Reader, publicKey, raw, r.labelForOAEP)
 }
 
 // EncryptBase64 解码 Base64 明文后加密，并返回 Base64 密文
@@ -330,18 +319,10 @@ func (r *RsaEncrypt) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	switch r.paddingType {
-	case PaddingTypePKCS1:
-		return rsa.DecryptPKCS1v15(rand.Reader, privateKey, cipher)
-	case PaddingTypeOAEP:
-		if r.hashForOAEP == nil {
-			return nil, toolkitError.ErrNilHashFunction
-		}
-		return rsa.DecryptOAEP(r.hashForOAEP, rand.Reader, privateKey, cipher, r.labelForOAEP)
-	default:
-
+	if r.hashForOAEP == nil {
+		return nil, toolkitError.ErrNilHashFunction
 	}
-	return nil, toolkitError.ErrUnsupportedPaddingType
+	return rsa.DecryptOAEP(r.hashForOAEP, rand.Reader, privateKey, cipher, r.labelForOAEP)
 }
 
 // DecryptBase64 解码 Base64 密文后解密，并返回 Base64 明文
@@ -442,20 +423,12 @@ func (r *RsaSign) VerifyBase64(keyPair KeyPair, base64Raw, base64Sign string) er
 	return r.Verify(keyPair, rawContent, signContent)
 }
 
-// NewRsaEncryptWithPKCS1 创建 RSA PKCS#1 v1.5 加解密实例
-func NewRsaEncryptWithPKCS1() *RsaEncrypt {
-	var encrypt RsaEncrypt
-	encrypt.paddingType = PaddingTypePKCS1
-	return &encrypt
-}
-
 // NewRsaEncryptWithOAEP 创建 RSA OAEP 加解密实例，label 在加密和解密时必须一致
 func NewRsaEncryptWithOAEP(hashFunc hash.Hash, label []byte) (*RsaEncrypt, error) {
 	if hashFunc == nil {
 		return nil, toolkitError.ErrNilHashFunction
 	}
 	var encrypt RsaEncrypt
-	encrypt.paddingType = PaddingTypeOAEP
 	encrypt.hashForOAEP = hashFunc
 	encrypt.labelForOAEP = label
 	return &encrypt, nil

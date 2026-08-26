@@ -163,12 +163,12 @@ func (r *Response) Cookies() []*http.Cookie {
 }
 
 // Result 获取成功响应绑定的结果。
-func (r *Response) Result() interface{} {
+func (r *Response) Result() any {
 	return r.response.Result()
 }
 
 // Error 获取错误响应绑定的结果。
-func (r *Response) Error() interface{} {
+func (r *Response) Error() any {
 	return r.response.Error()
 }
 
@@ -407,8 +407,8 @@ func (r *RestyClient) R() *RestyRequest {
 
 // SetReturnStruct 使用默认响应Body内容与结构体绑定
 // 仅支持响应码 200 - 299 内容类型为 JSON or XML时
-func (r *RestyRequest) SetReturnStruct(any interface{}) *RestyRequest {
-	r.request.SetResult(any)
+func (r *RestyRequest) SetReturnStruct(result any) *RestyRequest {
+	r.request.SetResult(result)
 	return r
 }
 
@@ -455,7 +455,7 @@ func (m *RestyMethod) ConfigureRequest(configure func(request *resty.Request)) *
 }
 
 // SetRequestBody 设置请求体及其内容类型。
-func (m *RestyMethod) SetRequestBody(body interface{}, contentType string) *RestyMethod {
+func (m *RestyMethod) SetRequestBody(body any, contentType string) *RestyMethod {
 	m.request.request.SetBody(body)
 	m.request.SetHeader(HeaderContentType, contentType)
 	return m
