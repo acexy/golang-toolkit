@@ -1,6 +1,10 @@
 package coll
 
-import "math/rand"
+import (
+	"maps"
+	"math/rand"
+	"slices"
+)
 
 // MapAny 从map中抽取任意一个元素
 func MapAny[K comparable, V any](m map[K]V) (K, V) {
@@ -17,26 +21,12 @@ func MapAny[K comparable, V any](m map[K]V) (K, V) {
 
 // MapKeys 将map的key转换为slice
 func MapKeys[K comparable, V any](m map[K]V) []K {
-	if len(m) == 0 {
-		return nil
-	}
-	result := make([]K, 0, len(m))
-	for k := range m {
-		result = append(result, k)
-	}
-	return result
+	return slices.Collect(maps.Keys(m))
 }
 
 // MapValues 将map的value转换为slice
 func MapValues[K comparable, V any](m map[K]V) []V {
-	if len(m) == 0 {
-		return nil
-	}
-	result := make([]V, 0, len(m))
-	for _, v := range m {
-		result = append(result, v)
-	}
-	return result
+	return slices.Collect(maps.Values(m))
 }
 
 // MapCollect 将map转换成新的map
@@ -106,9 +96,7 @@ func MapMerge[K comparable, V any](target map[K]V, source map[K]V) map[K]V {
 	if target == nil {
 		target = make(map[K]V, len(source))
 	}
-	for k, v := range source {
-		target[k] = v
-	}
+	maps.Copy(target, source)
 	return target
 }
 

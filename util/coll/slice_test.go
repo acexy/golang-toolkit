@@ -162,6 +162,10 @@ func TestSliceFlat(t *testing.T) {
 	if got == nil || len(got) != 0 {
 		t.Fatalf("SliceFlat(nil) = %v, want empty slice", got)
 	}
+	got = SliceFlat([][]int{nil, {}})
+	if got == nil || len(got) != 0 {
+		t.Fatalf("SliceFlat(empty slices) = %v, want non-nil empty slice", got)
+	}
 }
 
 func TestSliceForEach(t *testing.T) {
@@ -237,9 +241,13 @@ func TestSliceGroupBy(t *testing.T) {
 }
 
 func TestSliceSplitChunk(t *testing.T) {
-	got := SliceSplitChunk([]int{1, 2, 3, 4, 5}, 2)
+	source := []int{1, 2, 3, 4, 5}
+	got := SliceSplitChunk(source, 2)
 	if len(got) != 3 || !slices.Equal(got[0], []int{1, 2}) || !slices.Equal(got[2], []int{5}) {
 		t.Fatalf("unexpected chunks: %v", got)
+	}
+	if cap(got[0]) != len(got[0]) {
+		t.Fatalf("chunk capacity = %d, want %d", cap(got[0]), len(got[0]))
 	}
 	if got := SliceSplitChunk([]int{1}, 0); got != nil {
 		t.Fatalf("expected nil chunks, got %v", got)
@@ -247,12 +255,17 @@ func TestSliceSplitChunk(t *testing.T) {
 }
 
 func TestSliceRemove(t *testing.T) {
-	got, err := SliceRemove(1, []int{1, 2, 3})
+	one, two, three := 1, 2, 3
+	source := []*int{&one, &two, &three}
+	got, err := SliceRemove(1, source)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(got, []int{1, 3}) {
+	if !slices.Equal(got, []*int{&one, &three}) {
 		t.Fatalf("unexpected remove result: %v", got)
+	}
+	if source[2] != nil {
+		t.Fatal("expected removed slice tail to be cleared")
 	}
 	if _, err = SliceRemove(3, []int{1}); !errors.Is(err, toolkitError.ErrSliceIndexOutOfRange) {
 		t.Fatalf("expected ErrSliceIndexOutOfRange, got %v", err)
@@ -302,6 +315,15 @@ func TestSliceInserts(t *testing.T) {
 	if !slices.Equal(got, []int{1, 8, 9, 2}) {
 		t.Fatalf("unexpected inserts result: %v", got)
 	}
+
+	overlapping := []int{1, 2, 3}
+	overlapping, err = SliceInserts(1, overlapping[1:], overlapping)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(overlapping, []int{1, 2, 3, 2, 3}) {
+		t.Fatalf("unexpected overlapping inserts result: %v", overlapping)
+	}
 }
 
 func TestSliceInsertsSafe(t *testing.T) {
@@ -319,5 +341,12 @@ func TestSliceInsertsSafe(t *testing.T) {
 	}
 	if !slices.Equal(got, source) || &got[0] == &source[0] {
 		t.Fatalf("expected copied source when inserting empty slice")
+	}
+	got, err = SliceInsertsSafe[int](0, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got == nil || len(got) != 0 {
+		t.Fatalf("SliceInsertsSafe(nil) = %v, want non-nil empty slice", got)
 	}
 }
