@@ -5,6 +5,7 @@ import (
 	mail "github.com/wneessen/go-mail"
 )
 
+// Client wraps an SMTP client and its default sender configuration.
 type Client struct {
 	client          *mail.Client
 	initErr         error
@@ -12,31 +13,34 @@ type Client struct {
 	fromDisplayName string
 }
 
+// Address pairs an email address with an optional display name.
 type Address struct {
-	// 邮件地址
+	// Email is the recipient email address.
 	Email string
-	// 显示名称
+	// DisplayName is the optional recipient display name.
 	DisplayName string
 }
 
+// Message holds recipients, subject, body, sender overrides, and attachment paths.
 type Message struct {
 
-	// 发送方地址 可选
+	// Optional sender address override.
 	fromEmail string
-	// 发送方名称 可选
+	// Optional sender display name override.
 	fromDisplayName string
 
-	// 接收地址
+	// Recipient addresses.
 	toAddresses []*Address
-	// 邮件标题
+	// Message subject.
 	subject         string
 	bodyContentType string
 	body            string
 
-	// 附件文件路径
+	// Attachment file paths.
 	attachments []string
 }
 
+// NewMessage creates a message with the supplied recipients and subject.
 func NewMessage(toAddresses []*Address, subject string) *Message {
 	return &Message{
 		toAddresses: toAddresses,
@@ -44,18 +48,21 @@ func NewMessage(toAddresses []*Address, subject string) *Message {
 	}
 }
 
+// SetBody sets the body and content type; an empty type uses plain text.
 func (m *Message) SetBody(contentType, body string) *Message {
 	m.bodyContentType = contentType
 	m.body = body
 	return m
 }
 
+// SetFrom overrides the client sender when fromEmail is nonempty.
 func (m *Message) SetFrom(fromEmail, fromDisplayName string) *Message {
 	m.fromEmail = fromEmail
 	m.fromDisplayName = fromDisplayName
 	return m
 }
 
+// SetAttachments sets attachment paths; an empty slice leaves existing attachments unchanged.
 func (m *Message) SetAttachments(attachments []string) *Message {
 	if len(attachments) != 0 {
 		m.attachments = attachments
@@ -118,10 +125,12 @@ func (m *Message) toMessage(c *Client) (*mail.Msg, error) {
 	return message, nil
 }
 
+// NewClient creates an SMTP wrapper; initialization errors are reported by SendMail.
 func NewClient(host string, port int, username, password, fromEmail string, useSSL bool) *Client {
 	return NewClientWithName(host, port, username, password, fromEmail, "", useSSL)
 }
 
+// NewClientWithName creates an SMTP wrapper with a sender display name; errors are reported by SendMail.
 func NewClientWithName(host string, port int, username, password, fromEmail, fromDisplayName string, useSSL bool) *Client {
 	options := []mail.Option{
 		mail.WithPort(port),
@@ -143,6 +152,7 @@ func NewClientWithName(host string, port int, username, password, fromEmail, fro
 	}
 }
 
+// SendMail validates the message and client, then sends it through SMTP.
 func (c *Client) SendMail(message *Message) error {
 	if message == nil {
 		return toolkitError.ErrBadEmailContent

@@ -7,10 +7,12 @@ import (
 	"github.com/yl2chen/cidranger"
 )
 
+// Checker matches IP addresses against mutable CIDR rules.
 type Checker struct {
 	ranger cidranger.Ranger
 }
 
+// NewIpChecker creates a CIDR checker, logging and skipping invalid rules.
 func NewIpChecker(cidrIps ...string) *Checker {
 	ranger := cidranger.NewPCTrieRanger()
 	for _, ip := range cidrIps {
@@ -26,7 +28,7 @@ func NewIpChecker(cidrIps ...string) *Checker {
 	}
 }
 
-// AddRuleIp 添加新的ip规则
+// AddRuleIp adds CIDR rules, logging and skipping invalid input.
 func (i *Checker) AddRuleIp(cidrIps ...string) {
 	if len(cidrIps) == 0 {
 		return
@@ -41,7 +43,7 @@ func (i *Checker) AddRuleIp(cidrIps ...string) {
 	}
 }
 
-// RemoveRuleIp 删除ip规则
+// RemoveRuleIp removes CIDR rules, logging parsing or removal errors.
 func (i *Checker) RemoveRuleIp(cidrIps ...string) {
 	for _, ip := range cidrIps {
 		_, ipNet, err := net.ParseCIDR(ip)
@@ -56,7 +58,7 @@ func (i *Checker) RemoveRuleIp(cidrIps ...string) {
 	}
 }
 
-// Match 检测ip是否匹配
+// Match checks IP membership and returns any ranger error.
 func (i *Checker) Match(ip string) (bool, error) {
 	return i.ranger.Contains(net.ParseIP(ip))
 }

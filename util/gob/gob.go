@@ -5,7 +5,7 @@ import (
 	"encoding/gob"
 )
 
-// Encode 将指定的数据进行gob编码
+// Encode serializes a value to GOB bytes.
 func Encode(data any) ([]byte, error) {
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(data)
@@ -15,7 +15,7 @@ func Encode(data any) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Decode 将指定的数据进行gob解码
+// Decode decodes GOB bytes into a writable destination.
 func Decode(bs []byte, result any) error {
 	dec := gob.NewDecoder(bytes.NewBuffer(bs))
 	if err := dec.Decode(result); err != nil {

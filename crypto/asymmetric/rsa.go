@@ -17,13 +17,13 @@ import (
 	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
-// PaddingType 表示 RSA 签名使用的填充模式
+// PaddingType identifies the RSA signature padding scheme.
 type PaddingType uint8
 
 const (
-	// PaddingTypePKCS1 表示 RSA PKCS#1 v1.5 签名填充
+	// PaddingTypePKCS1 selects PKCS1 v1.5 signature padding.
 	PaddingTypePKCS1 PaddingType = 1
-	// PaddingTypePSS 表示 RSA PSS 签名填充
+	// PaddingTypePSS selects RSA PSS signature padding.
 	PaddingTypePSS PaddingType = 3
 )
 
@@ -32,7 +32,7 @@ type rsaKey struct {
 	publicKey  *rsa.PublicKey
 }
 
-// PrivateKey 返回原始 RSA 私钥
+// PrivateKey returns the raw private key, or nil if it is absent.
 func (r *rsaKey) PrivateKey() any {
 	if r.privateKey == nil {
 		return nil
@@ -40,7 +40,7 @@ func (r *rsaKey) PrivateKey() any {
 	return r.privateKey
 }
 
-// PublicKey 返回原始 RSA 公钥
+// PublicKey returns the raw public key, or nil if it is absent.
 func (r *rsaKey) PublicKey() any {
 	if r.publicKey == nil {
 		return nil
@@ -48,17 +48,17 @@ func (r *rsaKey) PublicKey() any {
 	return r.publicKey
 }
 
-// ToPublicPem 将 RSA 公钥导出为默认 PKIX PEM 格式
+// ToPublicPem exports the public key in PKIX PEM format.
 func (r *rsaKey) ToPublicPem() (string, error) {
 	return r.ToPKIXPublicPem()
 }
 
-// ToPrivatePem 将 RSA 私钥导出为默认 PKCS8 PEM 格式
+// ToPrivatePem exports the private key in PKCS8 PEM format.
 func (r *rsaKey) ToPrivatePem() (string, error) {
 	return r.ToPKCS8PrivatePem()
 }
 
-// ToPKCS1PublicPem 将 RSA 公钥导出为 PKCS1 PEM 格式
+// ToPKCS1PublicPem exports an RSA PKCS1 public-key PEM.
 func (r *rsaKey) ToPKCS1PublicPem() (string, error) {
 	if r.publicKey == nil {
 		return "", toolkitError.ErrNilPublicKey
@@ -70,7 +70,7 @@ func (r *rsaKey) ToPKCS1PublicPem() (string, error) {
 	})), nil
 }
 
-// ToPKCS1PrivatePem 将 RSA 私钥导出为 PKCS1 PEM 格式
+// ToPKCS1PrivatePem exports an RSA PKCS1 private-key PEM.
 func (r *rsaKey) ToPKCS1PrivatePem() (string, error) {
 	if r.privateKey == nil {
 		return "", toolkitError.ErrNilPrivateKey
@@ -82,7 +82,7 @@ func (r *rsaKey) ToPKCS1PrivatePem() (string, error) {
 	})), nil
 }
 
-// ToPKIXPublicPem 将 RSA 公钥导出为 PKIX PEM 格式
+// ToPKIXPublicPem exports a PKIX public-key PEM.
 func (r *rsaKey) ToPKIXPublicPem() (string, error) {
 	if r.publicKey == nil {
 		return "", toolkitError.ErrNilPublicKey
@@ -97,7 +97,7 @@ func (r *rsaKey) ToPKIXPublicPem() (string, error) {
 	})), nil
 }
 
-// ToPKCS8PrivatePem 将 RSA 私钥导出为 PKCS8 PEM 格式
+// ToPKCS8PrivatePem exports a PKCS8 private-key PEM.
 func (r *rsaKey) ToPKCS8PrivatePem() (string, error) {
 	if r.privateKey == nil {
 		return "", toolkitError.ErrNilPrivateKey
@@ -112,13 +112,13 @@ func (r *rsaKey) ToPKCS8PrivatePem() (string, error) {
 	})), nil
 }
 
-// CreateRsaSetting 表示创建 RSA 密钥时使用的配置
+// CreateRsaSetting configures RSA key generation.
 type CreateRsaSetting struct {
-	// Length 表示 RSA 密钥长度，单位为 bit
+	// Length is the RSA key length in bits.
 	Length int
 }
 
-// NewRsaKeyManager 创建带默认密钥长度的 RSA KeyManager
+// NewRsaKeyManager creates a key manager with the supplied RSA key length.
 func NewRsaKeyManager(keyLength int) *RsaKeyManager {
 	return &RsaKeyManager{
 		CreateSetting: CreateRsaSetting{
@@ -127,18 +127,18 @@ func NewRsaKeyManager(keyLength int) *RsaKeyManager {
 	}
 }
 
-// NewEmptyRsaKeyManager 创建空 RSA KeyManager，仅适合加载已有 PEM 密钥
+// NewEmptyRsaKeyManager creates a load-only RSA key manager without a generation length.
 func NewEmptyRsaKeyManager() *RsaKeyManager {
 	return &RsaKeyManager{}
 }
 
-// RsaKeyManager 管理 RSA 密钥创建和 PEM 加载
+// RsaKeyManager generates RSA keys and loads PEM key material.
 type RsaKeyManager struct {
-	// CreateSetting 表示创建 RSA 密钥时使用的默认配置
+	// CreateSetting holds the default key generation settings.
 	CreateSetting CreateRsaSetting
 }
 
-// Create 创建新的 RSA 公私钥对
+// Create generates a new public/private key pair using the manager configuration.
 func (r *RsaKeyManager) Create() (RsaKeyPair, error) {
 	if r.CreateSetting.Length == 0 {
 		return nil, toolkitError.ErrBadKeyLength
@@ -153,17 +153,17 @@ func (r *RsaKeyManager) Create() (RsaKeyPair, error) {
 	}, nil
 }
 
-// LoadPublicKey 从 PEM 字符串加载 RSA 公钥
+// LoadPublicKey loads a public key from PEM.
 func (r *RsaKeyManager) LoadPublicKey(pubPem string) (RsaKeyPair, error) {
 	return r.LoadKeyPair(pubPem, "")
 }
 
-// LoadPrivateKey 从 PEM 字符串加载 RSA 私钥，并派生对应公钥
+// LoadPrivateKey loads a private key from PEM and derives its public key.
 func (r *RsaKeyManager) LoadPrivateKey(priPem string) (RsaKeyPair, error) {
 	return r.LoadKeyPair("", priPem)
 }
 
-// LoadKeyPair 从 PEM 字符串加载 RSA 公私钥，并校验二者是否匹配
+// LoadKeyPair loads PEM keys and validates their match when both are supplied.
 func (r *RsaKeyManager) LoadKeyPair(pubPem, priPem string) (RsaKeyPair, error) {
 	if pubPem == "" && priPem == "" {
 		return nil, toolkitError.ErrBadKey
@@ -173,7 +173,7 @@ func (r *RsaKeyManager) LoadKeyPair(pubPem, priPem string) (RsaKeyPair, error) {
 	var pri *rsa.PrivateKey
 	var err error
 
-	// 解析公钥
+	// Parse the public key.
 	if pubPem != "" {
 		block, _ := pem.Decode(conversion.ParseBytes(pubPem))
 		if block == nil {
@@ -182,13 +182,13 @@ func (r *RsaKeyManager) LoadKeyPair(pubPem, priPem string) (RsaKeyPair, error) {
 
 		switch block.Type {
 		case "RSA PUBLIC KEY":
-			// PKCS#1 公钥
+			// PKCS1 public key.
 			pub, err = x509.ParsePKCS1PublicKey(block.Bytes)
 			if err != nil {
 				return nil, err
 			}
 		case "PUBLIC KEY":
-			// PKIX (PKCS#8) 公钥
+			// PKIX public key.
 			var iface any
 			iface, err = x509.ParsePKIXPublicKey(block.Bytes)
 			if err != nil {
@@ -204,7 +204,7 @@ func (r *RsaKeyManager) LoadKeyPair(pubPem, priPem string) (RsaKeyPair, error) {
 		}
 	}
 
-	// 解析私钥
+	// Parse the private key.
 	if priPem != "" {
 		block, _ := pem.Decode(conversion.ParseBytes(priPem))
 		if block == nil {
@@ -213,13 +213,13 @@ func (r *RsaKeyManager) LoadKeyPair(pubPem, priPem string) (RsaKeyPair, error) {
 
 		switch block.Type {
 		case "RSA PRIVATE KEY":
-			// PKCS#1 私钥
+			// PKCS1 private key.
 			pri, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 			if err != nil {
 				return nil, err
 			}
 		case "PRIVATE KEY":
-			// PKCS#8 私钥
+			// PKCS8 private key.
 			var iface any
 			iface, err = x509.ParsePKCS8PrivateKey(block.Bytes)
 			if err != nil {
@@ -247,7 +247,7 @@ func (r *RsaKeyManager) LoadKeyPair(pubPem, priPem string) (RsaKeyPair, error) {
 	}, nil
 }
 
-// Load 从 PEM 字符串加载 RSA 公私钥
+// Load loads PEM keys through LoadKeyPair.
 func (r *RsaKeyManager) Load(pubPem, priPem string) (RsaKeyPair, error) {
 	return r.LoadKeyPair(pubPem, priPem)
 }
@@ -282,13 +282,13 @@ func loadRsaPrivateKey(keyPair KeyPair) (*rsa.PrivateKey, error) {
 	return rsaPrivateKey, nil
 }
 
-// RsaEncrypt 提供 RSA 加解密能力
+// RsaEncrypt encrypts and decrypts with RSA OAEP using the configured hash and label.
 type RsaEncrypt struct {
 	hashForOAEP  hash.Hash
 	labelForOAEP []byte
 }
 
-// Encrypt 使用 RSA 公钥加密原始字节
+// Encrypt encrypts plaintext bytes with the public key.
 func (r *RsaEncrypt) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
 	publicKey, err := loadRsaPublicKey(keyPair)
 	if err != nil {
@@ -300,7 +300,7 @@ func (r *RsaEncrypt) Encrypt(keyPair KeyPair, raw []byte) ([]byte, error) {
 	return rsa.EncryptOAEP(r.hashForOAEP, rand.Reader, publicKey, raw, r.labelForOAEP)
 }
 
-// EncryptBase64 解码 Base64 明文后加密，并返回 Base64 密文
+// EncryptBase64 decodes Base64 plaintext, encrypts it, and returns Base64 ciphertext.
 func (r *RsaEncrypt) EncryptBase64(keyPair KeyPair, base64Raw string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {
@@ -313,7 +313,7 @@ func (r *RsaEncrypt) EncryptBase64(keyPair KeyPair, base64Raw string) (string, e
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-// Decrypt 使用 RSA 私钥解密密文字节
+// Decrypt decrypts ciphertext bytes with the private key.
 func (r *RsaEncrypt) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) {
 	privateKey, err := loadRsaPrivateKey(keyPair)
 	if err != nil {
@@ -325,7 +325,7 @@ func (r *RsaEncrypt) Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error) {
 	return rsa.DecryptOAEP(r.hashForOAEP, rand.Reader, privateKey, cipher, r.labelForOAEP)
 }
 
-// DecryptBase64 解码 Base64 密文后解密，并返回 Base64 明文
+// DecryptBase64 decodes Base64 ciphertext, decrypts it, and returns Base64 plaintext.
 func (r *RsaEncrypt) DecryptBase64(keyPair KeyPair, base64Cipher string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Cipher)
 	if err != nil {
@@ -338,7 +338,7 @@ func (r *RsaEncrypt) DecryptBase64(keyPair KeyPair, base64Cipher string) (string
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-// RsaSign 提供 RSA 签名和验签能力
+// RsaSign signs and verifies RSA data, synchronizing access to its configured hash.
 type RsaSign struct {
 	sync.Mutex
 	paddingType     PaddingType
@@ -347,7 +347,7 @@ type RsaSign struct {
 	options         *rsa.PSSOptions
 }
 
-// Sign 使用 RSA 私钥对原始数据签名
+// Sign signs data with the private key.
 func (r *RsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
 	if r.hashForSign == nil {
 		return nil, toolkitError.ErrNilHashFunction
@@ -372,7 +372,7 @@ func (r *RsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
 	return nil, toolkitError.ErrUnsupportedPaddingType
 }
 
-// Verify 使用 RSA 公钥验证签名
+// Verify verifies data with the public key, returning an error on failure.
 func (r *RsaSign) Verify(keyPair KeyPair, raw, sign []byte) error {
 	if r.hashForSign == nil {
 		return toolkitError.ErrNilHashFunction
@@ -397,7 +397,7 @@ func (r *RsaSign) Verify(keyPair KeyPair, raw, sign []byte) error {
 	return toolkitError.ErrUnsupportedPaddingType
 }
 
-// SignBase64 解码 Base64 原文后签名，并返回 Base64 签名
+// SignBase64 decodes Base64 data and returns its signature as Base64.
 func (r *RsaSign) SignBase64(keyPair KeyPair, base64Raw string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {
@@ -410,7 +410,7 @@ func (r *RsaSign) SignBase64(keyPair KeyPair, base64Raw string) (string, error) 
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-// VerifyBase64 解码 Base64 原文和签名后执行验签
+// VerifyBase64 decodes Base64 data and signature before verification.
 func (r *RsaSign) VerifyBase64(keyPair KeyPair, base64Raw, base64Sign string) error {
 	rawContent, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {
@@ -423,7 +423,7 @@ func (r *RsaSign) VerifyBase64(keyPair KeyPair, base64Raw, base64Sign string) er
 	return r.Verify(keyPair, rawContent, signContent)
 }
 
-// NewRsaEncryptWithOAEP 创建 RSA OAEP 加解密实例，label 在加密和解密时必须一致
+// NewRsaEncryptWithOAEP creates an OAEP instance; hash must be nonnil and the label must match on both sides.
 func NewRsaEncryptWithOAEP(hashFunc hash.Hash, label []byte) (*RsaEncrypt, error) {
 	if hashFunc == nil {
 		return nil, toolkitError.ErrNilHashFunction
@@ -434,19 +434,19 @@ func NewRsaEncryptWithOAEP(hashFunc hash.Hash, label []byte) (*RsaEncrypt, error
 	return &encrypt, nil
 }
 
-// NewRsaSignWithPKCS1AndSHA256 创建 RSA PKCS#1 v1.5 SHA256 签名验签实例
+// NewRsaSignWithPKCS1AndSHA256 creates a PKCS1 v1.5 signer using SHA256.
 func NewRsaSignWithPKCS1AndSHA256() *RsaSign {
 	sign, _ := NewRsaSignWithPKCS1(sha256.New(), crypto.SHA256)
 	return sign
 }
 
-// NewRsaSignWithPKCS1AndSHA512 创建 RSA PKCS#1 v1.5 SHA512 签名验签实例
+// NewRsaSignWithPKCS1AndSHA512 creates a PKCS1 v1.5 signer using SHA512.
 func NewRsaSignWithPKCS1AndSHA512() *RsaSign {
 	sign, _ := NewRsaSignWithPKCS1(sha512.New(), crypto.SHA512)
 	return sign
 }
 
-// NewRsaSignWithPKCS1 创建 RSA PKCS#1 v1.5 自定义 hash 签名验签实例，hashType 必须与 hashFunc 匹配
+// NewRsaSignWithPKCS1 creates a PKCS1 v1.5 signer; hashType must match hashFunc.
 func NewRsaSignWithPKCS1(hashFunc hash.Hash, hashType crypto.Hash) (*RsaSign, error) {
 	if hashFunc == nil {
 		return nil, toolkitError.ErrNilHashFunction
@@ -458,7 +458,7 @@ func NewRsaSignWithPKCS1(hashFunc hash.Hash, hashType crypto.Hash) (*RsaSign, er
 	return &sign, nil
 }
 
-// NewRsaSignWithPSSAndSHA256 创建 RSA PSS SHA256 签名验签实例，可选指定 saltLength
+// NewRsaSignWithPSSAndSHA256 creates a SHA256 PSS signer with an optional salt length.
 func NewRsaSignWithPSSAndSHA256(saltLength ...int) *RsaSign {
 	length := -1
 	if len(saltLength) > 0 {
@@ -468,7 +468,7 @@ func NewRsaSignWithPSSAndSHA256(saltLength ...int) *RsaSign {
 	return sign
 }
 
-// NewRsaSignWithPSSAndSHA512 创建 RSA PSS SHA512 签名验签实例，可选指定 saltLength
+// NewRsaSignWithPSSAndSHA512 creates a SHA512 PSS signer with an optional salt length.
 func NewRsaSignWithPSSAndSHA512(saltLength ...int) *RsaSign {
 	length := -1
 	if len(saltLength) > 0 {
@@ -478,12 +478,12 @@ func NewRsaSignWithPSSAndSHA512(saltLength ...int) *RsaSign {
 	return sign
 }
 
-// NewRsaSignWithPSS 创建 RSA PSS 自定义 hash 签名验签实例，默认使用 rsa.PSSSaltLengthAuto
+// NewRsaSignWithPSS creates a PSS signer using the automatic salt-length policy.
 func NewRsaSignWithPSS(hashFunc hash.Hash, hashType crypto.Hash) (*RsaSign, error) {
 	return NewRsaSignWithPSSAndOptions(hashFunc, hashType, -1)
 }
 
-// NewRsaSignWithPSSAndOptions 创建 RSA PSS 自定义 hash 签名验签实例，并指定 saltLength
+// NewRsaSignWithPSSAndOptions creates a PSS signer with the supplied hash and salt-length policy.
 func NewRsaSignWithPSSAndOptions(hashFunc hash.Hash, hashType crypto.Hash, saltLength int) (*RsaSign, error) {
 	if hashFunc == nil {
 		return nil, toolkitError.ErrNilHashFunction

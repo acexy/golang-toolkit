@@ -1,77 +1,79 @@
 package asymmetric
 
-// KeyPairManager 通用 KeyPair 管理器
+// KeyPairManager creates and loads typed public/private key pairs.
 type KeyPairManager[T KeyPair] interface {
-	// Create 生成新的公私钥对
+	// Create generates a new public/private key pair using the manager configuration.
 	Create() (T, error)
-	// LoadPublicKey 加载公钥
+	// LoadPublicKey loads a public key from PEM.
 	LoadPublicKey(pubPem string) (T, error)
-	// LoadPrivateKey 加载私钥
+	// LoadPrivateKey loads a private key from PEM and derives its public key.
 	LoadPrivateKey(priPem string) (T, error)
-	// LoadKeyPair 加载公私钥
+	// LoadKeyPair loads PEM keys and validates their match when both are supplied.
 	LoadKeyPair(pubPem, priPem string) (T, error)
 }
 
-// KeyPair 公私钥信息
+// KeyPair exposes raw keys and PEM serialization.
 type KeyPair interface {
-	// PrivateKey 获取原始私钥
+	// PrivateKey returns the raw private key, or nil if it is absent.
 	PrivateKey() any
-	// PublicKey 获取原始公钥信息
+	// PublicKey returns the raw public key, or nil if it is absent.
 	PublicKey() any
-	// ToPublicPem 将公钥转换为默认 PEM 格式
+	// ToPublicPem exports the public key in the default PEM format.
 	ToPublicPem() (string, error)
-	// ToPrivatePem 将私钥转换为默认 PEM 格式
+	// ToPrivatePem exports the private key in the default PEM format.
 	ToPrivatePem() (string, error)
-	// ToPKIXPublicPem 将公钥转换为 PKIX PEM 格式
+	// ToPKIXPublicPem exports a PKIX public-key PEM.
 	ToPKIXPublicPem() (string, error)
-	// ToPKCS8PrivatePem 将私钥转换为 PKCS8 PEM 格式
+	// ToPKCS8PrivatePem exports a PKCS8 private-key PEM.
 	ToPKCS8PrivatePem() (string, error)
 }
 
-// RsaKeyPair RSA 专用公私钥信息
+// RsaKeyPair adds RSA PKCS1 serialization to KeyPair.
 type RsaKeyPair interface {
 	KeyPair
-	// ToPKCS1PublicPem 将 RSA 公钥转换为 PKCS1 PEM 格式
+	// ToPKCS1PublicPem exports an RSA PKCS1 public-key PEM.
 	ToPKCS1PublicPem() (string, error)
-	// ToPKCS1PrivatePem 将 RSA 私钥转换为 PKCS1 PEM 格式
+	// ToPKCS1PrivatePem exports an RSA PKCS1 private-key PEM.
 	ToPKCS1PrivatePem() (string, error)
 }
 
-// RsaKeyPairManager RSA 专用 KeyPair 管理器
+// RsaKeyPairManager manages RSA key pairs.
 type RsaKeyPairManager interface {
 	KeyPairManager[RsaKeyPair]
 }
 
-// EcdsaKeyPair ECDSA 专用公私钥信息
+// EcdsaKeyPair adds SEC1 EC private-key serialization to KeyPair.
 type EcdsaKeyPair interface {
 	KeyPair
-	// ToECPrivatePem 将 ECDSA 私钥转换为 SEC1 EC PRIVATE KEY PEM 格式
+	// ToECPrivatePem exports a SEC1 EC private-key PEM.
 	ToECPrivatePem() (string, error)
 }
 
-// EcdsaKeyPairManager ECDSA 专用 KeyPair 管理器
+// EcdsaKeyPairManager manages ECDSA key pairs.
 type EcdsaKeyPairManager interface {
 	KeyPairManager[EcdsaKeyPair]
 }
 
+// CryptEncrypt defines public-key encryption and private-key decryption.
 type CryptEncrypt interface {
-	// Encrypt 加密
+	// Encrypt encrypts plaintext bytes with the public key.
 	Encrypt(keyPair KeyPair, raw []byte) ([]byte, error)
-	// EncryptBase64 使用标准Base64传递的数据进行加密
+	// EncryptBase64 decodes Base64 plaintext, encrypts it, and returns Base64 ciphertext.
 	EncryptBase64(keyPair KeyPair, base64Raw string) (string, error)
-	// Decrypt 解密
+	// Decrypt decrypts ciphertext bytes with the private key.
 	Decrypt(keyPair KeyPair, cipher []byte) ([]byte, error)
-	// DecryptBase64 使用标准Base64传递的数据进行解密
+	// DecryptBase64 decodes Base64 ciphertext, decrypts it, and returns Base64 plaintext.
 	DecryptBase64(keyPair KeyPair, base64Cipher string) (string, error)
 }
 
+// CryptSign defines private-key signing and public-key verification.
 type CryptSign interface {
-	// Sign 数据签名
+	// Sign signs data with the private key.
 	Sign(keyPair KeyPair, raw []byte) ([]byte, error)
-	// Verify 签名验证
+	// Verify verifies data with the public key, returning an error on failure.
 	Verify(keyPair KeyPair, raw, sign []byte) error
-	// SignBase64 使用标准Base64传递的数据进行加签
+	// SignBase64 decodes Base64 data and returns its signature as Base64.
 	SignBase64(keyPair KeyPair, base64Raw string) (string, error)
-	// VerifyBase64 使用标准Base64传递的数据进行验签
+	// VerifyBase64 decodes Base64 data and signature before verification.
 	VerifyBase64(keyPair KeyPair, base64Raw, base64Sign string) error
 }

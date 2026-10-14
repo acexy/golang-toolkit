@@ -4,7 +4,7 @@ import (
 	"math/rand/v2"
 )
 
-// RandInt 生成指定范围内随机数 [0,max]
+// RandInt returns a pseudo-random integer in [0, max], or -1 for a negative max.
 func RandInt(max int) int {
 	if max < 0 {
 		return -1
@@ -12,16 +12,16 @@ func RandInt(max int) int {
 	return int(rand.Uint64N(uint64(max) + 1))
 }
 
-// RandRangeInt 生成指定范围内随机数 [min,max]
+// RandRangeInt returns a pseudo-random integer in [min, max], or -1 for an invalid range.
 func RandRangeInt(min, max int) int {
 	if min > max {
 		return -1
 	}
 
-	// 使用无符号运算计算区间宽度，避免有符号整数在边界处溢出。
+	// Compute width using unsigned arithmetic to avoid signed boundary overflow.
 	width := uint64(max) - uint64(min) + 1
 	if width == 0 {
-		// 64 位平台完整 int 区间的宽度是 2^64，无法用 uint64 表示。
+		// A full 64-bit int range has width 2^64, represented here by zero.
 		return int(rand.Uint64())
 	}
 	return int(uint64(min) + rand.Uint64N(width))

@@ -13,41 +13,45 @@ import (
 )
 
 const (
-	// AESModeCBC 表示 AES CBC 加密模式
+	// AESModeCBC selects CBC mode with padding.
 	AESModeCBC AESMode = iota
-	// AESModeGCM 表示 AES GCM 加密模式
+	// AESModeGCM selects authenticated GCM mode.
 	AESModeGCM
 )
 
-// AESMode 表示 AES 加密模式
+// AESMode identifies the AES encryption mode.
 type AESMode int
 
-// AESEncrypt 提供 AES 对称加解密能力
+// AESEncrypt encrypts and decrypts with a copied AES key and configured strategies.
 type AESEncrypt struct {
-	key            []byte         // 私有化密钥
-	mode           AESMode        // 加密模式
-	ivCreator      IVCreator      // IV规则
-	resultCreator  ResultCreator  // 结果返回规则
-	paddingCreator PaddingCreator // 填充规则
+	key            []byte         // Copied key material.
+	mode           AESMode        // Encryption mode.
+	ivCreator      IVCreator      // IV/nonce strategy.
+	resultCreator  ResultCreator  // Ciphertext framing strategy.
+	paddingCreator PaddingCreator // CBC padding strategy.
 	block          cipher.Block
 	blockErr       error
 	once           sync.Once
 }
 
-// AESOption 表示创建 AES 实例时使用的可选配置
+// AESOption configures AES mode, IV/nonce handling, output framing, and CBC padding.
 type AESOption struct {
-	Mode           AESMode        // 加密模式
-	IVCreator      IVCreator      // IV规则
-	ResultCreator  ResultCreator  // 结果返回规则
-	PaddingCreator PaddingCreator // 填充规则
+	// Mode selects CBC or GCM mode.
+	Mode AESMode
+	// IVCreator controls IV/nonce creation and extraction; nil selects the mode default.
+	IVCreator IVCreator
+	// ResultCreator controls ciphertext framing; nil prefixes the IV/nonce.
+	ResultCreator ResultCreator
+	// PaddingCreator controls CBC padding; nil selects PKCS7 and GCM ignores padding.
+	PaddingCreator PaddingCreator
 }
 
-// NewAES 创建默认 CBC 模式的 AES 加解密实例
+// NewAES creates a CBC instance with random IVs and PKCS7 padding; keys must be 16, 24, or 32 bytes.
 func NewAES(key []byte) (*AESEncrypt, error) {
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
 		return nil, toolkitError.ErrInvalidAESKeySize
 	}
-	// 复制密钥以避免外部修改
+	// Copy the key to isolate it from caller mutation.
 	keyCopy := make([]byte, len(key))
 	copy(keyCopy, key)
 
@@ -60,7 +64,7 @@ func NewAES(key []byte) (*AESEncrypt, error) {
 	}, nil
 }
 
-// NewAESWithOption 使用指定配置创建 AES 加解密实例
+// NewAESWithOption creates an instance with copied key material and optional strategies.
 func NewAESWithOption(key []byte, option AESOption) (*AESEncrypt, error) {
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
 		return nil, toolkitError.ErrInvalidAESKeySize
@@ -74,7 +78,7 @@ func NewAESWithOption(key []byte, option AESOption) (*AESEncrypt, error) {
 		mode: AESModeCBC,
 	}
 
-	// 设置模式
+	// Select the encryption mode.
 	switch option.Mode {
 	case AESModeCBC:
 		aesInstance.mode = AESModeCBC
@@ -84,7 +88,7 @@ func NewAESWithOption(key []byte, option AESOption) (*AESEncrypt, error) {
 		return nil, toolkitError.ErrUnsupportedAESMode
 	}
 
-	// 设置IV创建器 - GCM模式使用专门的nonce创建器
+	// Select a nonce strategy for GCM and an IV strategy for CBC.
 	if option.IVCreator != nil {
 		aesInstance.ivCreator = option.IVCreator
 	} else {
@@ -95,14 +99,14 @@ func NewAESWithOption(key []byte, option AESOption) (*AESEncrypt, error) {
 		}
 	}
 
-	// 设置结果创建器
+	// Select the ciphertext framing strategy.
 	if option.ResultCreator != nil {
 		aesInstance.resultCreator = option.ResultCreator
 	} else {
 		aesInstance.resultCreator = &AppendResultCreator{}
 	}
 
-	// 设置填充创建器（仅CBC模式需要）
+	// Only CBC requires a padding strategy.
 	if aesInstance.mode == AESModeCBC {
 		if option.PaddingCreator != nil {
 			aesInstance.paddingCreator = option.PaddingCreator
@@ -114,35 +118,34 @@ func NewAESWithOption(key []byte, option AESOption) (*AESEncrypt, error) {
 	return aesInstance, nil
 }
 
-// IVCreator 定义加密和解密时的 IV/nonce 处理规则
+// IVCreator defines IV/nonce creation and ciphertext extraction.
 type IVCreator interface {
-	// CreateForEncrypt 加密时创建IV
+	// CreateForEncrypt creates the IV or nonce used for encryption.
 	CreateForEncrypt(key, rawData []byte) ([]byte, error)
-	// ExtractForDecrypt 解密时提取IV
+	// ExtractForDecrypt extracts the IV or nonce required for decryption.
 	ExtractForDecrypt(key, cipherData []byte) ([]byte, error)
 }
 
-// ResultCreator 定义 IV/nonce 与密文的组合和分离规则
+// ResultCreator defines how the IV/nonce and ciphertext are framed.
 type ResultCreator interface {
-	// CombineResult 加密时组合IV和密文
+	// CombineResult combines the IV/nonce and ciphertext.
 	CombineResult(iv, cipherData []byte) []byte
-	// SeparateResult 解密时分离IV和密文
+	// SeparateResult extracts ciphertext from the combined result.
 	SeparateResult(combinedData []byte, ivSize int) (cipherData []byte, err error)
 }
 
-// PaddingCreator 定义分组加密的填充和去填充规则
+// PaddingCreator defines block padding and validation.
 type PaddingCreator interface {
-	// Pad 填充
+	// Pad pads plaintext to the block size.
 	Pad(rawData []byte, blockSize int) ([]byte, error)
-	// UnPad 去除填充
+	// UnPad validates and removes padding.
 	UnPad(paddedData []byte) ([]byte, error)
 }
 
-// RandomIvCreator 为 CBC 模式随机生成 IV
-// 该模式需要配合 AppendResultCreator 使用，解密时从密文前缀解析 IV。
+// RandomIvCreator generates CBC IVs and reads them from a ciphertext prefix.
 type RandomIvCreator struct{}
 
-// CreateForEncrypt 创建 CBC 加密使用的随机 IV
+// CreateForEncrypt creates a random CBC IV.
 func (r *RandomIvCreator) CreateForEncrypt(key, rawData []byte) ([]byte, error) {
 	iv := make([]byte, aes.BlockSize)
 	if _, err := rand.Read(iv); err != nil {
@@ -151,7 +154,7 @@ func (r *RandomIvCreator) CreateForEncrypt(key, rawData []byte) ([]byte, error) 
 	return iv, nil
 }
 
-// ExtractForDecrypt 从密文前缀提取 CBC 解密使用的 IV
+// ExtractForDecrypt reads a CBC IV from the ciphertext prefix.
 func (r *RandomIvCreator) ExtractForDecrypt(key, cipherData []byte) ([]byte, error) {
 	if len(cipherData) < aes.BlockSize {
 		return nil, toolkitError.ErrCipherDataTooShort
@@ -159,12 +162,12 @@ func (r *RandomIvCreator) ExtractForDecrypt(key, cipherData []byte) ([]byte, err
 	return cipherData[:aes.BlockSize], nil
 }
 
-// RandomGCMNonceCreator 随机生成GCM nonce (GCM模式使用)
+// RandomGCMNonceCreator generates GCM nonces and reads them from a ciphertext prefix.
 type RandomGCMNonceCreator struct{}
 
-// CreateForEncrypt 创建 GCM 加密使用的随机 nonce
+// CreateForEncrypt creates a random 12-byte GCM nonce.
 func (r *RandomGCMNonceCreator) CreateForEncrypt(key, rawData []byte) ([]byte, error) {
-	// GCM标准推荐使用12字节的nonce
+	// Use the default 12-byte GCM nonce size.
 	nonce := make([]byte, 12)
 	if _, err := rand.Read(nonce); err != nil {
 		return nil, toolkitError.ErrCreateNonceFailed
@@ -172,7 +175,7 @@ func (r *RandomGCMNonceCreator) CreateForEncrypt(key, rawData []byte) ([]byte, e
 	return nonce, nil
 }
 
-// ExtractForDecrypt 从密文前缀提取 GCM 解密使用的 nonce
+// ExtractForDecrypt reads a GCM nonce from the ciphertext prefix.
 func (r *RandomGCMNonceCreator) ExtractForDecrypt(key, cipherData []byte) ([]byte, error) {
 	if len(cipherData) < 12 {
 		return nil, toolkitError.ErrCipherDataTooShort
@@ -180,10 +183,10 @@ func (r *RandomGCMNonceCreator) ExtractForDecrypt(key, cipherData []byte) ([]byt
 	return cipherData[:12], nil
 }
 
-// AppendResultCreator IV+密文的拼接方式
+// AppendResultCreator prefixes the ciphertext with its IV or nonce.
 type AppendResultCreator struct{}
 
-// CombineResult 将 IV/nonce 放在密文前缀
+// CombineResult prefixes ciphertext with the IV/nonce.
 func (a *AppendResultCreator) CombineResult(iv, cipherData []byte) []byte {
 	result := make([]byte, len(iv)+len(cipherData))
 	copy(result, iv)
@@ -191,7 +194,7 @@ func (a *AppendResultCreator) CombineResult(iv, cipherData []byte) []byte {
 	return result
 }
 
-// SeparateResult 从组合数据中分离密文
+// SeparateResult removes the IV/nonce prefix from ciphertext.
 func (a *AppendResultCreator) SeparateResult(combinedData []byte, ivSize int) (cipherData []byte, err error) {
 	if len(combinedData) < ivSize {
 		return nil, toolkitError.ErrCipherDataTooShort
@@ -199,24 +202,24 @@ func (a *AppendResultCreator) SeparateResult(combinedData []byte, ivSize int) (c
 	return combinedData[ivSize:], nil
 }
 
-// PureResultCreator 纯密文方式（需要外部管理IV）
+// PureResultCreator returns ciphertext without including its IV or nonce.
 type PureResultCreator struct{}
 
-// CombineResult 仅返回密文，调用方需要自行管理 IV/nonce
+// CombineResult returns ciphertext without the IV/nonce.
 func (p *PureResultCreator) CombineResult(iv, cipherData []byte) []byte {
 	return cipherData
 }
 
-// SeparateResult 直接返回密文，调用方需要通过 IVCreator 提供 IV/nonce
+// SeparateResult returns the input ciphertext unchanged.
 func (p *PureResultCreator) SeparateResult(combinedData []byte, ivSize int) (cipherData []byte, err error) {
-	// 纯密文模式下无法从数据中提取IV，需要外部提供
+	// Pure ciphertext has no IV prefix; extraction needs an external IV strategy.
 	return combinedData, nil
 }
 
-// Pkcs7PaddingCreator PKCS7填充
+// Pkcs7PaddingCreator implements PKCS7 padding and validation.
 type Pkcs7PaddingCreator struct{}
 
-// Pad 按 PKCS7 规则填充数据
+// Pad pads data to the requested block size.
 func (p *Pkcs7PaddingCreator) Pad(rawData []byte, blockSize int) ([]byte, error) {
 	if blockSize <= 0 || blockSize > 255 {
 		return nil, toolkitError.ErrInvalidBlockSize
@@ -232,7 +235,7 @@ func (p *Pkcs7PaddingCreator) Pad(rawData []byte, blockSize int) ([]byte, error)
 	return result, nil
 }
 
-// UnPad 按 PKCS7 规则移除填充
+// UnPad validates and removes PKCS7 padding.
 func (p *Pkcs7PaddingCreator) UnPad(paddedData []byte) ([]byte, error) {
 	if len(paddedData) == 0 {
 		return nil, toolkitError.ErrInvalidPadding
@@ -243,7 +246,7 @@ func (p *Pkcs7PaddingCreator) UnPad(paddedData []byte) ([]byte, error) {
 		return nil, toolkitError.ErrInvalidPadding
 	}
 
-	// 使用常量时间比较防止padding oracle攻击
+	// Compare padding bytes without early exit; CBC still requires separate authentication.
 	for i := 0; i < padding; i++ {
 		if subtle.ConstantTimeByteEq(paddedData[len(paddedData)-1-i], byte(padding)) != 1 {
 			return nil, toolkitError.ErrInvalidPadding
@@ -253,7 +256,7 @@ func (p *Pkcs7PaddingCreator) UnPad(paddedData []byte) ([]byte, error) {
 	return paddedData[:len(paddedData)-padding], nil
 }
 
-// cipherBlock 获取cipher.Block实例
+// cipherBlock initializes the AES block once.
 func (a *AESEncrypt) cipherBlock() (cipher.Block, error) {
 	a.once.Do(func() {
 		a.block, a.blockErr = aes.NewCipher(a.key)
@@ -261,7 +264,7 @@ func (a *AESEncrypt) cipherBlock() (cipher.Block, error) {
 	return a.block, a.blockErr
 }
 
-// Encrypt 加密数据
+// Encrypt encrypts nonempty plaintext bytes.
 func (a *AESEncrypt) Encrypt(rawData []byte) ([]byte, error) {
 	if len(rawData) == 0 {
 		return nil, toolkitError.ErrEmptyEncryptData
@@ -282,15 +285,15 @@ func (a *AESEncrypt) Encrypt(rawData []byte) ([]byte, error) {
 	}
 }
 
-// encryptCBC CBC模式加密
+// encryptCBC applies padding, a fresh IV, and ciphertext framing.
 func (a *AESEncrypt) encryptCBC(block cipher.Block, rawData []byte) ([]byte, error) {
-	// 填充数据
+	// Pad the plaintext.
 	paddedData, err := a.paddingCreator.Pad(rawData, aes.BlockSize)
 	if err != nil {
 		return nil, err
 	}
 
-	// 生成IV
+	// Create the IV.
 	iv, err := a.ivCreator.CreateForEncrypt(a.key, paddedData)
 	if err != nil {
 		return nil, toolkitError.ErrCreateIVFailed
@@ -299,41 +302,41 @@ func (a *AESEncrypt) encryptCBC(block cipher.Block, rawData []byte) ([]byte, err
 		return nil, toolkitError.ErrInvalidIVSize
 	}
 
-	// 加密
+	// Encrypt the padded blocks.
 	cipherData := make([]byte, len(paddedData))
 	mode := cipher.NewCBCEncrypter(block, iv)
 	mode.CryptBlocks(cipherData, paddedData)
 
-	// 组合结果
+	// Frame the ciphertext with its IV or nonce.
 	return a.resultCreator.CombineResult(iv, cipherData), nil
 }
 
-// encryptGCM GCM模式加密
+// encryptGCM encrypts and authenticates using a fresh nonce.
 func (a *AESEncrypt) encryptGCM(block cipher.Block, rawData []byte) ([]byte, error) {
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, toolkitError.ErrCreateGCMFailed
 	}
 
-	// 生成nonce
+	// Create the nonce.
 	nonce, err := a.ivCreator.CreateForEncrypt(a.key, rawData)
 	if err != nil {
 		return nil, toolkitError.ErrCreateNonceFailed
 	}
 
-	// 确保nonce长度正确
+	// Validate the nonce size before sealing.
 	if len(nonce) != gcm.NonceSize() {
 		return nil, toolkitError.ErrInvalidNonceSize
 	}
 
-	// GCM加密（包含认证标签）
+	// Seal the plaintext, including the authentication tag.
 	cipherData := gcm.Seal(nil, nonce, rawData, nil)
 
-	// 组合结果
+	// Frame the ciphertext with its IV or nonce.
 	return a.resultCreator.CombineResult(nonce, cipherData), nil
 }
 
-// EncryptBase64 加密并返回Base64字符串
+// EncryptBase64 encrypts plaintext bytes and returns Base64 ciphertext.
 func (a *AESEncrypt) EncryptBase64(rawData []byte) (string, error) {
 	cipherData, err := a.Encrypt(rawData)
 	if err != nil {
@@ -342,7 +345,7 @@ func (a *AESEncrypt) EncryptBase64(rawData []byte) (string, error) {
 	return base64.StdEncoding.EncodeToString(cipherData), nil
 }
 
-// Decrypt 解密数据
+// Decrypt decrypts nonempty ciphertext bytes.
 func (a *AESEncrypt) Decrypt(cipherData []byte) ([]byte, error) {
 	if len(cipherData) == 0 {
 		return nil, toolkitError.ErrEmptyCipherData
@@ -363,9 +366,9 @@ func (a *AESEncrypt) Decrypt(cipherData []byte) ([]byte, error) {
 	}
 }
 
-// decryptCBC CBC模式解密
+// decryptCBC extracts the IV, decrypts blocks, and validates padding.
 func (a *AESEncrypt) decryptCBC(block cipher.Block, cipherData []byte) ([]byte, error) {
-	// 使用IVCreator提取IV
+	// Extract the IV using the configured strategy.
 	iv, err := a.ivCreator.ExtractForDecrypt(a.key, cipherData)
 	if err != nil {
 		return nil, toolkitError.ErrExtractIVFailed
@@ -374,7 +377,7 @@ func (a *AESEncrypt) decryptCBC(block cipher.Block, cipherData []byte) ([]byte, 
 		return nil, toolkitError.ErrInvalidIVSize
 	}
 
-	// 分离实际密文
+	// Separate the ciphertext from its framing.
 	actualCipherData, err := a.resultCreator.SeparateResult(cipherData, len(iv))
 	if err != nil {
 		return nil, toolkitError.ErrSeparateCipherDataFailed
@@ -384,44 +387,44 @@ func (a *AESEncrypt) decryptCBC(block cipher.Block, cipherData []byte) ([]byte, 
 		return nil, toolkitError.ErrInvalidBlockSize
 	}
 
-	// 解密
+	// Decrypt the blocks.
 	rawData := make([]byte, len(actualCipherData))
 	mode := cipher.NewCBCDecrypter(block, iv)
 	mode.CryptBlocks(rawData, actualCipherData)
 
-	// 去除填充
+	// Validate and remove padding.
 	return a.paddingCreator.UnPad(rawData)
 }
 
-// decryptGCM GCM模式解密
+// decryptGCM extracts the nonce and authenticates before returning plaintext.
 func (a *AESEncrypt) decryptGCM(block cipher.Block, cipherData []byte) ([]byte, error) {
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, toolkitError.ErrCreateGCMFailed
 	}
 
-	// 使用IVCreator提取nonce
+	// Extract the nonce using the configured strategy.
 	nonce, err := a.ivCreator.ExtractForDecrypt(a.key, cipherData)
 	if err != nil {
 		return nil, toolkitError.ErrExtractNonceFailed
 	}
 
-	// 分离实际密文
+	// Separate the ciphertext from its framing.
 	actualCipherData, err := a.resultCreator.SeparateResult(cipherData, len(nonce))
 	if err != nil {
 		return nil, toolkitError.ErrSeparateCipherDataFailed
 	}
 
-	// 验证nonce长度
+	// Validate the nonce size before opening.
 	if len(nonce) != gcm.NonceSize() {
 		return nil, toolkitError.ErrInvalidNonceSize
 	}
 
-	// GCM解密（包含认证验证）
+	// Open the ciphertext and verify its authentication tag.
 	return gcm.Open(nil, nonce, actualCipherData, nil)
 }
 
-// DecryptBase64 解密Base64字符串
+// DecryptBase64 decodes Base64 ciphertext and returns the plaintext string.
 func (a *AESEncrypt) DecryptBase64(base64CipherData string) (string, error) {
 	data, err := base64.StdEncoding.DecodeString(base64CipherData)
 	if err != nil {

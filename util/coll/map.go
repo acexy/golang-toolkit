@@ -6,7 +6,7 @@ import (
 	"slices"
 )
 
-// MapAny 从map中抽取任意一个元素
+// MapAny returns an arbitrary entry, or zero values for an empty map.
 func MapAny[K comparable, V any](m map[K]V) (K, V) {
 	var key K
 	var value V
@@ -19,17 +19,17 @@ func MapAny[K comparable, V any](m map[K]V) (K, V) {
 	return key, value
 }
 
-// MapKeys 将map的key转换为slice
+// MapKeys collects map keys in unspecified order.
 func MapKeys[K comparable, V any](m map[K]V) []K {
 	return slices.Collect(maps.Keys(m))
 }
 
-// MapValues 将map的value转换为slice
+// MapValues collects map values in unspecified order.
 func MapValues[K comparable, V any](m map[K]V) []V {
 	return slices.Collect(maps.Values(m))
 }
 
-// MapCollect 将map转换成新的map
+// MapCollect maps entries to a new map; duplicate output keys overwrite earlier values.
 func MapCollect[K, RK comparable, V, RV any](m map[K]V, mapFn func(K, V) (RK, RV)) map[RK]RV {
 	if len(m) == 0 {
 		return nil
@@ -42,7 +42,7 @@ func MapCollect[K, RK comparable, V, RV any](m map[K]V, mapFn func(K, V) (RK, RV
 	return result
 }
 
-// MapFilterCollect 将map过滤转换成新的map
+// MapFilterCollect filters and transforms entries into a new map.
 func MapFilterCollect[K, RK comparable, V, RV any](m map[K]V, mapFn func(K, V) (RK, RV, bool)) map[RK]RV {
 	if len(m) == 0 {
 		return nil
@@ -57,7 +57,7 @@ func MapFilterCollect[K, RK comparable, V, RV any](m map[K]V, mapFn func(K, V) (
 	return result
 }
 
-// MapFilterToSlice 将map过滤转换成切片
+// MapFilterToSlice filters and transforms entries into a slice.
 func MapFilterToSlice[K comparable, V, R any](m map[K]V, mapFn func(K, V) (R, bool)) []R {
 	if len(m) == 0 {
 		return nil
@@ -72,7 +72,7 @@ func MapFilterToSlice[K comparable, V, R any](m map[K]V, mapFn func(K, V) (R, bo
 	return result
 }
 
-// MapForEach 遍历map return false时停止迭代
+// MapForEach visits entries until the callback returns false.
 func MapForEach[K comparable, V any](m map[K]V, fn func(k K, v V) bool) {
 	for k, v := range m {
 		if !fn(k, v) {
@@ -81,14 +81,14 @@ func MapForEach[K comparable, V any](m map[K]V, fn func(k K, v V) bool) {
 	}
 }
 
-// MapForEachAll 遍历map
+// MapForEachAll visits every entry in unspecified order.
 func MapForEachAll[K comparable, V any](m map[K]V, fn func(k K, v V)) {
 	for k, v := range m {
 		fn(k, v)
 	}
 }
 
-// MapMerge 将source追加到target中
+// MapMerge copies source into target, allocating target if nil and source is nonempty.
 func MapMerge[K comparable, V any](target map[K]V, source map[K]V) map[K]V {
 	if len(source) == 0 {
 		return target
@@ -100,7 +100,7 @@ func MapMerge[K comparable, V any](target map[K]V, source map[K]V) map[K]V {
 	return target
 }
 
-// MapRandom 随机获取一个map的元素
+// MapRandom returns a pseudo-random entry, or zero values for an empty map.
 func MapRandom[K comparable, V any](m map[K]V) (K, V) {
 	if len(m) == 0 {
 		var zk K

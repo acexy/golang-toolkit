@@ -8,11 +8,15 @@ import (
 )
 
 const (
-	LimitHalf  = -1 // 使用一半核心数，最小1，向下取整
-	LimitMax   = -2 // 全部
-	Limit1Left = -3 // 保留一个核心 最小1
+	// LimitHalf uses half the detected CPU count, rounded down with a minimum of one.
+	LimitHalf = -1
+	// LimitMax uses all detected CPUs.
+	LimitMax = -2
+	// Limit1Left reserves one detected CPU, with a minimum of one for Go.
+	Limit1Left = -3
 )
 
+// CPULimitType selects a GOMAXPROCS policy.
 type CPULimitType int
 
 func readCgroupV1CPU() (quota int64, period int64) {
@@ -52,7 +56,7 @@ func readIntFromFile(path string) int64 {
 	return n
 }
 
-// DetectCPULimit 检测操作系统/容器 可运行CPU核数
+// DetectCPULimit checks cgroup CPU quotas and falls back to runtime.NumCPU.
 func DetectCPULimit() int {
 	if quota, period := readCgroupV1CPU(); quota > 0 && period > 0 {
 		limit := int(float64(quota) / float64(period))
@@ -66,14 +70,14 @@ func DetectCPULimit() int {
 	return runtime.NumCPU()
 }
 
-// SetGoMaxProc 设置GOMAXPROCS
+// SetGoMaxProc sets process-wide GOMAXPROCS when limit is positive.
 func SetGoMaxProc(limit int) {
 	if limit > 0 {
 		runtime.GOMAXPROCS(limit)
 	}
 }
 
-// SetGoMaxProcType 设置GOMAXPROCS
+// SetGoMaxProcType applies a supported CPU-limit policy to GOMAXPROCS.
 func SetGoMaxProcType(limit CPULimitType) {
 	switch limit {
 	case LimitHalf:

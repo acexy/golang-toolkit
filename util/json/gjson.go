@@ -5,22 +5,22 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// GJSONValue 表示一个 gjson 查询结果
+// GJSONValue wraps a gjson query result.
 type GJSONValue struct {
 	gr gjson.Result
 }
 
-// GJSONObject 表示一个 JSON 对象
+// GJSONObject wraps a JSON object for key-based access.
 type GJSONObject struct {
 	m map[string]gjson.Result
 }
 
-// GetRawJSON 获取指定路径的原始 JSON 字符串
+// GetRawJSON returns raw JSON at a gjson path.
 func GetRawJSON(json, path string) string {
 	return gjson.Get(json, path).Raw
 }
 
-// GetStringValue 获取指定 JSON 结构中的字符串值
+// GetStringValue returns the converted string value and whether the path exists.
 func GetStringValue(json, path string) (string, bool) {
 	result := gjson.Get(json, path)
 	if !result.Exists() {
@@ -29,7 +29,7 @@ func GetStringValue(json, path string) (string, bool) {
 	return result.String(), true
 }
 
-// GetIntValue 获取指定 JSON 结构中的 int 值
+// GetIntValue returns the converted int value and whether the path exists.
 func GetIntValue(json, path string) (int64, bool) {
 	result := gjson.Get(json, path)
 	if !result.Exists() {
@@ -38,7 +38,7 @@ func GetIntValue(json, path string) (int64, bool) {
 	return result.Int(), true
 }
 
-// GetUintValue 获取指定 JSON 结构中的 uint 值
+// GetUintValue returns the converted uint value and whether the path exists.
 func GetUintValue(json, path string) (uint64, bool) {
 	result := gjson.Get(json, path)
 	if !result.Exists() {
@@ -47,7 +47,7 @@ func GetUintValue(json, path string) (uint64, bool) {
 	return result.Uint(), true
 }
 
-// GetFloatValue 获取指定 JSON 结构中的 float 值
+// GetFloatValue returns the converted float value and whether the path exists.
 func GetFloatValue(json, path string) (float64, bool) {
 	result := gjson.Get(json, path)
 	if !result.Exists() {
@@ -56,7 +56,7 @@ func GetFloatValue(json, path string) (float64, bool) {
 	return result.Float(), true
 }
 
-// GetBoolValue 获取指定 JSON 结构中的 bool 值
+// GetBoolValue returns the converted bool value and whether the path exists.
 func GetBoolValue(json, path string) (bool, bool) {
 	result := gjson.Get(json, path)
 	if !result.Exists() {
@@ -65,7 +65,7 @@ func GetBoolValue(json, path string) (bool, bool) {
 	return result.Bool(), true
 }
 
-// GetArrayValue 获取指定 JSON 结构中的数组
+// GetArrayValue returns array items and whether the path contains an array.
 func GetArrayValue(json, path string) ([]*GJSONValue, bool) {
 	result := gjson.Get(json, path)
 	if !result.Exists() || !result.IsArray() {
@@ -77,7 +77,7 @@ func GetArrayValue(json, path string) ([]*GJSONValue, bool) {
 	}), true
 }
 
-// GetObject 获取指定 JSON 结构中的对象
+// GetObject returns an object and whether the path contains an object.
 func GetObject(json, path string) (*GJSONObject, bool) {
 	result := gjson.Get(json, path)
 	if !result.Exists() || !result.IsObject() {
@@ -86,7 +86,7 @@ func GetObject(json, path string) (*GJSONObject, bool) {
 	return &GJSONObject{result.Map()}, true
 }
 
-// Get 获取指定 JSON 结构中的值
+// Get returns the named member and whether it exists.
 func (g *GJSONObject) Get(jsonKey string) (*GJSONValue, bool) {
 	if g == nil {
 		return nil, false
@@ -98,7 +98,7 @@ func (g *GJSONObject) Get(jsonKey string) (*GJSONValue, bool) {
 	return &GJSONValue{v}, true
 }
 
-// GetRawJSON 获取指定 JSON 结构中的原始 JSON 字符串
+// GetRawJSON returns the raw member JSON and whether it exists.
 func (g *GJSONObject) GetRawJSON(jsonKey string) (string, bool) {
 	value, ok := g.Get(jsonKey)
 	if !ok {
@@ -107,7 +107,7 @@ func (g *GJSONObject) GetRawJSON(jsonKey string) (string, bool) {
 	return value.RawJSONString(), true
 }
 
-// GetStringValue 获取指定 JSON 结构中的字符串值
+// GetStringValue returns the converted member value and whether it exists.
 func (g *GJSONObject) GetStringValue(jsonKey string) (string, bool) {
 	value, ok := g.Get(jsonKey)
 	if !ok {
@@ -116,13 +116,13 @@ func (g *GJSONObject) GetStringValue(jsonKey string) (string, bool) {
 	return value.StringValue()
 }
 
-// GetStringOrZero 获取指定 JSON 结构中的字符串值，不存在时返回零值
+// GetStringOrZero returns the converted member value, or its zero value when absent.
 func (g *GJSONObject) GetStringOrZero(jsonKey string) string {
 	r, _ := g.GetStringValue(jsonKey)
 	return r
 }
 
-// GetIntValue 获取指定 JSON 结构中的 int 值
+// GetIntValue returns the converted member value and whether it exists.
 func (g *GJSONObject) GetIntValue(jsonKey string) (int64, bool) {
 	value, ok := g.Get(jsonKey)
 	if !ok {
@@ -131,13 +131,13 @@ func (g *GJSONObject) GetIntValue(jsonKey string) (int64, bool) {
 	return value.IntValue()
 }
 
-// GetIntOrZero 获取指定 JSON 结构中的 int 值，不存在时返回零值
+// GetIntOrZero returns the converted member value, or its zero value when absent.
 func (g *GJSONObject) GetIntOrZero(jsonKey string) int64 {
 	r, _ := g.GetIntValue(jsonKey)
 	return r
 }
 
-// GetUintValue 获取指定 JSON 结构中的 uint 值
+// GetUintValue returns the converted member value and whether it exists.
 func (g *GJSONObject) GetUintValue(jsonKey string) (uint64, bool) {
 	value, ok := g.Get(jsonKey)
 	if !ok {
@@ -146,13 +146,13 @@ func (g *GJSONObject) GetUintValue(jsonKey string) (uint64, bool) {
 	return value.UintValue()
 }
 
-// GetUintOrZero 获取指定 JSON 结构中的 uint 值，不存在时返回零值
+// GetUintOrZero returns the converted member value, or its zero value when absent.
 func (g *GJSONObject) GetUintOrZero(jsonKey string) uint64 {
 	r, _ := g.GetUintValue(jsonKey)
 	return r
 }
 
-// GetFloatValue 获取指定 JSON 结构中的 float 值
+// GetFloatValue returns the converted member value and whether it exists.
 func (g *GJSONObject) GetFloatValue(jsonKey string) (float64, bool) {
 	value, ok := g.Get(jsonKey)
 	if !ok {
@@ -161,13 +161,13 @@ func (g *GJSONObject) GetFloatValue(jsonKey string) (float64, bool) {
 	return value.FloatValue()
 }
 
-// GetFloatOrZero 获取指定 JSON 结构中的 float 值，不存在时返回零值
+// GetFloatOrZero returns the converted member value, or its zero value when absent.
 func (g *GJSONObject) GetFloatOrZero(jsonKey string) float64 {
 	r, _ := g.GetFloatValue(jsonKey)
 	return r
 }
 
-// GetBoolValue 获取指定 JSON 结构中的 bool 值
+// GetBoolValue returns the converted member value and whether it exists.
 func (g *GJSONObject) GetBoolValue(jsonKey string) (bool, bool) {
 	value, ok := g.Get(jsonKey)
 	if !ok {
@@ -176,13 +176,13 @@ func (g *GJSONObject) GetBoolValue(jsonKey string) (bool, bool) {
 	return value.BoolValue()
 }
 
-// GetBoolOrZero 获取指定 JSON 结构中的 bool 值，不存在时返回零值
+// GetBoolOrZero returns the converted member value, or its zero value when absent.
 func (g *GJSONObject) GetBoolOrZero(jsonKey string) bool {
 	r, _ := g.GetBoolValue(jsonKey)
 	return r
 }
 
-// GetArrayValue 获取指定 JSON 结构中的数组
+// GetArrayValue returns array items and whether the member contains an array.
 func (g *GJSONObject) GetArrayValue(jsonKey string) ([]*GJSONValue, bool) {
 	value, ok := g.Get(jsonKey)
 	if !ok {
@@ -191,7 +191,7 @@ func (g *GJSONObject) GetArrayValue(jsonKey string) ([]*GJSONValue, bool) {
 	return value.ArrayValue()
 }
 
-// GetObject 获取指定 JSON 结构中的对象
+// GetObject returns a member object and whether it has object shape.
 func (g *GJSONObject) GetObject(jsonKey string) (*GJSONObject, bool) {
 	value, ok := g.Get(jsonKey)
 	if !ok {
@@ -200,21 +200,21 @@ func (g *GJSONObject) GetObject(jsonKey string) (*GJSONObject, bool) {
 	return value.ObjectValue()
 }
 
-// NewGJSON 创建一个 GJSONValue
+// NewGJSON parses a JSON string for gjson queries.
 func NewGJSON(json string) *GJSONValue {
 	return &GJSONValue{
 		gjson.Parse(json),
 	}
 }
 
-// NewGJSONBytes 创建一个 GJSONValue
+// NewGJSONBytes parses JSON bytes for gjson queries.
 func NewGJSONBytes(json []byte) *GJSONValue {
 	return &GJSONValue{
 		gjson.ParseBytes(json),
 	}
 }
 
-// Get 获取指定 JSON 结构中的值
+// Get queries a nested path, returning an empty result for a nil receiver.
 func (g *GJSONValue) Get(path string) *GJSONValue {
 	if g == nil {
 		return &GJSONValue{}
@@ -224,7 +224,7 @@ func (g *GJSONValue) Get(path string) *GJSONValue {
 	}
 }
 
-// ForEach 遍历 JSON 对象或数组
+// ForEach visits object or array entries until the callback returns false.
 func (g *GJSONValue) ForEach(fn func(key, value gjson.Result) bool) {
 	if g == nil || fn == nil {
 		return
@@ -234,7 +234,7 @@ func (g *GJSONValue) ForEach(fn func(key, value gjson.Result) bool) {
 	})
 }
 
-// StringValue 获取指定 JSON 结构中的字符串值
+// StringValue returns the converted value and whether the result exists.
 func (g *GJSONValue) StringValue() (string, bool) {
 	if g == nil || !g.gr.Exists() {
 		return "", false
@@ -242,13 +242,13 @@ func (g *GJSONValue) StringValue() (string, bool) {
 	return g.gr.String(), true
 }
 
-// StringOrZero 获取指定 JSON 结构中的字符串值，不存在时返回零值
+// StringOrZero returns the converted value, or its zero value when absent.
 func (g *GJSONValue) StringOrZero() string {
 	r, _ := g.StringValue()
 	return r
 }
 
-// IntValue 获取指定 JSON 结构中的 int 值
+// IntValue returns the converted value and whether the result exists.
 func (g *GJSONValue) IntValue() (int64, bool) {
 	if g == nil || !g.gr.Exists() {
 		return 0, false
@@ -256,13 +256,13 @@ func (g *GJSONValue) IntValue() (int64, bool) {
 	return g.gr.Int(), true
 }
 
-// IntOrZero 获取指定 JSON 结构中的 int 值，不存在时返回零值
+// IntOrZero returns the converted value, or its zero value when absent.
 func (g *GJSONValue) IntOrZero() int64 {
 	r, _ := g.IntValue()
 	return r
 }
 
-// UintValue 获取指定 JSON 结构中的 uint 值
+// UintValue returns the converted value and whether the result exists.
 func (g *GJSONValue) UintValue() (uint64, bool) {
 	if g == nil || !g.gr.Exists() {
 		return 0, false
@@ -270,13 +270,13 @@ func (g *GJSONValue) UintValue() (uint64, bool) {
 	return g.gr.Uint(), true
 }
 
-// UintOrZero 获取指定 JSON 结构中的 uint 值，不存在时返回零值
+// UintOrZero returns the converted value, or its zero value when absent.
 func (g *GJSONValue) UintOrZero() uint64 {
 	r, _ := g.UintValue()
 	return r
 }
 
-// FloatValue 获取指定 JSON 结构中的 float 值
+// FloatValue returns the converted value and whether the result exists.
 func (g *GJSONValue) FloatValue() (float64, bool) {
 	if g == nil || !g.gr.Exists() {
 		return 0, false
@@ -284,13 +284,13 @@ func (g *GJSONValue) FloatValue() (float64, bool) {
 	return g.gr.Float(), true
 }
 
-// FloatOrZero 获取指定 JSON 结构中的 float 值，不存在时返回零值
+// FloatOrZero returns the converted value, or its zero value when absent.
 func (g *GJSONValue) FloatOrZero() float64 {
 	r, _ := g.FloatValue()
 	return r
 }
 
-// BoolValue 获取指定 JSON 结构中的 bool 值
+// BoolValue returns the converted value and whether the result exists.
 func (g *GJSONValue) BoolValue() (bool, bool) {
 	if g == nil || !g.gr.Exists() {
 		return false, false
@@ -298,13 +298,13 @@ func (g *GJSONValue) BoolValue() (bool, bool) {
 	return g.gr.Bool(), true
 }
 
-// BoolOrZero 获取指定 JSON 结构中的 bool 值，不存在时返回零值
+// BoolOrZero returns the converted value, or its zero value when absent.
 func (g *GJSONValue) BoolOrZero() bool {
 	r, _ := g.BoolValue()
 	return r
 }
 
-// ArrayValue 获取指定 JSON 结构中的数组
+// ArrayValue returns array items and whether the result contains an array.
 func (g *GJSONValue) ArrayValue() ([]*GJSONValue, bool) {
 	if g == nil || !g.gr.Exists() || !g.gr.IsArray() {
 		return nil, false
@@ -315,7 +315,7 @@ func (g *GJSONValue) ArrayValue() ([]*GJSONValue, bool) {
 	}), true
 }
 
-// RawJSONString 获取指定 JSON 结构中的原始 JSON 字符串
+// RawJSONString returns the raw result JSON, or empty for a nil receiver.
 func (g *GJSONValue) RawJSONString() string {
 	if g == nil {
 		return ""
@@ -323,7 +323,7 @@ func (g *GJSONValue) RawJSONString() string {
 	return g.gr.Raw
 }
 
-// ObjectValue 获取指定 JSON 结构中的对象
+// ObjectValue returns the object and whether the result has object shape.
 func (g *GJSONValue) ObjectValue() (*GJSONObject, bool) {
 	if g == nil || !g.gr.Exists() || !g.gr.IsObject() {
 		return nil, false

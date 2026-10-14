@@ -8,7 +8,7 @@ import (
 	toolkitError "github.com/acexy/golang-toolkit/error"
 )
 
-// SliceRandom 随机返回切片中的一个元素
+// SliceRandom returns a pseudo-random element, or the zero value for an empty slice.
 func SliceRandom[T any](slice []T) T {
 	if len(slice) == 0 {
 		var zeroValue T
@@ -17,7 +17,7 @@ func SliceRandom[T any](slice []T) T {
 	return slice[rand.Intn(len(slice))]
 }
 
-// SliceContains 检查指定的元素是否存在切片中
+// SliceContains reports membership using equality or the first nonnil comparator.
 func SliceContains[T comparable](slice []T, target T, compare ...func(T, T) bool) bool {
 	if len(compare) > 0 && compare[0] != nil {
 		return slices.ContainsFunc(slice, func(item T) bool {
@@ -27,7 +27,7 @@ func SliceContains[T comparable](slice []T, target T, compare ...func(T, T) bool
 	return slices.Contains(slice, target)
 }
 
-// SliceIndexOf 获取指定元素在切片中的索引，如果元素不存在则返回-1
+// SliceIndexOf returns the first matching index, or -1 when absent.
 func SliceIndexOf[T comparable](slice []T, target T, compare ...func(T, T) bool) int {
 	if len(compare) > 0 && compare[0] != nil {
 		return slices.IndexFunc(slice, func(item T) bool {
@@ -37,17 +37,17 @@ func SliceIndexOf[T comparable](slice []T, target T, compare ...func(T, T) bool)
 	return slices.Index(slice, target)
 }
 
-// SliceContainsBy 按照指定条件检查切片中是否存在元素
+// SliceContainsBy reports whether any element matches the predicate.
 func SliceContainsBy[T any](slice []T, compare func(ele T) bool) bool {
 	return slices.ContainsFunc(slice, compare)
 }
 
-// SliceIndexBy 按照指定条件获取切片元素索引，如果元素不存在则返回-1
+// SliceIndexBy returns the first predicate match, or -1 when absent.
 func SliceIndexBy[T any](slice []T, compare func(ele T) bool) int {
 	return slices.IndexFunc(slice, compare)
 }
 
-// SliceFind 筛选切片 通过函数筛选出符合要求的第一个元素
+// SliceFind returns the first predicate match and whether one exists.
 func SliceFind[T any](slice []T, filter func(item T) bool) (T, bool) {
 	index := slices.IndexFunc(slice, filter)
 	if index >= 0 {
@@ -57,7 +57,7 @@ func SliceFind[T any](slice []T, filter func(item T) bool) (T, bool) {
 	return zero, false
 }
 
-// SliceFindLast 筛选切片 通过函数反向匹配筛选出符合要求的第一个元素
+// SliceFindLast returns the last predicate match and whether one exists.
 func SliceFindLast[T any](slice []T, filter func(item T) bool) (T, bool) {
 	var t T
 	if len(slice) == 0 {
@@ -75,7 +75,7 @@ func SliceFindLast[T any](slice []T, filter func(item T) bool) (T, bool) {
 	return t, exist
 }
 
-// SliceFilter 筛选切片 通过函数筛选出符合要求的元素
+// SliceFilter returns matching elements in input order.
 func SliceFilter[T any](slice []T, filter func(item T) bool) []T {
 	if len(slice) == 0 {
 		return nil
@@ -90,7 +90,7 @@ func SliceFilter[T any](slice []T, filter func(item T) bool) []T {
 	return result
 }
 
-// SliceIntersection 求两个切片的交集 两个集合中共同的元素所组成的集合
+// SliceIntersection returns shared values, optionally using a custom comparator.
 func SliceIntersection[T comparable](slicePart1, slicePart2 []T, compare ...func(part1, part2 T) bool) []T {
 	var compareFn func(T, T) bool
 	if len(compare) > 0 {
@@ -100,7 +100,7 @@ func SliceIntersection[T comparable](slicePart1, slicePart2 []T, compare ...func
 	cache := make(map[T]struct{})
 
 	if compareFn == nil {
-		// 如果没有自定义的比较函数，使用默认的比较方式
+		// Use comparable-value membership when no comparator is supplied.
 		setA := make(map[T]struct{})
 		for i := range slicePart1 {
 			setA[slicePart1[i]] = struct{}{}
@@ -114,7 +114,7 @@ func SliceIntersection[T comparable](slicePart1, slicePart2 []T, compare ...func
 			}
 		}
 	} else {
-		// 使用自定义的比较函数
+		// Use the supplied comparator.
 		for i := range slicePart1 {
 			for j := range slicePart2 {
 				if compareFn(slicePart1[i], slicePart2[j]) {
@@ -129,7 +129,7 @@ func SliceIntersection[T comparable](slicePart1, slicePart2 []T, compare ...func
 	return result
 }
 
-// SliceUnion 求两个切片的并集 两个集合中所有元素（不重复）所组成的集合。
+// SliceUnion returns distinct values from both inputs using the selected equality rule.
 func SliceUnion[T comparable](slicePart1, slicePart2 []T, compare ...func(part1 T, part2 T) bool) []T {
 	var compareFn func(T, T) bool
 	if len(compare) > 0 {
@@ -137,14 +137,14 @@ func SliceUnion[T comparable](slicePart1, slicePart2 []T, compare ...func(part1 
 	}
 	result := make([]T, 0)
 
-	// 处理 slicePart1 中的元素
+	// Preserve the first input order.
 	for i := range slicePart1 {
 		if !SliceContains(result, slicePart1[i], compareFn) {
 			result = append(result, slicePart1[i])
 		}
 	}
 
-	// 处理 slicePart2 中的元素
+	// Append unseen values from the second input.
 	for i := range slicePart2 {
 		if !SliceContains(result, slicePart2[i], compareFn) {
 			result = append(result, slicePart2[i])
@@ -153,7 +153,7 @@ func SliceUnion[T comparable](slicePart1, slicePart2 []T, compare ...func(part1 
 	return result
 }
 
-// SliceComplement 求两个切片的补集 全集中(slicePart1)不属于某个集合(slicePart2)的元素所组成的集合
+// SliceComplement returns values from the first input that are absent from the second.
 func SliceComplement[T comparable](slicePart1, slicePart2 []T, compare ...func(part1, part2 T) bool) []T {
 	var compareFn func(T, T) bool
 	if len(compare) > 0 {
@@ -180,9 +180,7 @@ func SliceComplement[T comparable](slicePart1, slicePart2 []T, compare ...func(p
 	return result
 }
 
-// SliceDiff 返回两个集合的差异：新增的和减少的
-// added: partNew中有但partOld中没有的元素
-// removed: partOld中有但partNew中没有的元素
+// SliceDiff returns values added in partNew and removed from partOld.
 func SliceDiff[T comparable](partOld, partNew []T, compare ...func(T, T) bool) (added, removed []T) {
 	if len(compare) > 0 {
 		eq := compare[0]
@@ -225,7 +223,7 @@ func SliceDiff[T comparable](partOld, partNew []T, compare ...func(T, T) bool) (
 			removed = append(removed, v)
 		}
 	}
-	// 找新增的（partNew 中有，partOld 中没有）
+	// Collect values present only in the new input.
 	for _, v := range partNew {
 		if _, ok := amap[v]; !ok {
 			added = append(added, v)
@@ -234,9 +232,7 @@ func SliceDiff[T comparable](partOld, partNew []T, compare ...func(T, T) bool) (
 	return
 }
 
-// SliceAnyDiff 针对不可比较类型
-// added: partNew中有但partOld中没有的元素
-// removed: partOld中有但partNew中没有的元素
+// SliceAnyDiff returns additions and removals using one-to-one predicate matches.
 func SliceAnyDiff[T any](partOld, partNew []T, compare func(T, T) bool) (added, removed []T) {
 	usedA := make([]bool, len(partOld))
 	usedB := make([]bool, len(partNew))
@@ -262,7 +258,7 @@ func SliceAnyDiff[T any](partOld, partNew []T, compare func(T, T) bool) (added, 
 	return
 }
 
-// SliceIsSubset 判断切片slicePart是否是切片sliceAll的子集
+// SliceIsSubset reports whether every value in the first slice belongs to the second.
 func SliceIsSubset[T comparable](slicePart, sliceAll []T) bool {
 	setMap := make(map[T]struct{}, len(sliceAll))
 	for _, v := range sliceAll {
@@ -277,7 +273,7 @@ func SliceIsSubset[T comparable](slicePart, sliceAll []T) bool {
 	return true
 }
 
-// SliceFilterToMap 将切片按照指定的过滤处理形成map
+// SliceFilterToMap filters and maps elements into a map; later duplicate keys overwrite values.
 func SliceFilterToMap[T any, K comparable, V any](slice []T, filter func(T) (K, V, bool)) map[K]V {
 	if len(slice) == 0 {
 		return nil
@@ -292,7 +288,7 @@ func SliceFilterToMap[T any, K comparable, V any](slice []T, filter func(T) (K, 
 	return result
 }
 
-// SliceCollect 将切片按照指定的采集映射方法处理为一个新的切片
+// SliceCollect maps each element to a new slice in input order.
 func SliceCollect[T, R any](input []T, mapFn func(T) R) []R {
 	if len(input) == 0 {
 		return nil
@@ -304,7 +300,7 @@ func SliceCollect[T, R any](input []T, mapFn func(T) R) []R {
 	return output
 }
 
-// SliceFilterCollect 将切片按照指定的过滤条件采集映射方法处理为一个新的切片
+// SliceFilterCollect filters and maps elements into a new slice in input order.
 func SliceFilterCollect[T, R any](input []T, mapFn func(T) (R, bool)) []R {
 	if len(input) == 0 {
 		return nil
@@ -319,7 +315,7 @@ func SliceFilterCollect[T, R any](input []T, mapFn func(T) (R, bool)) []R {
 	return output
 }
 
-// SliceFlat 将二维切片中的所有元素聚合为一个新的切片
+// SliceFlat flattens a two-dimensional slice, returning a nonnil empty slice for no elements.
 func SliceFlat[T any](input [][]T) []T {
 	if len(input) == 0 {
 		return []T{}
@@ -331,7 +327,7 @@ func SliceFlat[T any](input [][]T) []T {
 	return output
 }
 
-// SliceForEachAll 遍历所有切片并执行指定的函数
+// SliceForEachAll visits every element in input order.
 func SliceForEachAll[T any](slice []T, fn func(T)) {
 	if len(slice) == 0 {
 		return
@@ -341,7 +337,7 @@ func SliceForEachAll[T any](slice []T, fn func(T)) {
 	}
 }
 
-// SliceForEach 遍历切片并执行指定的函数，如果返回false则停止遍历
+// SliceForEach visits elements until the callback returns false.
 func SliceForEach[T any](slice []T, foreach func(T) bool) {
 	if len(slice) == 0 {
 		return
@@ -353,7 +349,7 @@ func SliceForEach[T any](slice []T, foreach func(T) bool) {
 	}
 }
 
-// SliceDistinct 去除切片的重复元素
+// SliceDistinct removes equal duplicates while keeping the first occurrence.
 func SliceDistinct[T comparable](slice []T) []T {
 	if len(slice) == 0 {
 		return nil
@@ -370,7 +366,7 @@ func SliceDistinct[T comparable](slice []T) []T {
 	return result
 }
 
-// SliceDistinctBy 按照指定的切片去重值去重元素
+// SliceDistinctBy removes duplicate keys while keeping the first matching element.
 func SliceDistinctBy[T any, K comparable](slice []T, keyBuild func(ele T) K) []T {
 	if len(slice) == 0 {
 		return nil
@@ -388,9 +384,7 @@ func SliceDistinctBy[T any, K comparable](slice []T, keyBuild func(ele T) K) []T
 	return result
 }
 
-// SliceSort 对切片进行排序
-// less: 元素排序的权重值
-// desc: 是否降序 默认为升序
+// SliceSort sorts the input in place by integer weight, ascending unless desc is true.
 func SliceSort[T any](slice []T, less func(e T) int, desc ...bool) {
 	if len(slice) == 0 {
 		return
@@ -405,7 +399,7 @@ func SliceSort[T any](slice []T, less func(e T) int, desc ...bool) {
 	})
 }
 
-// SliceGroupBy 将切片按照指定的分组函数进行分组
+// SliceGroupBy groups elements into slices by key.
 func SliceGroupBy[T any, K comparable](slice []T, groupFn func(T) K) map[K][]T {
 	result := make(map[K][]T)
 	for i := range slice {
@@ -415,7 +409,7 @@ func SliceGroupBy[T any, K comparable](slice []T, groupFn func(T) K) map[K][]T {
 	return result
 }
 
-// SliceGroupBySingle 将切片按照指定的分组函数进行分组 适用于分组的值为单个元素
+// SliceGroupBySingle groups elements by key, keeping the last element for each key.
 func SliceGroupBySingle[T any, K comparable](slice []T, groupFn func(T) K) map[K]T {
 	result := make(map[K]T)
 	for i := range slice {
@@ -425,7 +419,7 @@ func SliceGroupBySingle[T any, K comparable](slice []T, groupFn func(T) K) map[K
 	return result
 }
 
-// SliceGroupByValue 将切片按照指定的分组函数进行分组
+// SliceGroupByValue groups projected values into slices by key.
 func SliceGroupByValue[T, V any, K comparable](slice []T, groupFn func(T) (K, V)) map[K][]V {
 	result := make(map[K][]V)
 	for i := range slice {
@@ -435,7 +429,7 @@ func SliceGroupByValue[T, V any, K comparable](slice []T, groupFn func(T) (K, V)
 	return result
 }
 
-// SliceGroupBySingleValue 将切片按照指定的分组函数进行分组 适用于分组的值为单个元素
+// SliceGroupBySingleValue groups projected values by key, keeping the last value.
 func SliceGroupBySingleValue[T, V any, K comparable](slice []T, groupFn func(T) (K, V)) map[K]V {
 	result := make(map[K]V)
 	for i := range slice {
@@ -445,7 +439,7 @@ func SliceGroupBySingleValue[T, V any, K comparable](slice []T, groupFn func(T) 
 	return result
 }
 
-// SliceSplitChunk 将 slice 拆分为多个子 slice，每个子 slice 的大小不超过 size
+// SliceSplitChunk returns views of at most size elements; nonpositive size returns nil.
 func SliceSplitChunk[T any](slice []T, size int) [][]T {
 	if size <= 0 {
 		return nil
@@ -453,7 +447,7 @@ func SliceSplitChunk[T any](slice []T, size int) [][]T {
 	return slices.Collect(slices.Chunk(slice, size))
 }
 
-// SliceRemove 删除指定索引的元素 （会影响原始值）
+// SliceRemove removes an indexed element, potentially modifying the backing array; invalid indexes return an error.
 func SliceRemove[T any](index int, slice []T) ([]T, error) {
 	if index < 0 || index >= len(slice) {
 		return slice, toolkitError.ErrSliceIndexOutOfRange
@@ -461,7 +455,7 @@ func SliceRemove[T any](index int, slice []T) ([]T, error) {
 	return slices.Delete(slice, index, index+1), nil
 }
 
-// SliceRemoveSafe 删除指定索引的元素（不影响原始 slice）
+// SliceRemoveSafe removes an indexed element from a shallow copy of the slice.
 func SliceRemoveSafe[T any](index int, slice []T) ([]T, error) {
 	if index < 0 || index >= len(slice) {
 		return nil, toolkitError.ErrSliceIndexOutOfRange
@@ -469,7 +463,7 @@ func SliceRemoveSafe[T any](index int, slice []T) ([]T, error) {
 	return slices.Delete(slices.Clone(slice), index, index+1), nil
 }
 
-// SliceInsert 插入元素 （可能影响原始值）
+// SliceInsert inserts an element at a checked index, potentially modifying the backing array.
 func SliceInsert[T any](index int, new T, slice []T) ([]T, error) {
 	if index < 0 || index > len(slice) {
 		return slice, toolkitError.ErrSliceIndexOutOfRange
@@ -477,7 +471,7 @@ func SliceInsert[T any](index int, new T, slice []T) ([]T, error) {
 	return slices.Insert(slice, index, new), nil
 }
 
-// SliceInsertSafe 在指定索引插入单个元素（不影响原始 slice）
+// SliceInsertSafe inserts an element into a shallow copy at a checked index.
 func SliceInsertSafe[T any](index int, new T, slice []T) ([]T, error) {
 	if index < 0 || index > len(slice) {
 		return nil, toolkitError.ErrSliceIndexOutOfRange
@@ -485,7 +479,7 @@ func SliceInsertSafe[T any](index int, new T, slice []T) ([]T, error) {
 	return slices.Insert(slices.Clone(slice), index, new), nil
 }
 
-// SliceInserts 插入多个元素 （可能影响原始值）
+// SliceInserts inserts multiple elements at a checked index, potentially modifying the backing array.
 func SliceInserts[T any](index int, new []T, slice []T) ([]T, error) {
 	if index < 0 || index > len(slice) {
 		return slice, toolkitError.ErrSliceIndexOutOfRange
@@ -493,7 +487,7 @@ func SliceInserts[T any](index int, new []T, slice []T) ([]T, error) {
 	return slices.Insert(slice, index, new...), nil
 }
 
-// SliceInsertsSafe 在指定索引插入多个元素（不影响原始 slice）
+// SliceInsertsSafe inserts multiple elements into a shallow copy at a checked index.
 func SliceInsertsSafe[T any](index int, new []T, slice []T) ([]T, error) {
 	if index < 0 || index > len(slice) {
 		return nil, toolkitError.ErrSliceIndexOutOfRange

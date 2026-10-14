@@ -8,8 +8,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// ProbabilityTrue 随机执行指定概率(0-100%)返回true的计算
-// 0 <= percentage <= 100 超出范围将永远返回 false。
+// ProbabilityTrue samples a percentage in [0, 100]; invalid or non-finite values return false.
 func ProbabilityTrue(percentage float64) bool {
 	if math.IsNaN(percentage) || math.IsInf(percentage, 0) || percentage < 0 || percentage > 100 {
 		return false
@@ -17,8 +16,7 @@ func ProbabilityTrue(percentage float64) bool {
 	return rand.Float64() < percentage/100
 }
 
-// ProbabilityResult 按照设置的各种key(概率结果)执行随机返回对应的key(发生的结果)
-// 所有key的概率之和必须为100%
+// ProbabilityResult samples a map key from finite nonnegative percentages totaling exactly 100.
 func ProbabilityResult(percentage map[any]float64) (any, error) {
 	if len(percentage) == 0 {
 		return nil, toolkitError.ErrEmptyProbability

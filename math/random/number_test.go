@@ -39,6 +39,6 @@ func TestRandRangeInt(t *testing.T) {
 	if got := RandRangeInt(math.MaxInt, math.MaxInt); got != math.MaxInt {
 		t.Fatalf("unexpected maximum boundary result: %d", got)
 	}
-	// 完整整数区间不应因宽度溢出而触发 panic。
+	// The full integer range must not panic due to width overflow.
 	_ = RandRangeInt(math.MinInt, math.MaxInt)
 }

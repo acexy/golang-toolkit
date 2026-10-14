@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// TestParse 测试 Parse 函数。
+// TestParse covers Parse behavior.
 func TestParse(t *testing.T) {
 	tests := []struct {
 		layout string
@@ -27,7 +27,7 @@ func TestParse(t *testing.T) {
 	}
 }
 
-// TestFormat 测试 Format 函数。
+// TestFormat covers Format behavior.
 func TestFormat(t *testing.T) {
 	tests := []struct {
 		t      time.Time
@@ -47,7 +47,7 @@ func TestFormat(t *testing.T) {
 	}
 }
 
-// TestFormatUnixSec 测试 FormatUnixSec 函数。
+// TestFormatUnixSec covers FormatUnixSec behavior.
 func TestFormatUnixSec(t *testing.T) {
 	tests := []struct {
 		ts     int64
@@ -66,7 +66,7 @@ func TestFormatUnixSec(t *testing.T) {
 	}
 }
 
-// TestFormatUnixMilli 测试 FormatUnixMilli 函数。
+// TestFormatUnixMilli covers FormatUnixMilli behavior.
 func TestFormatUnixMilli(t *testing.T) {
 	tests := []struct {
 		ts     int64
@@ -85,7 +85,7 @@ func TestFormatUnixMilli(t *testing.T) {
 	}
 }
 
-// TestFormatUnixNano 测试 FormatUnixNano 函数。
+// TestFormatUnixNano covers FormatUnixNano behavior.
 func TestFormatUnixNano(t *testing.T) {
 	tests := []struct {
 		ts     int64
@@ -104,7 +104,7 @@ func TestFormatUnixNano(t *testing.T) {
 	}
 }
 
-// TestFromUnixTimestamp 测试 FromUnixTimestamp 函数。
+// TestFromUnixTimestamp verifies second-based timestamp parsing.
 func TestFromUnixTimestamp(t *testing.T) {
 	tests := []struct {
 		ts   int64
@@ -121,7 +121,7 @@ func TestFromUnixTimestamp(t *testing.T) {
 	}
 }
 
-// TestFromUnixNano 测试 FromUnixNano 函数。
+// TestFromUnixNano verifies nanosecond-based timestamp parsing.
 func TestFromUnixNano(t *testing.T) {
 	tests := []struct {
 		ts   int64
@@ -138,7 +138,7 @@ func TestFromUnixNano(t *testing.T) {
 	}
 }
 
-// TestFromUnixMilli 测试 FromUnixMilli 函数。
+// TestFromUnixMilli verifies millisecond-based timestamp parsing.
 func TestFromUnixMilli(t *testing.T) {
 	tests := []struct {
 		ts   int64
@@ -155,7 +155,7 @@ func TestFromUnixMilli(t *testing.T) {
 	}
 }
 
-// TestQuarter 测试 Quarter 函数。
+// TestQuarter covers Quarter behavior.
 func TestQuarter(t *testing.T) {
 	tests := []struct {
 		t    time.Time
@@ -175,7 +175,7 @@ func TestQuarter(t *testing.T) {
 	}
 }
 
-// TestIsAfter 测试 IsAfter 函数。
+// TestIsAfter covers IsAfter behavior.
 func TestIsAfter(t *testing.T) {
 	tests := []struct {
 		t1   time.Time
@@ -194,7 +194,7 @@ func TestIsAfter(t *testing.T) {
 	}
 }
 
-// TestIsBefore 测试 IsBefore 函数。
+// TestIsBefore covers IsBefore behavior.
 func TestIsBefore(t *testing.T) {
 	tests := []struct {
 		t1   time.Time
@@ -213,7 +213,7 @@ func TestIsBefore(t *testing.T) {
 	}
 }
 
-// TestIsSameDay 测试 IsSameDay 函数。
+// TestIsSameDay covers IsSameDay behavior.
 func TestIsSameDay(t *testing.T) {
 	tests := []struct {
 		t1   time.Time
@@ -232,14 +232,14 @@ func TestIsSameDay(t *testing.T) {
 	}
 }
 
-// TestIsWeekday 测试 IsWeekday 函数。
+// TestIsWeekday covers IsWeekday behavior.
 func TestIsWeekday(t *testing.T) {
 	tests := []struct {
 		t    time.Time
 		want bool
 	}{
-		{time.Date(2023, 10, 5, 0, 0, 0, 0, time.UTC), true},  // 星期四
-		{time.Date(2023, 10, 7, 0, 0, 0, 0, time.UTC), false}, // 星期六
+		{time.Date(2023, 10, 5, 0, 0, 0, 0, time.UTC), true},  // Thursday.
+		{time.Date(2023, 10, 7, 0, 0, 0, 0, time.UTC), false}, // Saturday.
 	}
 
 	for _, test := range tests {
@@ -250,14 +250,14 @@ func TestIsWeekday(t *testing.T) {
 	}
 }
 
-// TestIsWeekend 测试 IsWeekend 函数。
+// TestIsWeekend covers IsWeekend behavior.
 func TestIsWeekend(t *testing.T) {
 	tests := []struct {
 		t    time.Time
 		want bool
 	}{
-		{time.Date(2023, 10, 5, 0, 0, 0, 0, time.UTC), false}, // 星期四
-		{time.Date(2023, 10, 7, 0, 0, 0, 0, time.UTC), true},  // 星期六
+		{time.Date(2023, 10, 5, 0, 0, 0, 0, time.UTC), false}, // Thursday.
+		{time.Date(2023, 10, 7, 0, 0, 0, 0, time.UTC), true},  // Saturday.
 	}
 
 	for _, test := range tests {

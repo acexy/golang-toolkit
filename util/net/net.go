@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Telnet 尝试在指定的时间内连接指定主机的指定端口 用于探活网络端口 address: ip:port
+// Telnet probes a TCP address within timeout and closes successful connections; it does not test application health.
 func Telnet(address string, timeout time.Duration) bool {
 	conn, err := net.DialTimeout("tcp", address, timeout)
 	if err != nil {
@@ -17,14 +17,14 @@ func Telnet(address string, timeout time.Duration) bool {
 	return true
 }
 
-// GetLocalIPV4 获取本机IPV4
+// GetLocalIPV4 returns the first private IPv4 on an eligible active interface, or an error if none is found.
 func GetLocalIPV4() (string, error) {
 	interfaces, err := net.Interfaces()
 	if err != nil {
 		return "", err
 	}
 	for _, iface := range interfaces {
-		// 排除掉虚拟网卡、未启用或回环接口
+		// Skip inactive, loopback, and selected virtual interfaces.
 		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
 			continue
 		}
@@ -38,7 +38,7 @@ func GetLocalIPV4() (string, error) {
 		for _, addr := range addrs {
 			if ipNet, ok := addr.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
 				if ip4 := ipNet.IP.To4(); ip4 != nil {
-					// 只返回常见内网网段
+					// Select only common private IPv4 ranges.
 					if (ip4[0] == 10) || (ip4[0] == 172 && ip4[1] >= 16 && ip4[1] <= 31) || (ip4[0] == 192 && ip4[1] == 168) {
 						return ip4.String(), nil
 					}

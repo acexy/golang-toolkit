@@ -30,7 +30,7 @@ func TestHasText(t *testing.T) {
 }
 
 func TestIsCamelCase(t *testing.T) {
-	// 测试字符串
+	// Sample text.
 	testCases := []string{"camelCase", "PascalCase", "snake_case", "camel_case", "camelCase123", "camelCaseExample"}
 	for _, testCase := range testCases {
 		fmt.Printf("%s: %v\n", testCase, IsCamelCase(testCase))
@@ -50,13 +50,13 @@ func TestSnakeToCamel(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"", ""},                      // 空字符串
-		{"hello", "hello"},            // 单词
-		{"hello_world", "helloWorld"}, // 下划线分隔的小写
-		{"snake_case_example", "snakeCaseExample"},          // 多个单词
-		{"_leading_underscore", "LeadingUnderscore"},        // 前置下划线
-		{"trailing_underscore_", "trailingUnderscore"},      // 后置下划线
-		{"mixed_case_example_TEST", "mixedCaseExampleTest"}, // 混合大小写
+		{"", ""},                      // Empty string.
+		{"hello", "hello"},            // Single word.
+		{"hello_world", "helloWorld"}, // Lowercase underscore-separated words.
+		{"snake_case_example", "snakeCaseExample"},          // Multiple words.
+		{"_leading_underscore", "LeadingUnderscore"},        // Leading underscore.
+		{"trailing_underscore_", "trailingUnderscore"},      // Trailing underscore.
+		{"mixed_case_example_TEST", "mixedCaseExampleTest"}, // Mixed case.
 	}
 
 	for _, test := range tests {

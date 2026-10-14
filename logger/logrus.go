@@ -12,20 +12,32 @@ import (
 
 var traceIdSupplier TraceIdSupplier
 
+// Level identifies a log severity threshold.
 type Level uint32
+
+// Type selects the console or file logger.
 type Type int8
 
 const (
+	// PanicLevel is the panic severity threshold.
 	PanicLevel Level = iota
+	// FatalLevel is the fatal severity threshold.
 	FatalLevel
+	// ErrorLevel is the error severity threshold.
 	ErrorLevel
+	// WarnLevel is the warn severity threshold.
 	WarnLevel
+	// InfoLevel is the info severity threshold.
 	InfoLevel
+	// DebugLevel is the debug severity threshold.
 	DebugLevel
+	// TraceLevel is the trace severity threshold.
 	TraceLevel
 
+	// ConsoleLogger selects console output.
 	ConsoleLogger Type = 1
-	FileLogger    Type = 2
+	// FileLogger selects file output.
+	FileLogger Type = 2
 )
 
 var (
@@ -42,9 +54,11 @@ var (
 	activeLogger  = enableConsole(DebugLevel, nil, false)
 )
 
-// TraceIdSupplier 生成日志跟踪id
+// TraceIdSupplier provides the current trace identifier and a setter for application integration.
 type TraceIdSupplier interface {
+	// GetTraceId returns the current trace identifier.
 	GetTraceId() string
+	// SetTraceId sets the current trace identifier.
 	SetTraceId(string)
 }
 
@@ -52,8 +66,13 @@ type autoConsole struct {
 	log *logrus.Logger
 }
 
+// Fire forwards an entry only if the destination level allows it.
 func (h *autoConsole) Fire(entry *logrus.Entry) error {
 	if h.log == nil || h.log.Formatter == nil || h.log.Out == nil {
+		return nil
+	}
+	// Forwarding bypasses the target entry point, so apply its level filter explicitly.
+	if !h.log.IsLevelEnabled(entry.Level) {
 		return nil
 	}
 	dup := *entry
@@ -66,6 +85,7 @@ func (h *autoConsole) Fire(entry *logrus.Entry) error {
 	return err
 }
 
+// Levels subscribes the forwarding hook to every level.
 func (h *autoConsole) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
@@ -74,11 +94,12 @@ type formatter struct {
 	formatterFn func(trace TraceIdSupplier, entry *logrus.Entry) ([]byte, error)
 }
 
+// Format formats an entry with the configured trace supplier.
 func (f *formatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return f.formatterFn(traceIdSupplier, entry)
 }
 
-// NewFormatter 创建一个自定义格式化器
+// NewFormatter creates a formatter callback using the current trace supplier.
 func NewFormatter(formatterFn func(traceSupplier TraceIdSupplier, entry *logrus.Entry) ([]byte, error)) *formatter {
 	return &formatter{
 		formatterFn: formatterFn,
@@ -126,7 +147,7 @@ func enableFile(level Level, formatter logrus.Formatter, fileConfig ...*lumberja
 	}
 }
 
-// SetTraceIdSupplier 设置TraceIdSupplier
+// SetTraceIdSupplier accepts the first nonnil supplier; configure it during startup.
 func SetTraceIdSupplier(supplier TraceIdSupplier) {
 	if traceIdSupplier == nil {
 		if supplier != nil {
@@ -135,7 +156,7 @@ func SetTraceIdSupplier(supplier TraceIdSupplier) {
 	}
 }
 
-// GetTraceId 获取当前traceId
+// GetTraceId returns the current trace identifier, or an empty string without a supplier.
 func GetTraceId() string {
 	if traceIdSupplier != nil {
 		return traceIdSupplier.GetTraceId()
@@ -143,7 +164,7 @@ func GetTraceId() string {
 	return ""
 }
 
-// EnableConsole 启用该设置后，日志内容将向标准控台输出
+// EnableConsole initializes console output once; repeated initialization panics.
 func EnableConsole(level Level, disableColor ...bool) {
 	if consoleLogger != nil {
 		panic("repeated initialization")
@@ -156,7 +177,7 @@ func EnableConsole(level Level, disableColor ...bool) {
 	setActiveLogger()
 }
 
-// EnableConsoleWithFormatter 启用该设置后，日志内容将向标准控台输出
+// EnableConsoleWithFormatter initializes console output once with a custom formatter.
 func EnableConsoleWithFormatter(level Level, formatter *formatter) {
 	if consoleLogger != nil {
 		panic("repeated initialization")
@@ -165,8 +186,7 @@ func EnableConsoleWithFormatter(level Level, formatter *formatter) {
 	setActiveLogger()
 }
 
-// EnableFileWithJson 启用该配置后将写入日志文件，并将日志输出json格式
-// 如果要使用console+file需要先初始化Console配置
+// EnableFileWithJson initializes rotating JSON file output once; configure console first for dual output.
 func EnableFileWithJson(level Level, fileConfig ...*lumberjack.Logger) {
 	if fileLogger != nil {
 		panic("repeated initialization")
@@ -178,8 +198,7 @@ func EnableFileWithJson(level Level, fileConfig ...*lumberjack.Logger) {
 	setActiveLogger()
 }
 
-// EnableFileWithText 启用该配置后写入日志文件，将日志输出为text格式
-// 如果要使用console+file需要先初始化Console配置
+// EnableFileWithText initializes rotating text file output once; configure console first for dual output.
 func EnableFileWithText(level Level, fileConfig ...*lumberjack.Logger) {
 	if fileLogger != nil {
 		panic("repeated initialization")
@@ -192,8 +211,7 @@ func EnableFileWithText(level Level, fileConfig ...*lumberjack.Logger) {
 	setActiveLogger()
 }
 
-// EnableFileWithFormatter 启用该配置后写入日志文件，将日志输出为指定格式
-// 如果要使用console+file需要先初始化Console配置
+// EnableFileWithFormatter initializes file output once with a custom formatter and optional rotation settings.
 func EnableFileWithFormatter(level Level, formatter *formatter, fileConfig ...*lumberjack.Logger) {
 	if fileLogger != nil {
 		panic("repeated initialization")
@@ -224,22 +242,22 @@ func setActiveLogger() {
 	}
 }
 
-// Logrus 获取logrus实例
+// Logrus returns the active logger, initially a debug-level console logger.
 func Logrus() *logrus.Logger {
 	return activeLogger
 }
 
-// RawConsoleLogger 获取原始控制台日志实例
+// RawConsoleLogger returns the configured console logger, or nil before initialization.
 func RawConsoleLogger() *logrus.Logger {
 	return consoleLogger
 }
 
-// RawFileLogger 获取原始文件日志实例
+// RawFileLogger returns the configured file logger, or nil before initialization.
 func RawFileLogger() *logrus.Logger {
 	return fileLogger
 }
 
-// IsLevelEnabled 判断指定级别是否启用 优先以fileLogger实例的状态判断
+// IsLevelEnabled checks a selected logger level; without a type, configured file output takes precedence.
 func IsLevelEnabled(level Level, logType ...Type) bool {
 	if len(logType) > 0 && logType[0] != 0 {
 		if logType[0] == FileLogger {
