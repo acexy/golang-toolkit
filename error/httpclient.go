@@ -3,6 +3,6 @@ package error
 import "errors"
 
 var (
-	// ErrUnsupportedHTTPMethod 表示不支持的 HTTP 请求方法
+	// ErrUnsupportedHTTPMethod indicates unsupported http method.
 	ErrUnsupportedHTTPMethod = errors.New("unsupported http method")
 )

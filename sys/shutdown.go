@@ -23,19 +23,7 @@ var shutdownSignalsInitialized bool
 var exitSignChan = make(chan struct{})
 var exitOnce sync.Once
 
-func holding(sig ...os.Signal) os.Signal {
-	ch := make(chan os.Signal, 1)
-	defer signal.Stop(ch)
-	if len(sig) == 0 {
-		signal.Notify(ch, defaultShutdownSig...)
-	} else {
-		signal.Notify(ch, sig...)
-	}
-	return <-ch // 返回捕获的信号
-}
-
-// SetShutdownSignals 设置进程级关闭信号。
-// 该方法必须在首次初始化底层信号订阅前调用，且信号不能为空或包含 nil。
+// SetShutdownSignals sets nonempty process shutdown signals before the first subscription.
 func SetShutdownSignals(sig ...os.Signal) error {
 	if len(sig) == 0 {
 		return toolkitError.ErrInvalidShutdownSignals
@@ -55,12 +43,12 @@ func SetShutdownSignals(sig ...os.Signal) error {
 	return nil
 }
 
-// ShutdownHolding 阻塞等待进程级共享的关闭信号。
+// ShutdownHolding blocks until the shared process shutdown signal is received.
 func ShutdownHolding() {
 	<-ShutdownSignal()
 }
 
-// ShutdownCallback 阻塞等待进程级共享的关闭信号，收到信号后同步执行回调。
+// ShutdownCallback waits for shutdown and runs a nonnil callback synchronously.
 func ShutdownCallback(f func()) {
 	<-ShutdownSignal()
 	if f != nil {
@@ -68,34 +56,36 @@ func ShutdownCallback(f func()) {
 	}
 }
 
-// ShutdownSignal 返回进程级共享的关闭信道。
-// 底层仅订阅一次系统信号；未调用 SetShutdownSignals 时使用默认关闭信号。
-// 收到任一监听信号后，共享信道会被关闭并通知所有监听者。
+// ShutdownSignal returns the shared shutdown channel after synchronously registering the OS signals.
+// The first received signal closes the channel for all waiters; registration happens only once.
 func ShutdownSignal() <-chan struct{} {
 	exitOnce.Do(func() {
 		shutdownSignalMu.Lock()
 		shutdownSignalsInitialized = true
 		sig := append([]os.Signal(nil), shutdownSignals...)
 		shutdownSignalMu.Unlock()
+		ch := make(chan os.Signal, 1)
+		signal.Notify(ch, sig...)
 		go func() {
-			holding(sig...)
+			defer signal.Stop(ch)
+			<-ch
 			close(exitSignChan)
 		}()
 	})
 	return exitSignChan
 }
 
-// ShutdownContext 返回一个可取消的 context。
-// 父 context、调用方主动取消或进程收到关闭信号时，返回的 context 会被取消。
-// 该方法复用进程级共享的信号订阅。
+// ShutdownContext returns a context canceled by shutdown, its parent, or the returned cancel function.
+// The shared signal subscription is initialized before this function returns.
 func ShutdownContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	ctxNew, cancel := context.WithCancel(ctx)
+	shutdown := ShutdownSignal()
 	go func() {
 		select {
-		case <-ShutdownSignal():
+		case <-shutdown:
 			cancel()
 		case <-ctxNew.Done():
 		}
@@ -103,8 +93,8 @@ func ShutdownContext(ctx context.Context) (context.Context, context.CancelFunc) 
 	return ctxNew, cancel
 }
 
-// ShutdownCallbackDeadline 阻塞等待进程级共享的关闭信号，收到信号后执行回调。
-// 超过指定等待时间后方法返回，但不会强制终止仍在执行的回调。
+// ShutdownCallbackDeadline waits for shutdown, then waits for the callback up to deadline.
+// A timeout does not terminate a callback that is still running.
 func ShutdownCallbackDeadline(f func(), deadline time.Duration) {
 	<-ShutdownSignal()
 	ctx, cancel := context.WithTimeout(context.Background(), deadline)

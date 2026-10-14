@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-// processStructFields 处理结构体字段的通用方法
+// processStructFields visits accessible struct fields with optional filtering.
 func processStructFields(value any, filter func(field reflect.Value) bool, process func(fieldName string, field reflect.Value)) error {
 	val := reflect.ValueOf(value)
 	if val.Kind() == reflect.Pointer {
@@ -17,7 +17,7 @@ func processStructFields(value any, filter func(field reflect.Value) bool, proce
 	}
 
 	for structField, field := range val.Fields() {
-		// 跳过未导出的字段
+		// Skip inaccessible fields.
 		if !field.CanInterface() {
 			continue
 		}
@@ -28,29 +28,29 @@ func processStructFields(value any, filter func(field reflect.Value) bool, proce
 	return nil
 }
 
-// AllFieldName 返回结构体的所有字段
+// AllFieldName returns accessible struct field names.
 func AllFieldName(value any) ([]string, error) {
 	var allFields []string
 	err := processStructFields(value,
-		nil, // 不需要过滤
+		nil, // No field filter.
 		func(fieldName string, field reflect.Value) {
 			allFields = append(allFields, fieldName)
 		})
 	return allFields, err
 }
 
-// AllFieldValue 返回结构体的所有字段的值
+// AllFieldValue returns accessible struct fields as a map.
 func AllFieldValue(value any) (map[string]any, error) {
 	allValue := make(map[string]any)
 	err := processStructFields(value,
-		nil, // 不需要过滤
+		nil, // No field filter.
 		func(fieldName string, field reflect.Value) {
 			allValue[fieldName] = field.Interface()
 		})
 	return allValue, err
 }
 
-// NonZeroFieldName 返回结构体的非零字段
+// NonZeroFieldName returns accessible nonzero field names; empty collections count as zero.
 func NonZeroFieldName(value any) ([]string, error) {
 	var nonZeroFields []string
 	err := processStructFields(value,
@@ -63,7 +63,7 @@ func NonZeroFieldName(value any) ([]string, error) {
 	return nonZeroFields, err
 }
 
-// NonZeroFieldValue 返回结构体的非零字段的值
+// NonZeroFieldValue returns accessible nonzero fields; empty collections count as zero.
 func NonZeroFieldValue(value any) (map[string]any, error) {
 	nonZeroValue := make(map[string]any)
 	err := processStructFields(value,
@@ -76,7 +76,8 @@ func NonZeroFieldValue(value any) (map[string]any, error) {
 	return nonZeroValue, err
 }
 
-// DeepCopy 深拷贝 源和目标需要是同类型
+// DeepCopy recursively copies supported values without cycle detection.
+// Unexported struct fields can panic; channels and functions are not copied.
 func DeepCopy(src any) any {
 	if src == nil {
 		return nil
@@ -135,22 +136,23 @@ func deepCopyRecursive(src, dst reflect.Value) {
 
 func isZeroValue(v reflect.Value) bool {
 	if !v.IsValid() || !v.CanInterface() {
-		return true // 无效或不可导出的字段视为零值
+		return true // Treat invalid or inaccessible fields as zero.
 	}
-	// 根据类型检查零值
+	// Apply the existing kind-specific zero rules.
 	zero := reflect.Zero(v.Type())
 	switch v.Kind() {
 	case reflect.Slice, reflect.Array, reflect.Map, reflect.Chan:
-		return v.Len() == 0 // 切片、数组、映射或通道的零值为长度为0
+		return v.Len() == 0 // Empty collections count as zero, including arrays and channels.
 	case reflect.Ptr, reflect.Interface:
-		return v.IsNil() // 指针和接口零值为nil
+		return v.IsNil() // Nil pointers and interfaces count as zero.
 	default:
-		// 对于其他类型，使用通用比较
+		// Compare other kinds with their typed zero value.
 		return reflect.DeepEqual(v.Interface(), zero.Interface())
 	}
 }
 
-// SetFieldValue 将 map[string]any 中的值赋给 structPtr 指向的结构体中对应字段
+// SetFieldValue assigns convertible values to a struct pointer, optionally rejecting missing fields.
+// Nil map values are unsupported and can panic.
 func SetFieldValue(structPtr any, values map[string]any, checkMissingField ...bool) error {
 	v := reflect.ValueOf(structPtr)
 	if v.Kind() != reflect.Ptr || v.IsNil() {
@@ -167,7 +169,7 @@ func SetFieldValue(structPtr any, values map[string]any, checkMissingField ...bo
 			if len(checkMissingField) > 0 && checkMissingField[0] {
 				return fmt.Errorf("field %s does not exist in struct", fieldName)
 			}
-			continue // 忽略不存在的字段
+			continue // Ignore missing fields unless strict checking was requested.
 		}
 		if !field.CanSet() {
 			return fmt.Errorf("field %s cannot be set (may be unexported)", fieldName)
@@ -175,13 +177,13 @@ func SetFieldValue(structPtr any, values map[string]any, checkMissingField ...bo
 		value := reflect.ValueOf(val)
 		fieldType := field.Type()
 
-		// 自动兼容基本类型转换
+		// Apply conversions supported by reflection.
 		if value.Type().ConvertibleTo(fieldType) {
 			field.Set(value.Convert(fieldType))
 			continue
 		}
 
-		// 尝试处理不同数值类型间的兼容
+		// Try numeric-kind conversion as a fallback.
 		if converted, ok := tryConvertNumber(value, fieldType); ok {
 			field.Set(converted)
 			continue
@@ -193,7 +195,7 @@ func SetFieldValue(structPtr any, values map[string]any, checkMissingField ...bo
 	return nil
 }
 
-// tryConvertNumber 尝试在不同的数字类型之间转换（int/uint/float）
+// tryConvertNumber converts between numeric kinds through float64.
 func tryConvertNumber(val reflect.Value, targetType reflect.Type) (reflect.Value, bool) {
 	if !val.IsValid() {
 		return reflect.Value{}, false
@@ -201,7 +203,7 @@ func tryConvertNumber(val reflect.Value, targetType reflect.Type) (reflect.Value
 	kind := val.Kind()
 	tKind := targetType.Kind()
 	if isNumericKind(kind) && isNumericKind(tKind) {
-		// 转换为 float64 作为中介
+		// Convert through float64.
 		var floatVal float64
 		switch kind {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -213,7 +215,7 @@ func tryConvertNumber(val reflect.Value, targetType reflect.Type) (reflect.Value
 		default:
 			return reflect.Value{}, false
 		}
-		// 转换为目标类型
+		// Convert to the destination type.
 		switch tKind {
 		case reflect.Int:
 			return reflect.ValueOf(int(floatVal)).Convert(targetType), true
@@ -250,7 +252,7 @@ func isNumericKind(kind reflect.Kind) bool {
 	return kind >= reflect.Int && kind <= reflect.Float64
 }
 
-// GetFieldValue 获取结构体中指定字段的值
+// GetFieldValue returns an accessible named struct field or a validation error.
 func GetFieldValue(value any, fieldName string) (any, error) {
 	if value == nil {
 		return nil, fmt.Errorf("input must be a struct or pointer to struct")

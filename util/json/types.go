@@ -10,37 +10,41 @@ import (
 )
 
 const (
-	// TimestampTypeMilli 时间戳类型 毫秒级别
+	// TimestampTypeMilli selects millisecond timestamps.
 	TimestampTypeMilli TimestampType = 0
-	// TimestampTypeSecond 时间戳类型 秒级别
+	// TimestampTypeSecond selects second timestamps.
 	TimestampTypeSecond TimestampType = 1
 )
 
 var wrapperMu sync.RWMutex
 var wrapperOnce sync.Once
 var defaultOptions = &TypeWrapperOptions{
-	// 默认毫秒
+	// Default to milliseconds.
 	TimestampType: TimestampTypeMilli,
 }
 
-// TimestampType 表示时间戳序列化/反序列化类型
+// TimestampType identifies the JSON timestamp unit.
 type TimestampType int
 
-// TypeWrapperOptions 表示 JSON 类型包装器的全局配置
+// TypeWrapperOptions holds process-wide JSON wrapper settings.
 type TypeWrapperOptions struct {
-	// 序列化/反序列化 时间戳类型
+	// TimestampType selects the timestamp serialization unit.
 	TimestampType TimestampType
 }
 
-// SetWrapperOption 表示 JSON 类型包装器配置项
+// SetWrapperOption synchronously updates the supplied settings. Do not retain or asynchronously mutate the pointer.
 type SetWrapperOption func(*TypeWrapperOptions)
 
-// Timestamp 用于按全局时间戳配置序列化/反序列化 time.Time
+// Timestamp wraps time.Time using the global timestamp unit.
+// Zero time encodes as 0, which decodes as the Unix epoch; use a nil *Timestamp for a missing value.
 type Timestamp struct {
 	time.Time
 }
 
-// GlobalWrapperSetting 设置全局 JSON 类型包装器配置，仅首次调用生效
+// GlobalWrapperSetting applies only the first configuration call.
+// Options run under the write lock: only assign to their parameter and do not retain its pointer.
+// Reading global settings or recursively configuring them inside an option deadlocks.
+// Prepare option data before calling this function.
 func GlobalWrapperSetting(opt ...SetWrapperOption) {
 	initialized := false
 	wrapperOnce.Do(func() {
@@ -56,7 +60,7 @@ func GlobalWrapperSetting(opt ...SetWrapperOption) {
 	}
 }
 
-// WithTimestampType 设置时间戳序列化/反序列化类型
+// WithTimestampType sets the timestamp unit in an option.
 func WithTimestampType(timestampType TimestampType) SetWrapperOption {
 	return func(options *TypeWrapperOptions) {
 		options.TimestampType = timestampType
@@ -69,12 +73,13 @@ func currentTimestampType() TimestampType {
 	return defaultOptions.TimestampType
 }
 
-// Time2Timestamp 将 time.Time 按全局配置转换为时间戳 JSON 字节
+// Time2Timestamp encodes a time using the global timestamp unit.
 func Time2Timestamp(value time.Time) ([]byte, error) {
 	return Time2TimestampWithType(value, currentTimestampType())
 }
 
-// Time2TimestampWithType 将 time.Time 按指定类型转换为时间戳 JSON 字节
+// Time2TimestampWithType encodes a time using an explicit unit.
+// Zero time returns 0 before validating the unit; validate it first when strict checking is required.
 func Time2TimestampWithType(value time.Time, timestampType TimestampType) ([]byte, error) {
 	if value.IsZero() {
 		return ToBytesError(0)
@@ -89,12 +94,14 @@ func Time2TimestampWithType(value time.Time, timestampType TimestampType) ([]byt
 	}
 }
 
-// Timestamp2Time 将时间戳 JSON 字节按全局配置转换为 time.Time
+// Timestamp2Time decodes a timestamp using the global unit.
 func Timestamp2Time(timestampBytes []byte) (time.Time, error) {
 	return Timestamp2TimeWithType(timestampBytes, currentTimestampType())
 }
 
-// Timestamp2TimeWithType 将时间戳 JSON 字节按指定类型转换为 time.Time
+// Timestamp2TimeWithType decodes a timestamp using an explicit unit.
+// Exact null returns zero time before unit validation; whitespace-padded null is treated as numeric 0.
+// Callers may normalize JSON whitespace first and validate the unit explicitly for strict behavior.
 func Timestamp2TimeWithType(timestampBytes []byte, timestampType TimestampType) (time.Time, error) {
 	if bytes.Equal(timestampBytes, []byte("null")) {
 		return time.Time{}, nil
@@ -113,10 +120,12 @@ func Timestamp2TimeWithType(timestampBytes []byte, timestampType TimestampType) 
 	}
 }
 
+// MarshalJSON encodes the wrapped time using global settings.
 func (t Timestamp) MarshalJSON() ([]byte, error) {
 	return Time2Timestamp(t.Time)
 }
 
+// UnmarshalJSON decodes into the wrapped time using global settings.
 func (t *Timestamp) UnmarshalJSON(data []byte) error {
 	formatTime, err := Timestamp2Time(data)
 	if err != nil {

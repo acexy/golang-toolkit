@@ -10,7 +10,7 @@ import (
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const lettersLen = 62
 
-// RandString 生成指定长度的伪随机字符串，不适用于密钥、令牌等安全场景
+// RandString returns a pseudo-random alphanumeric string, or empty for nonpositive lengths. It is not a secret generator.
 func RandString(length int) string {
 	if length <= 0 {
 		return ""
@@ -23,7 +23,7 @@ func RandString(length int) string {
 	return string(result)
 }
 
-// UUID 生成UUID
+// UUID returns a UUID string without hyphens.
 func UUID() string {
 	return strings.ReplaceAll(uuid.NewString(), "-", "")
 }

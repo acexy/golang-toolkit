@@ -15,25 +15,25 @@ import (
 	"github.com/acexy/golang-toolkit/math/conversion"
 )
 
-// NewEcdsaKeyManager 创建带指定曲线配置的 ECDSA KeyManager
+// NewEcdsaKeyManager creates a key manager using the supplied elliptic curve.
 func NewEcdsaKeyManager(curve elliptic.Curve) *EcdsaKeyManager {
 	return &EcdsaKeyManager{
 		Curve: curve,
 	}
 }
 
-// NewEmptyEcdsaKeyManager 创建空 ECDSA KeyManager，仅适合加载已有 PEM 密钥
+// NewEmptyEcdsaKeyManager creates a load-only ECDSA key manager without a generation curve.
 func NewEmptyEcdsaKeyManager() *EcdsaKeyManager {
 	return &EcdsaKeyManager{}
 }
 
-// EcdsaKeyManager 管理 ECDSA 密钥创建和 PEM 加载
+// EcdsaKeyManager generates ECDSA keys and loads PEM key material.
 type EcdsaKeyManager struct {
-	// Curve 表示创建 ECDSA 密钥时使用的椭圆曲线
+	// Curve selects the elliptic curve used for key generation.
 	Curve elliptic.Curve
 }
 
-// Create 创建新的 ECDSA 公私钥对
+// Create generates a new public/private key pair using the manager configuration.
 func (e *EcdsaKeyManager) Create() (EcdsaKeyPair, error) {
 	if e.Curve == nil {
 		return nil, toolkitError.ErrNilCurve
@@ -48,17 +48,17 @@ func (e *EcdsaKeyManager) Create() (EcdsaKeyPair, error) {
 	}, nil
 }
 
-// LoadPublicKey 从 PEM 字符串加载 ECDSA 公钥
+// LoadPublicKey loads a public key from PEM.
 func (e *EcdsaKeyManager) LoadPublicKey(pubPem string) (EcdsaKeyPair, error) {
 	return e.LoadKeyPair(pubPem, "")
 }
 
-// LoadPrivateKey 从 PEM 字符串加载 ECDSA 私钥，并派生对应公钥
+// LoadPrivateKey loads a private key from PEM and derives its public key.
 func (e *EcdsaKeyManager) LoadPrivateKey(priPem string) (EcdsaKeyPair, error) {
 	return e.LoadKeyPair("", priPem)
 }
 
-// LoadKeyPair 从 PEM 字符串加载 ECDSA 公私钥，并校验二者是否匹配
+// LoadKeyPair loads PEM keys and validates their match when both are supplied.
 func (e *EcdsaKeyManager) LoadKeyPair(pubPem, priPem string) (EcdsaKeyPair, error) {
 	if pubPem == "" && priPem == "" {
 		return nil, toolkitError.ErrBadKey
@@ -68,7 +68,7 @@ func (e *EcdsaKeyManager) LoadKeyPair(pubPem, priPem string) (EcdsaKeyPair, erro
 	var pri *ecdsa.PrivateKey
 	var err error
 
-	// 解析公钥
+	// Parse the public key.
 	if pubPem != "" {
 		block, _ := pem.Decode(conversion.ParseBytes(pubPem))
 		if block == nil {
@@ -92,7 +92,7 @@ func (e *EcdsaKeyManager) LoadKeyPair(pubPem, priPem string) (EcdsaKeyPair, erro
 		}
 	}
 
-	// 解析私钥
+	// Parse the private key.
 	if priPem != "" {
 		block, _ := pem.Decode(conversion.ParseBytes(priPem))
 		if block == nil {
@@ -141,7 +141,7 @@ func sameEcdsaPublicKey(pub1, pub2 *ecdsa.PublicKey) bool {
 	return pub1.Equal(pub2)
 }
 
-// Load 从 PEM 字符串加载 ECDSA 公私钥
+// Load loads PEM keys through LoadKeyPair.
 func (e *EcdsaKeyManager) Load(pubPem, priPem string) (EcdsaKeyPair, error) {
 	return e.LoadKeyPair(pubPem, priPem)
 }
@@ -151,7 +151,7 @@ type ecdsaKey struct {
 	publicKey  *ecdsa.PublicKey
 }
 
-// PrivateKey 返回原始 ECDSA 私钥
+// PrivateKey returns the raw private key, or nil if it is absent.
 func (e *ecdsaKey) PrivateKey() any {
 	if e.privateKey == nil {
 		return nil
@@ -159,7 +159,7 @@ func (e *ecdsaKey) PrivateKey() any {
 	return e.privateKey
 }
 
-// PublicKey 返回原始 ECDSA 公钥
+// PublicKey returns the raw public key, or nil if it is absent.
 func (e *ecdsaKey) PublicKey() any {
 	if e.publicKey == nil {
 		return nil
@@ -167,17 +167,17 @@ func (e *ecdsaKey) PublicKey() any {
 	return e.publicKey
 }
 
-// ToPublicPem 将 ECDSA 公钥导出为默认 PKIX PEM 格式
+// ToPublicPem exports the public key in PKIX PEM format.
 func (e *ecdsaKey) ToPublicPem() (string, error) {
 	return e.ToPKIXPublicPem()
 }
 
-// ToPrivatePem 将 ECDSA 私钥导出为默认 PKCS8 PEM 格式
+// ToPrivatePem exports the private key in PKCS8 PEM format.
 func (e *ecdsaKey) ToPrivatePem() (string, error) {
 	return e.ToPKCS8PrivatePem()
 }
 
-// ToECPrivatePem 将 ECDSA 私钥导出为 SEC1 EC PRIVATE KEY PEM 格式
+// ToECPrivatePem exports a SEC1 EC private-key PEM.
 func (e *ecdsaKey) ToECPrivatePem() (string, error) {
 	if e.privateKey == nil {
 		return "", toolkitError.ErrNilPrivateKey
@@ -192,7 +192,7 @@ func (e *ecdsaKey) ToECPrivatePem() (string, error) {
 	})), nil
 }
 
-// ToPKIXPublicPem 将 ECDSA 公钥导出为 PKIX PEM 格式
+// ToPKIXPublicPem exports a PKIX public-key PEM.
 func (e *ecdsaKey) ToPKIXPublicPem() (string, error) {
 	if e.publicKey == nil {
 		return "", toolkitError.ErrNilPublicKey
@@ -207,7 +207,7 @@ func (e *ecdsaKey) ToPKIXPublicPem() (string, error) {
 	})), nil
 }
 
-// ToPKCS8PrivatePem 将 ECDSA 私钥导出为 PKCS8 PEM 格式
+// ToPKCS8PrivatePem exports a PKCS8 private-key PEM.
 func (e *ecdsaKey) ToPKCS8PrivatePem() (string, error) {
 	if e.privateKey == nil {
 		return "", toolkitError.ErrNilPrivateKey
@@ -222,13 +222,13 @@ func (e *ecdsaKey) ToPKCS8PrivatePem() (string, error) {
 	})), nil
 }
 
-// EcdsaSign 提供 ECDSA 签名和验签能力
+// EcdsaSign signs and verifies ECDSA data, synchronizing access to its configured hash.
 type EcdsaSign struct {
 	sync.Mutex
 	hashFunc hash.Hash
 }
 
-// NewEcdsaSign 创建 ECDSA 签名验签实例，hashFunc 为空时调用方必须传入摘要数据
+// NewEcdsaSign creates an ECDSA signer; a nil hash requires precomputed digest input.
 func NewEcdsaSign(hashFunc hash.Hash) *EcdsaSign {
 	return &EcdsaSign{
 		hashFunc: hashFunc,
@@ -265,7 +265,7 @@ func loadEcdsaPrivateKey(keyPair KeyPair) (*ecdsa.PrivateKey, error) {
 	return ecdsaPrivateKey, nil
 }
 
-// Sign 使用 ECDSA 私钥对数据进行 ASN.1 DER 签名，未配置 hashFunc 时 raw 必须是摘要
+// Sign returns an ASN.1 DER signature; input must be a digest when no hash is configured.
 func (e *EcdsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
 	privateKey, err := loadEcdsaPrivateKey(keyPair)
 	if err != nil {
@@ -282,7 +282,7 @@ func (e *EcdsaSign) Sign(keyPair KeyPair, raw []byte) ([]byte, error) {
 	return ecdsa.SignASN1(rand.Reader, privateKey, raw)
 }
 
-// Verify 使用 ECDSA 公钥验证 ASN.1 DER 签名，未配置 hashFunc 时 raw 必须是摘要
+// Verify verifies an ASN.1 DER signature; input must be a digest when no hash is configured.
 func (e *EcdsaSign) Verify(keyPair KeyPair, raw, sign []byte) error {
 	publicKey, err := loadEcdsaPublicKey(keyPair)
 	if err != nil {
@@ -307,7 +307,7 @@ func (e *EcdsaSign) Verify(keyPair KeyPair, raw, sign []byte) error {
 	return toolkitError.ErrVerifyFailed
 }
 
-// SignRS 使用 ECDSA 私钥签名并返回 r、s 两段签名值，未配置 hashFunc 时 raw 必须是摘要
+// SignRS returns ECDSA r and s values; input must be a digest when no hash is configured.
 func (e *EcdsaSign) SignRS(keyPair KeyPair, raw []byte) (*big.Int, *big.Int, error) {
 	privateKey, err := loadEcdsaPrivateKey(keyPair)
 	if err != nil {
@@ -324,7 +324,7 @@ func (e *EcdsaSign) SignRS(keyPair KeyPair, raw []byte) (*big.Int, *big.Int, err
 	return ecdsa.Sign(rand.Reader, privateKey, raw)
 }
 
-// VerifyRS 使用 ECDSA 公钥验证 r、s 两段签名值，未配置 hashFunc 时 raw 必须是摘要
+// VerifyRS verifies ECDSA r and s; input must be a digest when no hash is configured.
 func (e *EcdsaSign) VerifyRS(keyPair KeyPair, raw []byte, r, s *big.Int) (bool, error) {
 	publicKey, err := loadEcdsaPublicKey(keyPair)
 	if err != nil {
@@ -341,7 +341,7 @@ func (e *EcdsaSign) VerifyRS(keyPair KeyPair, raw []byte, r, s *big.Int) (bool, 
 	return ecdsa.Verify(publicKey, raw, r, s), nil
 }
 
-// SignBase64 解码 Base64 原文后签名，并返回 Base64 签名
+// SignBase64 decodes Base64 data and returns its signature as Base64.
 func (e *EcdsaSign) SignBase64(keyPair KeyPair, base64Raw string) (string, error) {
 	content, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {
@@ -354,7 +354,7 @@ func (e *EcdsaSign) SignBase64(keyPair KeyPair, base64Raw string) (string, error
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-// VerifyBase64 解码 Base64 原文和签名后执行验签
+// VerifyBase64 decodes Base64 data and signature before verification.
 func (e *EcdsaSign) VerifyBase64(keyPair KeyPair, base64Raw, base64Sign string) error {
 	rawContent, err := base64.StdEncoding.DecodeString(base64Raw)
 	if err != nil {

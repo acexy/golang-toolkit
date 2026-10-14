@@ -3,15 +3,15 @@ package error
 import "errors"
 
 var (
-	// ErrBinaryValueOutOfByteRange 表示二进制值超出单字节范围
+	// ErrBinaryValueOutOfByteRange indicates binary value out of byte range.
 	ErrBinaryValueOutOfByteRange = errors.New("binary value out of byte range")
 
-	// ErrEmptyProbability 表示概率参数为空
+	// ErrEmptyProbability indicates empty probability.
 	ErrEmptyProbability = errors.New("empty probability")
 
-	// ErrInvalidProbabilityTotal 表示概率总和无效
+	// ErrInvalidProbabilityTotal indicates invalid weights or a total other than 100 percent.
 	ErrInvalidProbabilityTotal = errors.New("invalid probability total")
 
-	// ErrProbabilityResultNotFound 表示未匹配到概率结果
+	// ErrProbabilityResultNotFound indicates probability result not found.
 	ErrProbabilityResultNotFound = errors.New("probability result not found")
 )

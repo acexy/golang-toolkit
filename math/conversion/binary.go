@@ -8,16 +8,15 @@ import (
 	toolkitError "github.com/acexy/golang-toolkit/error"
 )
 
-// Binary 定义二进制值
+// Binary stores an int64 with binary and hexadecimal representations.
 type Binary struct {
 	value int64
 }
 
-// Binaries 定义二进制数组
+// Binaries holds a sequence of binary values.
 type Binaries []*Binary
 
-// NewFromRawBinary 通过原始二进制值转换
-// 010010110101
+// NewFromRawBinary parses a base-2 int64 string.
 func NewFromRawBinary(rawBinary string) (*Binary, error) {
 	decimal, err := strconv.ParseInt(rawBinary, 2, 64)
 	if err != nil {
@@ -26,8 +25,7 @@ func NewFromRawBinary(rawBinary string) (*Binary, error) {
 	return &Binary{value: decimal}, nil
 }
 
-// NewFromRawHex 通过指定的原始hex值转换
-// ff
+// NewFromRawHex parses a hexadecimal int64 string with an optional 0x prefix.
 func NewFromRawHex(rawHex string) (*Binary, error) {
 	rawHex = strings.ToLower(rawHex)
 	decimal, err := strconv.ParseInt(strings.Replace(rawHex, hexPrefix, "", 1), 16, 64)
@@ -37,22 +35,22 @@ func NewFromRawHex(rawHex string) (*Binary, error) {
 	return &Binary{value: decimal}, nil
 }
 
-// NewFromDecimal 通过指定十进制数据转换
+// NewFromDecimal creates a binary value from an int64.
 func NewFromDecimal(decimal int64) *Binary {
 	return &Binary{value: decimal}
 }
 
-// NewFromByte 通过byte转换
+// NewFromByte creates a binary value from a byte.
 func NewFromByte(decimal byte) *Binary {
 	return &Binary{value: int64(decimal)}
 }
 
-// Value 输出二进制值
+// Value returns the unpadded binary representation.
 func (b *Binary) Value() string {
 	return fmt.Sprintf("%b", b.value)
 }
 
-// To8Bit 将该二进制值转换为计算机bit 8位
+// To8Bit left-pads to eight characters and rejects values greater than 255.
 func (b *Binary) To8Bit() (string, error) {
 	if b.value > maxByte {
 		return "", toolkitError.ErrBinaryValueOutOfByteRange
@@ -60,12 +58,12 @@ func (b *Binary) To8Bit() (string, error) {
 	return appendLeftZero(b.Value(), 8), nil
 }
 
-// ToHexValue 转换为原始hex值
+// ToHexValue returns the unpadded hexadecimal representation.
 func (b *Binary) ToHexValue() string {
 	return fmt.Sprintf("%x", b.value)
 }
 
-// To2Hex 将该二进制值转化为hex 2位
+// To2Hex left-pads to two hex characters and rejects values greater than 255.
 func (b *Binary) To2Hex() (string, error) {
 	if b.value > maxByte {
 		return "", toolkitError.ErrBinaryValueOutOfByteRange
@@ -73,7 +71,7 @@ func (b *Binary) To2Hex() (string, error) {
 	return appendLeftZero(b.ToHexValue(), 2), nil
 }
 
-// NewFromBytes 通过bytes转换
+// NewFromBytes creates one binary value for each byte.
 func NewFromBytes(bytes []byte) *Binaries {
 	bs := make([]*Binary, len(bytes))
 	for i, v := range bytes {
@@ -83,7 +81,7 @@ func NewFromBytes(bytes []byte) *Binaries {
 	return &bis
 }
 
-// RawType 获取原始[]*Binary类型
+// RawType returns the underlying slice.
 func (b *Binaries) RawType() []*Binary {
 	return *b
 }
@@ -106,7 +104,7 @@ func (b *Binaries) join(valuer func(b *Binary) (string, error), char ...string) 
 	return builder.String(), nil
 }
 
-// To8Bits 每位转换8长度二进制字符串
+// To8Bits joins eight-character binary values with an optional separator.
 func (b *Binaries) To8Bits(char ...string) (string, error) {
 	return b.join(func(b *Binary) (string, error) {
 		value, err := b.To8Bit()
@@ -117,7 +115,7 @@ func (b *Binaries) To8Bits(char ...string) (string, error) {
 	}, char...)
 }
 
-// To2Hex 每位转换2位hex字符串
+// To2Hex joins two-character hex values with an optional separator, discarding conversion errors.
 func (b *Binaries) To2Hex(char ...string) string {
 	hexString, _ := b.join(func(b *Binary) (string, error) {
 		value, err := b.To2Hex()

@@ -14,7 +14,7 @@ var l = NewThreadLocal[string](func() string {
 })
 
 func TestLocal(t *testing.T) {
-	// 如果在获取线程本地变量之前，没有设置过，则返回默认值
+	// An unset local uses its default supplier on first access.
 	fmt.Println(l.Get())
 	l.Set(func() string {
 		fmt.Println("set")

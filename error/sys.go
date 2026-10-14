@@ -3,9 +3,9 @@ package error
 import "errors"
 
 var (
-	// ErrShutdownSignalsInitialized 表示底层信号订阅已初始化，不能再修改关闭信号。
+	// ErrShutdownSignalsInitialized indicates shutdown signals already initialized.
 	ErrShutdownSignalsInitialized = errors.New("shutdown signals already initialized")
 
-	// ErrInvalidShutdownSignals 表示关闭信号为空或包含 nil。
+	// ErrInvalidShutdownSignals indicates shutdown signals cannot be empty or contain nil.
 	ErrInvalidShutdownSignals = errors.New("shutdown signals cannot be empty or contain nil")
 )

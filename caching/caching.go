@@ -9,28 +9,34 @@ import (
 	"github.com/acexy/golang-toolkit/util/gob"
 )
 
+// CacheKey defines a cache key format with optional fmt.Sprintf arguments.
 type CacheKey struct {
-	// 最终key值的格式化格式 将使用 fmt.Sprintf(key.KeyFormat, keyAppend) 进行处理
+	// KeyFormat is the format used to construct the final cache key.
 	KeyFormat string
 }
 
+// BucketName identifies a registered cache bucket.
 type BucketName string
 
+// Codec encodes cache values and decodes them into caller-provided destinations.
 type Codec interface {
-	// Encode 将缓存值编码为字节数组
+	// Encode serializes a value to bytes.
 	Encode(data any) ([]byte, error)
 
-	// Decode 将缓存字节数组解码到 result 指针
+	// Decode decodes bytes into a writable destination.
 	Decode(bs []byte, result any) error
 }
 
+// GobCodec implements Codec with Go GOB serialization.
 type GobCodec struct {
 }
 
+// Encode serializes a value using GOB.
 func (g GobCodec) Encode(data any) ([]byte, error) {
 	return gob.Encode(data)
 }
 
+// Decode decodes GOB bytes into the destination.
 func (g GobCodec) Decode(bs []byte, result any) error {
 	return gob.Decode(bs, result)
 }
@@ -42,17 +48,17 @@ func defaultCodec(codec Codec) Codec {
 	return GobCodec{}
 }
 
-// NewCacheKey 创建一个缓存key
+// NewCacheKey creates a formatted cache key.
 func NewCacheKey(keyFormat string) CacheKey {
 	return CacheKey{KeyFormat: keyFormat}
 }
 
-// NewBucketName 创建一个缓存桶名称
+// NewBucketName creates a bucket identifier.
 func NewBucketName(bucketName string) BucketName {
 	return BucketName(bucketName)
 }
 
-// RawKeyString 获取原始的key字符串
+// RawKeyString formats the key when arguments are supplied, otherwise returns the raw format.
 func (m CacheKey) RawKeyString(keyAppend ...any) string {
 	if len(keyAppend) > 0 {
 		return fmt.Sprintf(m.KeyFormat, keyAppend...)
@@ -60,24 +66,27 @@ func (m CacheKey) RawKeyString(keyAppend ...any) string {
 	return m.KeyFormat
 }
 
+// CacheManager manages named buckets and a shared value codec.
 type CacheManager struct {
 	lock   sync.RWMutex
 	caches map[BucketName]CacheBucket
 	codec  Codec
 }
 
+// CacheBucket defines byte storage operations for a cache bucket.
 type CacheBucket interface {
 
-	// GetBytes 获取指定key对应的值
+	// GetBytes reads bytes under a formatted key.
 	GetBytes(key CacheKey, keyAppend ...any) ([]byte, error)
 
-	// PutBytes 设置key对应的字节数组
+	// PutBytes stores bytes under a formatted key.
 	PutBytes(key CacheKey, data []byte, keyAppend ...any) error
 
-	// Evict 清除缓存
+	// Evict removes a formatted key.
 	Evict(key CacheKey, keyAppend ...any) error
 }
 
+// NewCacheManager creates a manager using the first codec or GOB by default.
 func NewCacheManager(codec ...Codec) *CacheManager {
 	var selectedCodec Codec
 	if len(codec) > 0 {
@@ -89,7 +98,7 @@ func NewCacheManager(codec ...Codec) *CacheManager {
 	}
 }
 
-// AddBucket 添加一个缓存桶
+// AddBucket registers a bucket; duplicate names are logged and keep the existing bucket.
 func (c *CacheManager) AddBucket(bucketName BucketName, bucket CacheBucket) *CacheManager {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -102,7 +111,7 @@ func (c *CacheManager) AddBucket(bucketName BucketName, bucket CacheBucket) *Cac
 	return c
 }
 
-// GetBucket 获取缓存桶
+// GetBucket returns the named bucket, or nil if it is not registered.
 func (c *CacheManager) GetBucket(bucketName BucketName) CacheBucket {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
@@ -110,7 +119,7 @@ func (c *CacheManager) GetBucket(bucketName BucketName) CacheBucket {
 	return c.caches[bucketName]
 }
 
-// Get 获取缓存
+// Get reads and decodes a value into result; unknown buckets return ErrBadBucketName.
 func (c *CacheManager) Get(bucketName BucketName, key CacheKey, result any, keyAppend ...any) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
@@ -124,7 +133,7 @@ func (c *CacheManager) Get(bucketName BucketName, key CacheKey, result any, keyA
 	return c.codec.Decode(bs, result)
 }
 
-// GetBytes 获取缓存字节数组
+// GetBytes reads raw bytes from a registered bucket.
 func (c *CacheManager) GetBytes(bucketName BucketName, key CacheKey, keyAppend ...any) ([]byte, error) {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
@@ -134,7 +143,7 @@ func (c *CacheManager) GetBytes(bucketName BucketName, key CacheKey, keyAppend .
 	return bucket.GetBytes(key, keyAppend...)
 }
 
-// Put 缓存数据
+// Put encodes and stores a value in a registered bucket.
 func (c *CacheManager) Put(bucketName BucketName, key CacheKey, data any, keyAppend ...any) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
@@ -148,7 +157,7 @@ func (c *CacheManager) Put(bucketName BucketName, key CacheKey, data any, keyApp
 	return bucket.PutBytes(key, bs, keyAppend...)
 }
 
-// PutBytes 缓存字节数组
+// PutBytes stores raw bytes in a registered bucket.
 func (c *CacheManager) PutBytes(bucketName BucketName, key CacheKey, data []byte, keyAppend ...any) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {
@@ -158,7 +167,7 @@ func (c *CacheManager) PutBytes(bucketName BucketName, key CacheKey, data []byte
 	return bucket.PutBytes(key, data, keyAppend...)
 }
 
-// Evict 清除缓存
+// Evict removes a key from a registered bucket.
 func (c *CacheManager) Evict(bucketName BucketName, key CacheKey, keyAppend ...any) error {
 	bucket := c.GetBucket(bucketName)
 	if bucket == nil {

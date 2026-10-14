@@ -17,7 +17,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-// RestyClient resty客户端
+// RestyClient wraps Resty client settings and proxy configuration.
 type RestyClient struct {
 	r     *resty.Client
 	proxy string
@@ -42,7 +42,7 @@ func (p *proxyTrace) proxyURL() string {
 	return p.proxy
 }
 
-// multiProxyTransport 为每个代理维护独立的连接池，并在每次请求前执行代理选择策略。
+// multiProxyTransport selects a dedicated proxy connection pool for each request.
 type multiProxyTransport struct {
 	template   *http.Transport
 	proxies    []string
@@ -50,39 +50,40 @@ type multiProxyTransport struct {
 	choose     ChooseProxy
 }
 
+// RoundTrip selects a proxy and uses its dedicated connection pool.
 func (m *multiProxyTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	proxy := m.choose.Choose(request, m.proxies)
 	transport, ok := m.transports[proxy]
 	if !ok {
 		return nil, fmt.Errorf("choose proxy: proxy %q is not in the valid proxy pool", proxy)
 	}
-	// 将实际选中的代理绑定到本次请求，确保并发请求之间互不影响。
+	// Record the selected proxy on this request rather than shared client state.
 	if trace, ok := request.Context().Value(proxyContextKey{}).(*proxyTrace); ok {
 		trace.setProxy(proxy)
 	}
 	return transport.RoundTrip(request)
 }
 
-// CloseIdleConnections 关闭所有代理 Transport 的空闲连接。
+// CloseIdleConnections closes idle connections in every proxy pool.
 func (m *multiProxyTransport) CloseIdleConnections() {
 	for _, transport := range m.transports {
 		transport.CloseIdleConnections()
 	}
 }
 
-// RawRestyClient 获取原始restyClient实例
+// RawRestyClient returns the underlying Resty client.
 func (r *RestyClient) RawRestyClient() *resty.Client {
 	return r.r
 }
 
-// RestyRequest resty请求对象
+// RestyRequest wraps a request and its request-scoped proxy trace.
 type RestyRequest struct {
 	request *resty.Request
 	proxy   string
 	trace   *proxyTrace
 }
 
-// Response HTTP响应对象
+// Response wraps a response and the proxy used for that request.
 type Response struct {
 	response *resty.Response
 	proxy    string
@@ -104,17 +105,17 @@ func wrapResponse(response *resty.Response, configuredProxy string, trace *proxy
 	}
 }
 
-// RawRestyResponse 获取原始 Resty 响应对象。
+// RawRestyResponse returns the underlying Resty response.
 func (r *Response) RawRestyResponse() *resty.Response {
 	return r.response
 }
 
-// RawResponse 获取原始 HTTP 响应对象。
+// RawResponse returns the underlying HTTP response.
 func (r *Response) RawResponse() *http.Response {
 	return r.response.RawResponse
 }
 
-// Proxy 获取本次请求实际使用的代理，未使用代理时返回空字符串。
+// Proxy returns the selected proxy, or an empty string for a direct request.
 func (r *Response) Proxy() string {
 	if r == nil {
 		return ""
@@ -122,90 +123,89 @@ func (r *Response) Proxy() string {
 	return r.proxy
 }
 
-// Body 获取响应体。
+// Body returns the buffered response body.
 func (r *Response) Body() []byte {
 	return r.response.Body()
 }
 
-// RawBody 获取未读取的原始响应体。
+// RawBody returns the underlying body stream when raw response handling is enabled.
 func (r *Response) RawBody() io.ReadCloser {
 	return r.response.RawBody()
 }
 
-// String 以字符串形式获取响应体。
+// String returns the buffered response body as a string.
 func (r *Response) String() string {
 	return r.response.String()
 }
 
-// Status 获取响应状态。
+// Status returns the HTTP status text.
 func (r *Response) Status() string {
 	return r.response.Status()
 }
 
-// StatusCode 获取响应状态码。
+// StatusCode returns the HTTP status code.
 func (r *Response) StatusCode() int {
 	return r.response.StatusCode()
 }
 
-// Proto 获取响应协议版本。
+// Proto returns the HTTP protocol version.
 func (r *Response) Proto() string {
 	return r.response.Proto()
 }
 
-// Header 获取响应头。
+// Header returns response headers.
 func (r *Response) Header() http.Header {
 	return r.response.Header()
 }
 
-// Cookies 获取响应 Cookie。
+// Cookies returns response cookies.
 func (r *Response) Cookies() []*http.Cookie {
 	return r.response.Cookies()
 }
 
-// Result 获取成功响应绑定的结果。
+// Result returns the bound successful-response result.
 func (r *Response) Result() any {
 	return r.response.Result()
 }
 
-// Error 获取错误响应绑定的结果。
+// Error returns the bound error-response result.
 func (r *Response) Error() any {
 	return r.response.Error()
 }
 
-// IsSuccess 判断响应状态码是否为 200 至 299。
+// IsSuccess reports whether the status is between 200 and 299.
 func (r *Response) IsSuccess() bool {
 	return r.response.IsSuccess()
 }
 
-// IsError 判断响应状态码是否大于等于 400。
+// IsError reports whether the status is at least 400.
 func (r *Response) IsError() bool {
 	return r.response.IsError()
 }
 
-// Time 获取请求耗时。
+// Time returns the request duration.
 func (r *Response) Time() time.Duration {
 	return r.response.Time()
 }
 
-// ReceivedAt 获取收到响应的时间。
+// ReceivedAt returns the response receipt time.
 func (r *Response) ReceivedAt() time.Time {
 	return r.response.ReceivedAt()
 }
 
-// Size 获取响应体大小。
+// Size returns the response body size in bytes.
 func (r *Response) Size() int64 {
 	return r.response.Size()
 }
 
-// RestyMethod resty请求方法对象
+// RestyMethod holds a request method, URL, and body configuration.
 type RestyMethod struct {
 	request *RestyRequest
 	method  string
 	url     string
 }
 
-// NewRestyClient 创建一个httpClient对象
-// proxyHttpHost 可以指定代理 如 http://localhost:7890
+// NewRestyClient creates a client with an optional proxy URL.
 func NewRestyClient(proxyHttpHost ...string) *RestyClient {
 	var client = &RestyClient{
 		r: resty.New(),
@@ -217,9 +217,7 @@ func NewRestyClient(proxyHttpHost ...string) *RestyClient {
 	return client
 }
 
-// NewRestyClientWithMultiProxy 创建一个多代理实例，该实例下的请求将通过策略通过代理
-// chooseProxy 可以指定选择代理的策略 默认为随机
-// 每个代理使用独立的 Transport，所有请求都会触发 chooseProxy
+// NewRestyClientWithMultiProxy creates a proxy-pool client with random selection by default; configuration errors are logged.
 func NewRestyClientWithMultiProxy(multiProxy []string, choose ...ChooseProxy) *RestyClient {
 	if len(multiProxy) < 2 {
 		logger.Logrus().Warningln("multiProxies must contain at least 2 proxies")
@@ -235,15 +233,16 @@ func NewRestyClientWithMultiProxy(multiProxy []string, choose ...ChooseProxy) *R
 	return client
 }
 
-// ChooseProxy 多代理模式下的选择代理策略
+// ChooseProxy selects a configured proxy for each transport request.
 type ChooseProxy interface {
-	// Choose 选择代理
+	// Choose returns a proxy from the supplied pool.
 	Choose(request *http.Request, all []string) string
 }
 
 type randomChoose struct {
 }
 
+// Choose randomly selects a proxy, returning empty for an empty pool.
 func (r *randomChoose) Choose(_ *http.Request, all []string) string {
 	if len(all) == 0 {
 		return ""
@@ -251,22 +250,22 @@ func (r *randomChoose) Choose(_ *http.Request, all []string) string {
 	return all[random.RandInt(len(all)-1)]
 }
 
-// r 公共属性设置
+// Client configuration.
 
-// SetProxies 设置代理池
+// SetProxies configures a proxy pool and logs configuration errors.
 func (r *RestyClient) SetProxies(proxyUrls []string, choose ...ChooseProxy) {
 	if err := r.ConfigureProxies(proxyUrls, choose...); err != nil {
 		logger.Logrus().Warningln(err)
 	}
 }
 
-// ConfigureProxies 设置代理池，并向调用方返回配置错误。
+// ConfigureProxies configures dedicated proxy transports and returns configuration errors.
 func (r *RestyClient) ConfigureProxies(proxyUrls []string, choose ...ChooseProxy) error {
 	if len(proxyUrls) == 0 {
 		return nil
 	}
 
-	// 复制并过滤代理列表，避免调用方后续修改切片影响并发请求。
+	// Copy and validate the pool so caller slice mutations cannot affect requests.
 	proxies := append([]string(nil), proxyUrls...)
 	proxyCache := coll.SliceFilterToMap(proxies, func(proxy string) (string, *url.URL, bool) {
 		pURL, err := url.Parse(proxy)
@@ -331,7 +330,7 @@ func (r *RestyClient) ConfigureProxies(proxyUrls []string, choose ...ChooseProxy
 	return nil
 }
 
-// SetProxy 设置代理
+// SetProxy switches to a single proxy and closes old proxy-pool idle connections.
 func (r *RestyClient) SetProxy(proxy string) *RestyClient {
 	if multiTransport, ok := r.r.GetClient().Transport.(*multiProxyTransport); ok {
 		r.r.SetTransport(multiTransport.template.Clone())
@@ -342,56 +341,56 @@ func (r *RestyClient) SetProxy(proxy string) *RestyClient {
 	return r
 }
 
-// DisableTLSVerify 禁用TLS验证
+// DisableTLSVerify disables server certificate verification.
 func (r *RestyClient) DisableTLSVerify() *RestyClient {
 	if multiTransport, ok := r.r.GetClient().Transport.(*multiProxyTransport); ok {
 		multiTransport.template.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true, // 不验证证书签名
+			InsecureSkipVerify: true, // Disable server certificate verification.
 		}
 		for _, transport := range multiTransport.transports {
 			transport.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true, // 不验证证书签名
+				InsecureSkipVerify: true, // Disable server certificate verification.
 			}
 		}
 		return r
 	}
 	r.r.SetTLSClientConfig(&tls.Config{
-		InsecureSkipVerify: true, // 不验证证书签名
+		InsecureSkipVerify: true, // Disable server certificate verification.
 	})
 	return r
 }
 
-// DisableAllAutoRedirect 禁用所有自动重定向
+// DisableAllAutoRedirect disables automatic HTTP redirects.
 func (r *RestyClient) DisableAllAutoRedirect() *RestyClient {
 	r.r.SetRedirectPolicy(resty.NoRedirectPolicy())
 	return r
 }
 
-// SetBaseURL 设置BaseURL
+// SetBaseURL sets the base URL for relative requests.
 func (r *RestyClient) SetBaseURL(baseURL string) *RestyClient {
 	r.r.SetBaseURL(baseURL)
 	return r
 }
 
-// SetTimeout 设置超时时间
+// SetTimeout sets the client request timeout.
 func (r *RestyClient) SetTimeout(timeout time.Duration) *RestyClient {
 	r.r.SetTimeout(timeout)
 	return r
 }
 
-// SetHeader 设置请求头
+// SetHeader sets a client-wide header.
 func (r *RestyClient) SetHeader(key, value string) *RestyClient {
 	r.r.SetHeader(key, value)
 	return r
 }
 
-// SetHeaders 设置请求头
+// SetHeaders sets client-wide headers.
 func (r *RestyClient) SetHeaders(headers map[string]string) *RestyClient {
 	r.r.SetHeaders(headers)
 	return r
 }
 
-// R 获取Request实例
+// R creates a request with its own proxy trace.
 func (r *RestyClient) R() *RestyRequest {
 	trace := &proxyTrace{}
 	request := r.r.R()
@@ -403,41 +402,39 @@ func (r *RestyClient) R() *RestyRequest {
 	}
 }
 
-// 对 restyRequest进行设置
+// Request configuration.
 
-// SetReturnStruct 使用默认响应Body内容与结构体绑定
-// 仅支持响应码 200 - 299 内容类型为 JSON or XML时
+// SetReturnStruct binds successful JSON or XML response data to result.
 func (r *RestyRequest) SetReturnStruct(result any) *RestyRequest {
 	r.request.SetResult(result)
 	return r
 }
 
-// SetDownloadFile 将原始内容下载为文件
-// filepath 文件完整路径(含文件名)
+// SetDownloadFile writes response data to the supplied file path.
 func (r *RestyRequest) SetDownloadFile(filepath string) *RestyRequest {
 	r.request.SetOutput(filepath)
 	return r
 }
 
-// WithContext 设置请求上下文。
+// WithContext sets the context while preserving the request proxy trace.
 func (r *RestyRequest) WithContext(ctx context.Context) *RestyRequest {
 	r.request.SetContext(context.WithValue(ctx, proxyContextKey{}, r.trace))
 	return r
 }
 
-// SetHeaders 批量设置请求头。
+// SetHeaders sets request headers.
 func (r *RestyRequest) SetHeaders(headers map[string]string) *RestyRequest {
 	r.request.SetHeaders(headers)
 	return r
 }
 
-// SetHeader 设置请求头。
+// SetHeader sets a request header.
 func (r *RestyRequest) SetHeader(key, value string) *RestyRequest {
 	r.request.SetHeader(key, value)
 	return r
 }
 
-// Method 设置请求方法
+// Method creates a builder for the method and URL.
 func (r *RestyRequest) Method(httpMethod string, url string) *RestyMethod {
 	return &RestyMethod{
 		request: r,
@@ -446,7 +443,7 @@ func (r *RestyRequest) Method(httpMethod string, url string) *RestyMethod {
 	}
 }
 
-// ConfigureRequest 使用回调配置原始 Resty 请求。
+// ConfigureRequest applies a nonnil callback to the underlying Resty request.
 func (m *RestyMethod) ConfigureRequest(configure func(request *resty.Request)) *RestyMethod {
 	if configure != nil {
 		configure(m.request.request)
@@ -454,38 +451,38 @@ func (m *RestyMethod) ConfigureRequest(configure func(request *resty.Request)) *
 	return m
 }
 
-// SetRequestBody 设置请求体及其内容类型。
+// SetRequestBody sets the body and Content-Type header.
 func (m *RestyMethod) SetRequestBody(body any, contentType string) *RestyMethod {
 	m.request.request.SetBody(body)
 	m.request.SetHeader(HeaderContentType, contentType)
 	return m
 }
 
-// SetQueryValues 设置 URL 查询参数。
+// SetQueryValues sets URL query parameters.
 func (m *RestyMethod) SetQueryValues(query url.Values) *RestyMethod {
 	m.request.request.SetQueryParamsFromValues(query)
 	return m
 }
 
-// SetPathValues 设置 URL 路径参数。
+// SetPathValues sets URL path parameters.
 func (m *RestyMethod) SetPathValues(pathParams map[string]string) *RestyMethod {
 	m.request.request.SetPathParams(pathParams)
 	return m
 }
 
-// SetBodyJSON 设置 JSON 字符串请求体。
+// SetBodyJSON sets a JSON string body with an optional charset.
 func (m *RestyMethod) SetBodyJSON(bodyJSON string, charset ...string) *RestyMethod {
 	m.SetRequestBody(bodyJSON, getContentType(ContentTypeJSON, charset...))
 	return m
 }
 
-// SetBodyForm 设置表单请求体。
+// SetBodyForm sets a URL-encoded form body.
 func (m *RestyMethod) SetBodyForm(formEncode map[string]string) *RestyMethod {
 	m.request.request.SetFormData(formEncode)
 	return m
 }
 
-// Execute 执行请求
+// Execute executes a supported HTTP method or returns ErrUnsupportedHTTPMethod.
 func (m *RestyMethod) Execute() (*Response, error) {
 	switch m.method {
 	case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete,
@@ -496,21 +493,21 @@ func (m *RestyMethod) Execute() (*Response, error) {
 	return nil, toolkitError.ErrUnsupportedHTTPMethod
 }
 
-// 常用的快捷请求方法，默认使用resty.R()
+// Convenience request methods.
 
-// Get 发起 GET 请求。
+// Get executes a GET request.
 func (r *RestyRequest) Get(url string) (*Response, error) {
 	response, err := r.request.Get(url)
 	return wrapResponse(response, r.proxy, r.trace), err
 }
 
-// Post 发起 POST 请求。
+// Post executes a POST request.
 func (r *RestyRequest) Post(url string) (*Response, error) {
 	response, err := r.request.Post(url)
 	return wrapResponse(response, r.proxy, r.trace), err
 }
 
-// PostForm 发起表单 POST 请求。
+// PostForm executes a POST with optional form fields.
 func (r *RestyRequest) PostForm(url string, formEncode map[string]string) (*Response, error) {
 	var response *resty.Response
 	var err error
@@ -522,7 +519,7 @@ func (r *RestyRequest) PostForm(url string, formEncode map[string]string) (*Resp
 	return wrapResponse(response, r.proxy, r.trace), err
 }
 
-// PostJSON 发起 JSON POST 请求。
+// PostJSON executes a POST with a JSON string body and optional charset.
 func (r *RestyRequest) PostJSON(url string, jsonString string, charset ...string) (*Response, error) {
 	r.request.SetBody(jsonString)
 	r.request.SetHeader(HeaderContentType, getContentType(ContentTypeJSON, charset...))
