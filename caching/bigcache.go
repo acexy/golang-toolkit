@@ -15,7 +15,7 @@ type log struct {
 
 // Printf routes BigCache diagnostics to the toolkit debug logger.
 func (l log) Printf(format string, v ...any) {
-	logrus.Logrus().Debugln(format, v)
+	logrus.Logrus().Debugf(format, v...)
 }
 
 // BigCacheBucket adapts BigCache to byte-oriented cache operations.
@@ -34,8 +34,14 @@ func NewBigCacheByConfig(config bigcache.Config) (*BigCacheBucket, error) {
 }
 
 // NewSimpleBigCache creates a bucket with the given lifetime and a five-second cleanup interval.
+// It uses 64 shards and sizes initial queues for 10,000 entries of 500 bytes each.
+// Statistics and verbose logging are disabled; queue capacity has no hard limit.
 func NewSimpleBigCache(duration time.Duration) (*BigCacheBucket, error) {
 	c := bigcache.DefaultConfig(duration)
+	c.Shards = 64
+	c.MaxEntriesInWindow = 10_000
+	c.MaxEntrySize = 500
+	c.Verbose = false
 	c.CleanWindow = 5 * time.Second
 	c.StatsEnabled = false
 	c.Logger = log{}
