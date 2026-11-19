@@ -1,12 +1,49 @@
 package routine_test
 
 import (
+	"bytes"
+	"context"
 	"encoding/hex"
+	"runtime"
+	"runtime/pprof"
 	"testing"
 	"time"
 
 	"github.com/acexy/golang-toolkit/sys/routine"
 )
+
+func TestThreadLocalWithProfilerLabels(t *testing.T) {
+	id := routine.GetGoroutineId()
+	if id == 0 {
+		t.Fatal("current goroutine ID is zero")
+	}
+	childID := make(chan uint64, 1)
+	go func() { childID <- routine.GetGoroutineId() }()
+	if got := <-childID; got == 0 || got == id {
+		t.Fatalf("child goroutine ID = %d, parent = %d", got, id)
+	}
+
+	pprof.Do(context.Background(), pprof.Labels("toolkit", "thread-local"), func(context.Context) {
+		local := routine.NewThreadLocal[string]()
+		defer local.Delete()
+		local.Set("value")
+		stack := make([]byte, 4096)
+		n := runtime.Stack(stack, false)
+		if !bytes.HasPrefix(stack[:n], []byte("goroutine ")) {
+			t.Fatalf("unexpected current goroutine stack: %q", stack[:n])
+		}
+		var profile bytes.Buffer
+		if err := pprof.Lookup("goroutine").WriteTo(&profile, 1); err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Contains(profile.Bytes(), []byte(`"toolkit":"thread-local"`)) {
+			t.Fatal("goroutine profile omitted the label after using thread-local storage")
+		}
+		if got := local.Get(); got != "value" {
+			t.Fatalf("thread-local value = %q after collecting diagnostics", got)
+		}
+	})
+}
 
 func TestThreadLocalPublicMethods(t *testing.T) {
 	// Verify that private embedded storage still promotes public methods externally.

@@ -1,10 +1,9 @@
 package random
 
 import (
+	"encoding/hex"
 	"math/rand/v2"
-	"strings"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -23,7 +22,8 @@ func RandString(length int) string {
 	return string(result)
 }
 
-// UUID returns a UUID string without hyphens.
+// UUID returns a UUID v4 as 32 lowercase hexadecimal characters without hyphens.
 func UUID() string {
-	return strings.ReplaceAll(uuid.NewString(), "-", "")
+	id := uuid.NewV4()
+	return hex.EncodeToString(id[:])
 }

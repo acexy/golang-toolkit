@@ -2,7 +2,7 @@ package coll
 
 import (
 	"maps"
-	"math/rand"
+	"math/rand/v2"
 	"slices"
 )
 
@@ -107,7 +107,7 @@ func MapRandom[K comparable, V any](m map[K]V) (K, V) {
 		var zv V
 		return zk, zv
 	}
-	r := rand.Intn(len(m))
+	r := rand.IntN(len(m))
 	i := 0
 	for k, v := range m {
 		if i == r {

@@ -62,9 +62,16 @@ func TestSliceFind(t *testing.T) {
 	if !ok || got != 2 {
 		t.Fatalf("SliceFind() = %d, %v", got, ok)
 	}
-	got, ok = SliceFindLast(values, func(v int) bool { return v == 2 })
-	if !ok || got != 2 {
-		t.Fatalf("SliceFindLast() = %d, %v", got, ok)
+	var visited []int
+	got, ok = SliceFindLast(values, func(v int) bool {
+		visited = append(visited, v)
+		return v != 2
+	})
+	if !ok || got != 3 || !slices.Equal(visited, []int{2, 3}) {
+		t.Fatalf("SliceFindLast() = %d, %v, visited %v", got, ok, visited)
+	}
+	if got, ok := SliceFindLast[int](nil, nil); got != 0 || ok {
+		t.Fatalf("SliceFindLast(nil, nil) = %d, %v", got, ok)
 	}
 }
 
