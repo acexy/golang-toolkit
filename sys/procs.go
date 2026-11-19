@@ -1,7 +1,9 @@
 package sys
 
 import (
+	"math"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -19,26 +21,25 @@ const (
 // CPULimitType selects a GOMAXPROCS policy.
 type CPULimitType int
 
-func readCgroupV1CPU() (quota int64, period int64) {
-	quotaPath := "/sys/fs/cgroup/cpu/cpu.cfs_quota_us"
-	periodPath := "/sys/fs/cgroup/cpu/cpu.cfs_period_us"
-	quota = readIntFromFile(quotaPath)
-	period = readIntFromFile(periodPath)
-	return
+func cpuLimitFromQuota(quota, period int64) int {
+	if quota <= 0 || period <= 0 {
+		return 0
+	}
+	limit := max(1, quota/period)
+	return int(min(limit, math.MaxInt))
 }
 
-func readCgroupV2CPU() int {
-	cpuMaxPath := "/sys/fs/cgroup/cpu.max"
+func readCgroupV2CPU(cpuMaxPath string) int {
 	content, err := os.ReadFile(cpuMaxPath)
 	if err != nil {
 		return 0
 	}
 	parts := strings.Fields(string(content))
 	if len(parts) >= 2 && parts[0] != "max" {
-		quota, _ := strconv.ParseInt(parts[0], 10, 64)
-		period, _ := strconv.ParseInt(parts[1], 10, 64)
-		if quota > 0 && period > 0 {
-			return int(float64(quota) / float64(period))
+		quota, quotaErr := strconv.ParseInt(parts[0], 10, 64)
+		period, periodErr := strconv.ParseInt(parts[1], 10, 64)
+		if quotaErr == nil && periodErr == nil {
+			return cpuLimitFromQuota(quota, period)
 		}
 	}
 	return 0
@@ -56,15 +57,19 @@ func readIntFromFile(path string) int64 {
 	return n
 }
 
-// DetectCPULimit checks cgroup CPU quotas and falls back to runtime.NumCPU.
+// DetectCPULimit rounds a positive cgroup CPU quota down to at least one CPU.
+// It falls back to runtime.NumCPU when no usable quota is available.
 func DetectCPULimit() int {
-	if quota, period := readCgroupV1CPU(); quota > 0 && period > 0 {
-		limit := int(float64(quota) / float64(period))
-		if limit > 0 {
-			return limit
-		}
+	return detectCPULimit("/sys/fs/cgroup")
+}
+
+func detectCPULimit(cgroupDir string) int {
+	quota := readIntFromFile(filepath.Join(cgroupDir, "cpu", "cpu.cfs_quota_us"))
+	period := readIntFromFile(filepath.Join(cgroupDir, "cpu", "cpu.cfs_period_us"))
+	if limit := cpuLimitFromQuota(quota, period); limit > 0 {
+		return limit
 	}
-	if cpus := readCgroupV2CPU(); cpus > 0 {
+	if cpus := readCgroupV2CPU(filepath.Join(cgroupDir, "cpu.max")); cpus > 0 {
 		return cpus
 	}
 	return runtime.NumCPU()

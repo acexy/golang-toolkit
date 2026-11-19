@@ -2,7 +2,7 @@ package coll
 
 import (
 	"cmp"
-	"math/rand"
+	"math/rand/v2"
 	"slices"
 
 	toolkitError "github.com/acexy/golang-toolkit/error"
@@ -14,7 +14,7 @@ func SliceRandom[T any](slice []T) T {
 		var zeroValue T
 		return zeroValue
 	}
-	return slice[rand.Intn(len(slice))]
+	return slice[rand.IntN(len(slice))]
 }
 
 // SliceContains reports membership using equality or the first nonnil comparator.
@@ -59,20 +59,13 @@ func SliceFind[T any](slice []T, filter func(item T) bool) (T, bool) {
 
 // SliceFindLast returns the last predicate match and whether one exists.
 func SliceFindLast[T any](slice []T, filter func(item T) bool) (T, bool) {
-	var t T
-	if len(slice) == 0 {
-		return t, false
-	}
-	var exist bool
-	for i := len(slice) - 1; i >= 0; i-- {
-		flag := filter(slice[i])
-		if flag {
-			t = slice[i]
-			exist = true
-			break
+	for _, item := range slices.Backward(slice) {
+		if filter(item) {
+			return item, true
 		}
 	}
-	return t, exist
+	var zero T
+	return zero, false
 }
 
 // SliceFilter returns matching elements in input order.

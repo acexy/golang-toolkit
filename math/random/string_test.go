@@ -1,6 +1,9 @@
 package random
 
-import "testing"
+import (
+	"encoding/hex"
+	"testing"
+)
 
 func TestRandString(t *testing.T) {
 	if got := RandString(5); len(got) != 5 {
@@ -15,7 +18,12 @@ func TestRandString(t *testing.T) {
 }
 
 func TestUUID(t *testing.T) {
-	if got := UUID(); len(got) != 32 {
-		t.Fatalf("unexpected uuid length: %d", len(got))
+	got := UUID()
+	decoded, err := hex.DecodeString(got)
+	if err != nil || len(decoded) != 16 || hex.EncodeToString(decoded) != got {
+		t.Fatalf("UUID() = %q, want 32 lowercase hexadecimal characters", got)
+	}
+	if decoded[6]>>4 != 4 || decoded[8]>>6 != 2 {
+		t.Fatalf("UUID() = %q, want an RFC 9562 version 4 UUID", got)
 	}
 }

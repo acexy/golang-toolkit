@@ -4,7 +4,7 @@
 
 ## Requirements
 
-- Go `>= 1.25.0`
+- Go `>= 1.27.4`
 - Module: `github.com/acexy/golang-toolkit`
 
 ## Installation

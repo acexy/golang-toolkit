@@ -8,8 +8,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	toolkitError "github.com/acexy/golang-toolkit/error"
+	toolkitJSON "github.com/acexy/golang-toolkit/util/json"
 )
 
 type roundRobinChooseProxy struct {
@@ -95,6 +97,26 @@ func TestPostJSON(t *testing.T) {
 	}
 	if response.String() != "ok" {
 		t.Fatalf("unexpected response: %s", response.String())
+	}
+}
+
+func TestSetReturnStructJSON(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set(HeaderContentType, "application/json")
+		_, _ = w.Write([]byte(`{"name":"toolkit","time":1729136314000}`))
+	}))
+	defer server.Close()
+
+	result := struct {
+		Name string                `json:"name"`
+		Time toolkitJSON.Timestamp `json:"time"`
+	}{}
+	response, err := NewRestyClient().R().SetReturnStruct(&result).Get(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.Result() != &result || result.Name != "toolkit" || !result.Time.Equal(time.UnixMilli(1729136314000)) {
+		t.Fatalf("unexpected bound response: %+v", result)
 	}
 }
 
